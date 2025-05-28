@@ -4,6 +4,12 @@ FROM python:3.9-slim
 # Definir o diretório de trabalho na imagem.
 WORKDIR /app
 
+# Instalar dependências do sistema necessárias para compilação
+# (como gcc para a biblioteca 'blis', uma dependência do spacy)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential gcc && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copiar o arquivo de requisitos primeiro para aproveitar o cache do Docker.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -16,14 +22,17 @@ COPY web_app.py .
 COPY ontologiaB3_com_inferencia.ttl /app/ontologiaB3_com_inferencia.ttl
 
 # Copiar toda a pasta de resources para dentro da estrutura /app/src/main/resources no container.
-# Isso garante que pln_processor.py, setor_map.json, perguntas_de_interesse.txt, 
+# Isso garante que pln_processor.py, setor_map.json, perguntas_de_interesse.txt,
 # resultado_similaridade.txt, empresa_nome_map.json e a pasta Templates sejam acessíveis.
 COPY src/main/resources /app/src/main/resources
 
 # Informar ao Docker que a aplicação escuta na porta 5000 (ou a porta que Gunicorn usa).
+# O Render define a porta através da variável de ambiente PORT, então essa linha é mais informativa.
+# O Gunicorn será configurado para usar a porta do Render.
 EXPOSE 5000
 
 # Comando para executar a aplicação usando Gunicorn.
 # 'web_app:app' refere-se ao arquivo web_app.py e à instância 'app' do Flask nele.
 # Ajuste o número de workers (-w) conforme necessário para seu plano no Render.
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "-w", "2", "--timeout", "120", "web_app:app"]
+# O Render define a variável de ambiente $PORT, que deve ser usada aqui.
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "-w", "2", "--timeout", "120", "web_app:app"]
