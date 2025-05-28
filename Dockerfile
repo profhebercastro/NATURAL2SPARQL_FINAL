@@ -26,10 +26,11 @@ COPY ontologiaB3_com_inferencia.ttl /app/ontologiaB3_com_inferencia.ttl
 # resultado_similaridade.txt, empresa_nome_map.json e a pasta Templates sejam acessíveis.
 COPY src/main/resources /app/src/main/resources
 
-# Informar ao Docker que a aplicação escuta na porta 5000 (ou a porta que Gunicorn usa).
-# O Render define a porta através da variável de ambiente PORT, então essa linha é mais informativa.
-# O Gunicorn será configurado para usar a porta do Render.
-EXPOSE 5000 # Você pode deixar esta porta ou a porta que o Gunicorn usaria sem $PORT, ex: 8000 ou 8080
+# Informar ao Docker que a aplicação escuta na porta X.
+# O Render define a porta através da variável de ambiente PORT, então esta linha é mais informativa
+# para o desenvolvedor ou para ferramentas que inspecionam a imagem.
+# O Gunicorn será configurado para usar a porta do Render ($PORT).
+EXPOSE 5000 # Ou 8000, ou 8080, a porta padrão que Gunicorn/Flask usaria sem $PORT
 
 # Comando para executar a aplicação usando Gunicorn.
 # 'web_app:app' refere-se ao arquivo web_app.py e à instância 'app' do Flask nele.
