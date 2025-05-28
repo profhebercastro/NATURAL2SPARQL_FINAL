@@ -14,27 +14,21 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Baixar o modelo de linguagem spaCy para português
+# Certifique-se que 'spacy' está no requirements.txt
+RUN python -m spacy download pt_core_news_sm
+
 # Copiar o código da aplicação Flask (web_app.py) para o diretório de trabalho.
 COPY web_app.py .
 
 # Copiar o arquivo de ontologia CORRETO (com inferência) para o diretório /app.
-# Certifique-se que este arquivo está na raiz do seu projeto ou ajuste o caminho de origem.
 COPY ontologiaB3_com_inferencia.ttl /app/ontologiaB3_com_inferencia.ttl
 
 # Copiar toda a pasta de resources para dentro da estrutura /app/src/main/resources no container.
-# Isso garante que pln_processor.py, setor_map.json, perguntas_de_interesse.txt,
-# resultado_similaridade.txt, empresa_nome_map.json e a pasta Templates sejam acessíveis.
 COPY src/main/resources /app/src/main/resources
 
 # Informar ao Docker que a aplicação escuta na porta X.
-# O Render define a porta através da variável de ambiente PORT, então esta linha é mais informativa
-# para o desenvolvedor ou para ferramentas que inspecionam a imagem.
-# O Gunicorn será configurado para usar a porta do Render ($PORT).
-EXPOSE 5000 
+EXPOSE 5000
 
 # Comando para executar a aplicação usando Gunicorn.
-# 'web_app:app' refere-se ao arquivo web_app.py e à instância 'app' do Flask nele.
-# Ajuste o número de workers (-w) conforme necessário para seu plano no Render.
-# O Render define a variável de ambiente $PORT, que deve ser usada aqui.
-# Alterado para a forma "shell" para garantir a expansão de $PORT.
 CMD gunicorn --bind 0.0.0.0:$PORT -w 2 --timeout 120 web_app:app
