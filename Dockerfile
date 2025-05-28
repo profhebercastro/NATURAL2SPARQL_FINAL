@@ -30,7 +30,7 @@ COPY src/main/resources /app/src/main/resources
 # O Render define a porta através da variável de ambiente PORT, então esta linha é mais informativa
 # para o desenvolvedor ou para ferramentas que inspecionam a imagem.
 # O Gunicorn será configurado para usar a porta do Render ($PORT).
-EXPOSE 5000 # Ou 8000, ou 8080, a porta padrão que Gunicorn/Flask usaria sem $PORT
+EXPOSE 5000 
 
 # Comando para executar a aplicação usando Gunicorn.
 # 'web_app:app' refere-se ao arquivo web_app.py e à instância 'app' do Flask nele.
