@@ -1,12 +1,12 @@
 # Natural2SPARQL
 
-Natural2SPARQL é um sistema que traduz perguntas em linguagem natural (português) sobre o mercado de ações da B3 em consultas SPARQL. Essas consultas são executadas contra uma base de conhecimento em RDF para fornecer respostas aos usuários através de uma interface web.
+Natural2SPARQL é um sistema que traduz perguntas em linguagem natural (português) para gerar consultas SPARQL. Essas consultas são executadas contra uma base de conhecimento em RDF para fornecer respostas aos usuários através de uma interface web.
 
 ## Funcionalidades Principais
 
-*   **Tradução de Linguagem Natural para SPARQL**: Converte perguntas como "Qual o preço de fechamento da PETR4 em 10/05/2023?" em consultas SPARQL formais.
-*   **Processamento de Linguagem Natural (PLN)**: Utiliza spaCy e FuzzyWuzzy para identificar a intenção do usuário, extrair entidades relevantes (empresas, códigos de ação, datas, setores) e normalizá-las.
-*   **Base de Conhecimento Ontológica**: Utiliza uma ontologia (RDF/TTL) populada com dados da B3 (informações de empresas, setores, dados históricos de pregões).
+*   **Tradução de Linguagem Natural para SPARQL**: Converte perguntas como em consultas SPARQL formais.
+*   **Processamento de Linguagem Natural (PLN)**: Utiliza spaCy e FuzzyWuzzy para identificar a intenção do usuário, extrair entidades relevantes e normalizá-las.
+*   **Base de Conhecimento Ontológica**: Utiliza uma ontologia (RDF/TTL) que neste estudo de caso é populada com dados da B3, que é uma das principais empresas de infraestrutura de mercado financeiro no mundo, com atuação em ambiente de bolsa e de balcão (informações de empresas, setores, dados históricos de pregões).
 *   **Consultas Baseadas em Templates**: Emprega um sistema de templates SPARQL que são preenchidos dinamicamente com as entidades extraídas.
 *   **Interface Web**: Fornece uma interface de usuário simples baseada em Flask para interação.
 *   **Deploy em Nuvem**: Configurado para deploy na plataforma Render usando Docker.
