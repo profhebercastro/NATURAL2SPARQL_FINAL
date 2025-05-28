@@ -104,7 +104,6 @@
         }
 
         .input-section button {
-            /* background-color: #1976d2;  Azul para o botão principal */
             color: white;
             padding: 10px 20px;
             border: none;
@@ -117,15 +116,15 @@
             gap: 5px; /* Espaço entre ícone e texto */
         }
         
-        #btn-consultar {
-            background-color: #27ae60; /* Verde para consultar */
+        #btn-gerar-consulta { 
+            background-color: #27ae60; 
         }
-        #btn-consultar:hover {
+        #btn-gerar-consulta:hover {
             background-color: #229954;
         }
 
         #btn-limpar {
-            background-color: #e74c3c; /* Vermelho para limpar */
+            background-color: #e74c3c; 
         }
         #btn-limpar:hover {
             background-color: #c0392b;
@@ -134,79 +133,105 @@
 
         .output-container {
             display: flex;
-            gap: 20px; /* Espaço entre as duas seções de output */
+            gap: 20px; 
             justify-content: space-between;
         }
 
         .output-section {
-            flex: 1; /* Faz com que ambas as seções ocupem espaço igual */
+            flex: 1; 
             background-color: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            min-height: 200px; /* Altura mínima para visualização */
+            min-height: 200px; 
             display: flex;
-            flex-direction: column; /* Para que o <pre> possa crescer */
+            flex-direction: column; 
         }
 
-        .output-section h3 {
+        .output-section-header { 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px; 
+        }
+
+        .output-section-header h3 {
             margin-top: 0;
-            color: #2c3e50; /* Azul escuro para os títulos das seções */
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            color: #2c3e50; 
+            margin-bottom: 0; 
             font-size: 1.2em;
         }
+        
+        #btn-executar-sparql {
+            background-color: #16a085; 
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #btn-executar-sparql:hover {
+            background-color: #117a65;
+        }
+        #btn-executar-sparql:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
 
         .output-section pre, .output-section div#resultado-display {
-            background-color: #f9f9f9; /* Fundo levemente acinzentado para o código */
+            background-color: #f9f9f9; 
             padding: 15px;
             border: 1px solid #e0e0e0;
             border-radius: 4px;
-            white-space: pre-wrap;  /* Quebra de linha para SPARQL e resultados longos */
-            word-wrap: break-word; /* Quebra palavras longas */
-            min-height: 100px; /* Garante um espaço mínimo */
-            overflow-y: auto; /* Scroll se o conteúdo for maior */
-            flex-grow: 1; /* Permite que esta área cresça */
+            white-space: pre-wrap;  
+            word-wrap: break-word; 
+            min-height: 100px; 
+            overflow-y: auto; 
+            flex-grow: 1; 
         }
         
-        .output-section pre { /* Estilo específico para a caixa da query SPARQL */
+        .output-section pre#sparql-query-display { 
              font-family: 'Courier New', Courier, monospace;
              font-size: 0.9em;
         }
 
-        /* Estilo para o texto de resultado, adaptado para tabelas ou texto */
-        .resultado-texto {
-            font-size: 1em; /* Tamanho base para o texto de resultado */
+        #resultado-display { 
+            font-size: 1.2em; /* AJUSTE AQUI: de 1.1em para 1.2em */
             color: black;
         }
-        .resultado-texto.erro {
+        .resultado-texto.erro, #resultado-display .erro { 
             color: red;
-            font-weight: normal; /* Não precisa de bold para erro, a cor já destaca */
+            font-weight: normal; 
         }
-        .resultado-texto table {
+        #resultado-display table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9em;
+            font-size: 1em; /* Mantém 1em relativo ao #resultado-display, então também será maior */
         }
-        .resultado-texto th, .resultado-texto td {
+        #resultado-display th, #resultado-display td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
-        .resultado-texto th {
+        #resultado-display th {
             background-color: #f2f2f2;
             font-weight: bold;
         }
 
 
         footer {
-            background-color: #0d47a1; /* Mesmo azul do header */
+            background-color: #0d47a1; 
             color: white;
             text-align: center;
             padding: 15px 0;
             font-size: 0.9em;
-            margin-top: auto; /* Empurra o rodapé para baixo */
+            margin-top: auto; 
         }
 
         .placeholder-text {
@@ -236,19 +261,24 @@
             <label for="pergunta"><strong>Digite sua pergunta</strong></label>
             <input type="text" id="pergunta" placeholder="Entre com sua pergunta aqui">
             <div class="button-group">
-                <button id="btn-consultar">GERAR CONSULTA <i class="fas fa-arrow-right"></i></button>
+                <button id="btn-gerar-consulta">GERAR CONSULTA <i class="fas fa-arrow-right"></i></button>
                 <button id="btn-limpar"><i class="fas fa-sync-alt"></i> LIMPAR</button>
             </div>
         </div>
 
         <div class="output-container">
             <div class="output-section">
-                <h3>Consulta SPARQL</h3>
+                <div class="output-section-header">
+                    <h3>Consulta SPARQL</h3>
+                    <button id="btn-executar-sparql" title="Executar Consulta SPARQL" style="display: none;">
+                        <i class="fas fa-play"></i> EXECUTAR
+                    </button>
+                </div>
                 <pre id="sparql-query-display"><span class="placeholder-text">A consulta SPARQL aparecerá aqui...</span></pre>
             </div>
             <div class="output-section">
                 <h3>Resultado</h3>
-                <div id="resultado-display" class="resultado-texto"><span class="placeholder-text">O resultado aparece aqui...</span></div>
+                <div id="resultado-display"><span class="placeholder-text">O resultado aparece aqui...</span></div>
             </div>
         </div>
     </div>
@@ -260,39 +290,46 @@
 <script>
     let historicoConsultas = [];
     let historicoRespostas = [];
+    let dadosDaUltimaConsultaParaExecucao = null; 
 
     const perguntaInput = document.getElementById('pergunta');
     const sparqlDisplay = document.getElementById('sparql-query-display');
     const resultadoDisplay = document.getElementById('resultado-display');
+    const btnGerarConsulta = document.getElementById('btn-gerar-consulta');
+    const btnExecutarSparql = document.getElementById('btn-executar-sparql');
 
-    document.getElementById('btn-consultar').addEventListener('click', processarPergunta);
+    btnGerarConsulta.addEventListener('click', gerarConsulta);
+    btnExecutarSparql.addEventListener('click', executarConsultaArmazenada);
     document.getElementById('btn-limpar').addEventListener('click', limparCampos);
     document.getElementById('btn-download-consultas').addEventListener('click', baixarConsultas);
     document.getElementById('btn-download-respostas').addEventListener('click', baixarRespostas);
 
     perguntaInput.addEventListener('keypress', function(event) {
         if (event.key === 'Enter') {
-            event.preventDefault(); // Impede o comportamento padrão do Enter em formulários
-            processarPergunta();
+            event.preventDefault(); 
+            gerarConsulta();
         }
     });
 
-    function processarPergunta() {
+    function gerarConsulta() {
         const pergunta = perguntaInput.value.trim();
-        const perguntaOriginalParaHistorico = perguntaInput.value; // Salva a pergunta original para o histórico
+        const perguntaOriginalParaHistorico = perguntaInput.value; 
 
         if (!pergunta) {
             resultadoDisplay.innerHTML = '<span class="placeholder-text erro">Por favor, digite uma pergunta.</span>';
             sparqlDisplay.innerHTML = '<span class="placeholder-text">A consulta SPARQL aparecerá aqui...</span>';
+            btnExecutarSparql.style.display = 'none';
+            dadosDaUltimaConsultaParaExecucao = null;
             return;
         }
 
-        // Limpa e mostra placeholders
         sparqlDisplay.innerHTML = '<span class="placeholder-text">Processando sua pergunta...</span>';
-        resultadoDisplay.innerHTML = '<span class="placeholder-text">Aguardando resultado...</span>';
-        resultadoDisplay.className = 'resultado-texto'; // Reseta classes de erro
+        resultadoDisplay.innerHTML = '<span class="placeholder-text">Aguardando geração da Consulta...</span>'; 
+        resultadoDisplay.className = ''; 
+        btnExecutarSparql.style.display = 'none'; 
+        dadosDaUltimaConsultaParaExecucao = null;
         
-        fetch('/processar_pergunta', { // Endpoint no web_app.py
+        fetch('/processar_pergunta', { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -301,91 +338,115 @@
         })
         .then(response => {
             if (!response.ok) {
-                // Tenta ler o corpo do erro como JSON. Se não conseguir, cria um erro genérico.
                 return response.json().then(errorData => {
-                    // Se errorData é um objeto e tem a chave 'erro', use-a.
-                    // Caso contrário, pode ser uma estrutura de erro inesperada.
                     const detail = (errorData && typeof errorData === 'object' && errorData.erro) ? errorData.erro : `Status ${response.status}`;
                     const sparqlQueryOnError = (errorData && typeof errorData === 'object' && errorData.sparqlQuery) ? errorData.sparqlQuery : "N/A";
                     throw { message: detail, sparqlQuery: sparqlQueryOnError, isHttpError: true, status: response.status };
-                }).catch(() => { // Se o response.json() falhar (corpo não é JSON válido)
+                }).catch(() => { 
                     throw { message: `Erro HTTP ${response.status}: ${response.statusText}`, sparqlQuery: "N/A", isHttpError: true, status: response.status };
                 });
             }
-            return response.json(); // Se response.ok, espera-se um JSON válido
+            return response.json(); 
         })
         .then(data => {
-            // data agora deve ser { "sparqlQuery": "...", "resposta": "..." } ou { "erro": "...", "sparqlQuery": "..." }
             const consultaGerada = data.sparqlQuery || 'Consulta SPARQL não disponível.';
-            sparqlDisplay.textContent = consultaGerada; // Exibe como texto dentro do <pre>
-
-            if (data.erro) {
-                resultadoDisplay.innerHTML = `<span class="erro">Erro: ${data.erro}</span>`;
-                historicoRespostas.push({ pergunta: perguntaOriginalParaHistorico, resposta: `Erro: ${data.erro}` });
-            } else {
-                let respostaDoServidor = data.resposta || 'Nenhuma resposta recebida.';
-                try {
-                    const jsonParsedResposta = JSON.parse(respostaDoServidor); // Tenta parsear
-
-                    if (Array.isArray(jsonParsedResposta)) { // Resultados de um SELECT
-                        if (jsonParsedResposta.length === 0) {
-                            resultadoDisplay.innerHTML = '<span>Nenhum resultado encontrado.</span>';
-                            respostaDoServidor = "Nenhum resultado encontrado.";
-                        } else {
-                            resultadoDisplay.innerHTML = ''; // Limpa
-                            const table = document.createElement('table');
-                            const thead = table.createTHead();
-                            const tbody = table.createTBody();
-                            const headerRow = thead.insertRow();
-                            
-                            Object.keys(jsonParsedResposta[0]).forEach(key => {
-                                const th = document.createElement('th');
-                                th.textContent = key;
-                                headerRow.appendChild(th);
-                            });
-                            
-                            jsonParsedResposta.forEach(obj => {
-                                const row = tbody.insertRow();
-                                Object.values(obj).forEach(text => {
-                                    const cell = row.insertCell();
-                                    cell.textContent = text;
-                                });
-                            });
-                            resultadoDisplay.appendChild(table);
-                            // Para o histórico, manter o JSON stringificado para download
-                            respostaDoServidor = JSON.stringify(jsonParsedResposta, null, 2); 
-                        }
-                    } else if (typeof jsonParsedResposta === 'object' && jsonParsedResposta.hasOwnProperty('resultado_ask')) { // ASK
-                        resultadoDisplay.innerHTML = `<span>Resultado ASK: ${jsonParsedResposta.resultado_ask}</span>`;
-                        respostaDoServidor = `Resultado ASK: ${jsonParsedResposta.resultado_ask}`;
-                    } else { // Não é array JSON nem objeto ASK esperado, trata como texto
-                        resultadoDisplay.innerHTML = `<pre>${respostaDoServidor}</pre>`;
-                    }
-                } catch (e) { // Se não for JSON válido (ex: Turtle de CONSTRUCT/DESCRIBE ou erro de texto)
-                    resultadoDisplay.innerHTML = `<pre>${respostaDoServidor}</pre>`;
-                }
-                historicoRespostas.push({ pergunta: perguntaOriginalParaHistorico, resposta: respostaDoServidor });
-            }
+            sparqlDisplay.textContent = consultaGerada; 
             historicoConsultas.push({ pergunta: perguntaOriginalParaHistorico, sparql: consultaGerada });
+            
+            dadosDaUltimaConsultaParaExecucao = data; 
+
+            if (data.erro) { 
+                resultadoDisplay.innerHTML = `<span class="erro">Erro ao gerar/processar consulta: ${data.erro}</span>`;
+            } else if (consultaGerada !== 'Consulta SPARQL não disponível.' && consultaGerada.trim() !== '') {
+                 resultadoDisplay.innerHTML = '<span class="placeholder-text">Consulta gerada. Clique em EXECUTAR para ver o resultado.</span>';
+                 btnExecutarSparql.style.display = 'inline-flex'; 
+            } else {
+                 resultadoDisplay.innerHTML = '<span class="placeholder-text erro">Não foi possível gerar a consulta SPARQL.</span>';
+            }
         })
         .catch(error => {
-            console.error('Erro capturado no fetch:', error);
+            console.error('Erro capturado no fetch ao gerar consulta:', error);
             const consultaErro = error.sparqlQuery || 'N/A';
             sparqlDisplay.textContent = consultaErro;
             
             const mensagemErro = `Erro: ${error.message || 'Falha na comunicação ou processamento.'}`;
             resultadoDisplay.innerHTML = `<span class="erro">${mensagemErro}</span>`;
+            btnExecutarSparql.style.display = 'none';
+            dadosDaUltimaConsultaParaExecucao = null;
             
             historicoConsultas.push({ pergunta: perguntaOriginalParaHistorico, sparql: consultaErro });
-            historicoRespostas.push({ pergunta: perguntaOriginalParaHistorico, resposta: mensagemErro });
         });
     }
+
+    function executarConsultaArmazenada() {
+        if (!dadosDaUltimaConsultaParaExecucao) {
+            resultadoDisplay.innerHTML = '<span class="placeholder-text erro">Nenhuma consulta gerada para executar. Por favor, gere uma consulta primeiro.</span>';
+            return;
+        }
+
+        const ultimaConsultaInfo = historicoConsultas.length > 0 ? historicoConsultas[historicoConsultas.length - 1] : { pergunta: "Não disponível" };
+        const perguntaOriginalParaHistorico = ultimaConsultaInfo.pergunta;
+
+        resultadoDisplay.innerHTML = '<span class="placeholder-text">Exibindo resultado...</span>';
+        resultadoDisplay.className = ''; 
+
+
+        if (dadosDaUltimaConsultaParaExecucao.erro) {
+            resultadoDisplay.innerHTML = `<span class="erro">Erro: ${dadosDaUltimaConsultaParaExecucao.erro}</span>`;
+            historicoRespostas.push({ pergunta: perguntaOriginalParaHistorico, resposta: `Erro: ${dadosDaUltimaConsultaParaExecucao.erro}` });
+        } else {
+            let respostaDoServidor = dadosDaUltimaConsultaParaExecucao.resposta || 'Nenhuma resposta recebida.';
+            try {
+                const jsonParsedResposta = JSON.parse(respostaDoServidor); 
+
+                if (Array.isArray(jsonParsedResposta)) { 
+                    if (jsonParsedResposta.length === 0) {
+                        resultadoDisplay.innerHTML = '<span>Nenhum resultado encontrado.</span>';
+                        respostaDoServidor = "Nenhum resultado encontrado."; 
+                    } else {
+                        resultadoDisplay.innerHTML = ''; 
+                        const table = document.createElement('table');
+                        const thead = table.createTHead();
+                        const tbody = table.createTBody();
+                        const headerRow = thead.insertRow();
+                        
+                        Object.keys(jsonParsedResposta[0]).forEach(key => {
+                            const th = document.createElement('th');
+                            th.textContent = key;
+                            headerRow.appendChild(th);
+                        });
+                        
+                        jsonParsedResposta.forEach(obj => {
+                            const row = tbody.insertRow();
+                            Object.values(obj).forEach(text => {
+                                const cell = row.insertCell();
+                                cell.textContent = text;
+                            });
+                        });
+                        resultadoDisplay.appendChild(table);
+                        respostaDoServidor = JSON.stringify(jsonParsedResposta, null, 2); 
+                    }
+                } else if (typeof jsonParsedResposta === 'object' && jsonParsedResposta.hasOwnProperty('resultado_ask')) { 
+                    resultadoDisplay.innerHTML = `<span>Resultado ASK: ${jsonParsedResposta.resultado_ask}</span>`;
+                    respostaDoServidor = `Resultado ASK: ${jsonParsedResposta.resultado_ask}`; 
+                } else { 
+                    resultadoDisplay.innerHTML = `<pre>${respostaDoServidor}</pre>`;
+                }
+            } catch (e) { 
+                resultadoDisplay.innerHTML = `<pre>${respostaDoServidor}</pre>`;
+            }
+            historicoRespostas.push({ pergunta: perguntaOriginalParaHistorico, resposta: respostaDoServidor });
+        }
+    }
+
 
     function limparCampos() {
         perguntaInput.value = '';
         sparqlDisplay.innerHTML = '<span class="placeholder-text">A consulta SPARQL aparecerá aqui...</span>';
         resultadoDisplay.innerHTML = '<span class="placeholder-text">O resultado aparece aqui...</span>';
-        resultadoDisplay.className = 'resultado-texto'; // Reseta classes de erro
+        resultadoDisplay.className = ''; 
+        btnExecutarSparql.style.display = 'none';
+        dadosDaUltimaConsultaParaExecucao = null;
     }
 
     function downloadTexto(filename, text) {
@@ -422,7 +483,7 @@
         historicoRespostas.forEach((item, index) => {
             conteudo += `Resultado ${index + 1}:\n`;
             conteudo += `Pergunta em Linguagem Natural: ${item.pergunta}\n`;
-            conteudo += `Resposta Obtida:\n${item.resposta}\n\n`; // Usa a resposta (pode ser string JSON ou texto)
+            conteudo += `Resposta Obtida:\n${item.resposta}\n\n`; 
             conteudo += "--------------------------------------------------\n\n";
         });
         downloadTexto('respostas_sparql.txt', conteudo);

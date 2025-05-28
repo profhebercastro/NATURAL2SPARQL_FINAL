@@ -1,37 +1,32 @@
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#> 
 
-SELECT DISTINCT ?valor ?empresaLabel
+SELECT DISTINCT ?valor ?empresaLabel 
 WHERE {
+  
   ?empresa stock:atuaEm ?setorUri .
   ?setorUri rdfs:label ?setorLabel .
 
-  # MODIFICAÇÃO: Usar LCASE para comparação case-insensitive
-  # Ou UCASE, ou REGEX com flag 'i'
-  # #SETOR_NORMALIZADO# deve ser o nome do setor em minúsculas, e.g., "setor elétrico"
-  # ou você pode passar #SETOR# como está e aplicar LCASE dos dois lados.
-  FILTER(LCASE(STR(?setorLabel)) = LCASE(#SETOR#)) # Opção 1: LCASE em ambos
-  # FILTER REGEX(STR(?setorLabel), #SETOR_REGEX_PATTERN#, "i") # Opção 2: Regex case-insensitive
-
+  FILTER(STR(?setorLabel) = #SETOR#) 
+ 
   ?empresa rdfs:label ?empresaLabel .
-
-  OPTIONAL {
+  
+  OPTIONAL { 
     ?empresa stock:temValorMobiliarioNegociado ?vmOpt .
     ?vmOpt stock:representadoPor ?codOpt .
     ?codOpt stock:ticker ?tickerViaVm .
   }
   OPTIONAL {
-    ?empresa stock:representadoPor ?codDirOpt .
+    ?empresa stock:representadoPor ?codDirOpt . 
     ?codDirOpt stock:ticker ?tickerViaDireto .
   }
-
+    
   BIND(COALESCE(?tickerViaVm, ?tickerViaDireto) AS ?tickerBruto)
-  FILTER(BOUND(?tickerBruto)) # Garante que só pegamos empresas com ticker associado
+  FILTER(BOUND(?tickerBruto)) 
 
-  # Garante que o ticker está no formato esperado. A flag "i" já torna case-insensitive se necessário, mas tickers são usualmente maiúsculos.
-  FILTER REGEX(STR(?tickerBruto), "^[A-Z]{4}[0-9]{1,2}$") # Removi "i" assumindo que o dado na ontologia já é maiúsculo e padronizado. Se não, mantenha "i".
-  BIND(STR(?tickerBruto) AS ?valor) # Garante que ?valor é uma string
+  FILTER REGEX(STR(?tickerBruto), "^[A-Z]{4}[0-9]{1,2}$", "i") 
+  BIND(?tickerBruto AS ?valor) 
 }
 ORDER BY ?empresaLabel ?valor
-LIMIT 100
+LIMIT 100 

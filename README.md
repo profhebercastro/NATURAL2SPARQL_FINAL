@@ -1,63 +1,135 @@
 # Natural2SPARQL
 
-<!-- Uma breve descrição (1-2 frases) do que o projeto faz. -->
-Um framework Java para converter perguntas e afirmações em linguagem natural (Português) para consultas SPARQL, utilizando Processamento de Linguagem Natural e Ontologias OWL.
+Natural2SPARQL é um sistema que traduz perguntas em linguagem natural (português) sobre o mercado de ações da B3 em consultas SPARQL. Essas consultas são executadas contra uma base de conhecimento em RDF para fornecer respostas aos usuários através de uma interface web.
 
-<!-- Opcional: Badges/Escudos (ex: status do build, versão, licença) -->
-<!-- ![License](https://img.shields.io/badge/License-MIT-blue.svg) -->
+## Funcionalidades Principais
 
-## 📝 Sobre o Projeto
+*   **Tradução de Linguagem Natural para SPARQL**: Converte perguntas como "Qual o preço de fechamento da PETR4 em 10/05/2023?" em consultas SPARQL formais.
+*   **Processamento de Linguagem Natural (PLN)**: Utiliza spaCy e FuzzyWuzzy para identificar a intenção do usuário, extrair entidades relevantes (empresas, códigos de ação, datas, setores) e normalizá-las.
+*   **Base de Conhecimento Ontológica**: Utiliza uma ontologia (RDF/TTL) populada com dados da B3 (informações de empresas, setores, dados históricos de pregões).
+*   **Consultas Baseadas em Templates**: Emprega um sistema de templates SPARQL que são preenchidos dinamicamente com as entidades extraídas.
+*   **Interface Web**: Fornece uma interface de usuário simples baseada em Flask para interação.
+*   **Deploy em Nuvem**: Configurado para deploy na plataforma Render usando Docker.
 
-<!-- Explique um pouco mais o objetivo, o problema que resolve, e talvez o contexto. -->
-Este projeto visa facilitar o acesso a dados armazenados em grafos de conhecimento (Knowledge Graphs) RDF por meio de perguntas feitas em linguagem natural. Ele utiliza técnicas de PLN com Stanford CoreNLP para analisar a entrada do usuário e a biblioteca OWL API junto com Apache Jena para interpretar uma ontologia de domínio e gerar a consulta SPARQL correspondente.
+## Tecnologias Utilizadas
 
-<!-- Exemplo: Mencione o domínio específico se houver -->
-<!-- Atualmente, o foco é em perguntas sobre [Mencione o domínio da sua ontologia, ex: filmes, livros, dados acadêmicos]. -->
+*   **Backend**:
+    *   Java 17
+    *   Apache Jena (para manipulação da ontologia e execução de SPARQL)
+    *   Spring Boot (para empacotamento da aplicação Java)
+*   **Processamento de Linguagem Natural**:
+    *   Python 3.9
+    *   spaCy (tokenização, NER, modelos de linguagem)
+    *   FuzzyWuzzy (correspondência de strings por similaridade)
+*   **Frontend/Gateway**:
+    *   Python 3.9
+    *   Flask (framework web)
+*   **Base de Dados**:
+    *   RDF/TTL (para a base de conhecimento)
+    *   Arquivos Excel (`.xlsx`) como fonte primária dos dados.
+*   **DevOps**:
+    *   Docker
+    *   Render (para deploy)
+*   **Outros**:
+    *   Pandas (para manipulação de dados em scripts Python)
 
-## ✨ Funcionalidades Principais
+## Arquitetura do Sistema
 
-*   Análise sintática e semântica de frases em Português (usando Stanford CoreNLP).
-*   Reconhecimento de Entidades Nomeadas (NER) relevantes para a ontologia.
-*   Mapeamento de termos da linguagem natural para conceitos e propriedades da ontologia OWL.
-*   Geração de consultas SPARQL (SELECT, ASK, etc.) baseadas na pergunta e na ontologia.
-*   
+O sistema opera com os seguintes componentes principais:
 
-## 🚀 Tecnologias Utilizadas
+1.  **Interface do Usuário (Web App - Flask)**: Recebe a pergunta do usuário.
+2.  **Orquestrador Java (Spring Boot App)**:
+    *   Recebe a pergunta do Web App.
+    *   Invoca o **Processador de PLN Python**.
+3.  **Processador de PLN (Script Python)**:
+    *   Analisa a pergunta usando spaCy e `perguntas_de_interesse.txt`.
+    *   Identifica o template SPARQL e extrai entidades (empresas, datas, etc.).
+    *   Normaliza entidades usando `empresa_nome_map.json`.
+    *   Retorna o ID do template e as entidades para o Orquestrador Java.
+4.  **Construtor de Consultas (Java - parte do Orquestrador)**:
+    *   Seleciona o template SPARQL correspondente.
+    *   Preenche o template com as entidades extraídas.
+5.  **Motor de Consulta (Java - Apache Jena)**:
+    *   Executa a consulta SPARQL contra a ontologia (`ontologiaB3_com_inferencia.ttl`).
+6.  **Ontologia (RDF/TTL)**: Base de conhecimento com dados da B3.
+7.  O resultado é retornado pela cadeia até a Interface do Usuário.
 
-*   [Java](https://www.java.com/) - Linguagem de programação principal (<!-- Especifique a versão do JDK, ex: JDK 11 -->)
-*   [Maven](https://maven.apache.org/) - Gerenciamento de dependências e build
-*   [Apache Jena](https://jena.apache.org/) - Framework para manipulação de RDF, SPARQL e ontologias
-*   [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/) - Biblioteca para Processamento de Linguagem Natural
-*   [OWL API](https://owlapi.sourceforge.net/) - API para manipulação de ontologias OWL
-*   [JUnit](https://junit.org/junit5/) - Framework para testes unitários
+*(Veja o Diagrama de Arquitetura abaixo para uma representação visual)*
 
-## ⚙️ Configuração e Instalação
-
-<!-- Instruções passo a passo para que alguém possa rodar seu projeto. -->
+## Configuração e Instalação
 
 ### Pré-requisitos
 
-*   **Java Development Kit (JDK):** Versão <!-- Ex: 11 --> ou superior instalada e configurada (variável `JAVA_HOME`).
-*   **Apache Maven:** Instalado e configurado (comando `mvn` disponível no terminal).
-*   **Ontologia:** Um arquivo de ontologia no formato OWL (`.owl`) é necessário. <!-- Especifique o nome esperado ou onde colocá-lo, ex: `src/main/resources/sua_ontologia.owl` -->.
-*   **Modelos Stanford CoreNLP:** Pode ser necessário baixar os modelos para o idioma Português separadamente. Verifique a documentação do CoreNLP. <!-- Adicione instruções se houver passos específicos para o seu projeto -->
+*   Java JDK 17 ou superior
+*   Apache Maven (para construir o projeto Java)
+*   Python 3.9 ou superior
+*   `pip` (gerenciador de pacotes Python)
+*   Docker (opcional, para rodar em container ou para deploy)
 
-### Instalação
+### Passos de Instalação Local
 
 1.  **Clone o repositório:**
     ```bash
-    git clone https://github.com/hebercastro79/Natural2SPARQL.git
+    git clone https://github.com/hebercastro79/Natural2SPARQL_2025.git
+    cd Natural2SPARQL_2025
     ```
-2.  **Navegue até o diretório do projeto:**
+
+2.  **Prepare os dados e mapeamentos (se necessário):**
+    *   O arquivo `empresa_nome_map.json` é crucial e é gerado a partir de `src/main/resources/Templates/Informacoes_Empresas.xlsx`. Se este Excel for atualizado, regenere o mapa:
+        ```bash
+        python src/main/resources/generate_map.py
+        ```
+    *   **Importante**: Os arquivos de ontologia (`.ttl`) são populados a partir dos arquivos Excel em `src/main/resources/Datasets/` e `src/main/resources/Templates/Informacoes_Empresas.xlsx`. **Este projeto não inclui os scripts para converter Excel em TTL.** Se os dados nos Excels mudarem, os arquivos TTL precisam ser regenerados manualmente ou com ferramentas externas (não fornecidas aqui) e substituídos na pasta `src/main/resources/`.
+
+3.  **Construa a aplicação Java:**
     ```bash
-    cd Natural2SPARQL
+    ./mvnw clean package
+    # ou mvn clean package se você tem Maven instalado globalmente
     ```
-3.  **Instale as dependências com Maven:**
+    Isso gerará o arquivo `target/Natural2SPARQL-0.0.1-SNAPSHOT.jar`.
+
+4.  **Instale as dependências Python e baixe o modelo spaCy:**
     ```bash
-    mvn clean install
+    pip install -r requirements.txt
+    python -m spacy download pt_core_news_lg
     ```
-    *   **Observação:** Atualmente, algumas dependências podem estar sendo gerenciadas via `<scope>system</scope>` e a pasta `lib/`. O ideal é migrá-las para o gerenciamento padrão do Maven. Por enquanto, certifique-se de que a pasta `lib/` foi clonada corretamente.
 
+5.  **Execute a aplicação web:**
+    ```bash
+    python web_app.py
+    ```
+    A aplicação estará acessível em `http://127.0.0.1:8080`.
 
-## ▶️ Como Usar
+### Executando com Docker
 
+1.  **Construa a imagem Docker:**
+    (Certifique-se que o passo 2 e 3 da instalação local foram executados para ter o `.jar` e `empresa_nome_map.json` atualizados antes de construir a imagem, ou adapte o Dockerfile para incluir esses passos).
+    ```bash
+    docker build -t natural2sparql .
+    ```
+
+2.  **Execute o container Docker:**
+    ```bash
+    docker run -p 8080:8080 natural2sparql
+    ```
+    A aplicação estará acessível em `http://127.0.0.1:8080`.
+
+## Como Usar
+
+1.  Acesse a interface web (localmente em `http://127.0.0.1:8080` ou no link de deploy do Render: [https://natural2sparql-master-1.onrender.com](https://natural2sparql-master-1.onrender.com)).
+2.  Digite sua pergunta no campo de texto. O sistema suporta perguntas como:
+    *   Preço de fechamento de uma empresa em uma data:
+        *   `Qual foi o preço de fechamento da ação da CSN em 08/05/2023?`
+    *   Preço de abertura de um código de ação em uma data:
+        *   `Qual foi o preço de abertura da CBAV3 em 08/05/2023?`
+    *   Código de negociação de uma empresa:
+        *   `Qual o código de negociação da ação da Gerdau?`
+    *   Ações de um setor específico:
+        *   `Quais são as ações do setor eletrico?`
+3.  Clique em "Perguntar".
+4.  A resposta será exibida abaixo do campo de pergunta.
+
+## Manutenção de Dados
+
+*   **Mapeamento Empresa-Nome (`empresa_nome_map.json`)**: Se `src/main/resources/Templates/Informacoes_Empresas.xlsx` for modificado, execute `python src/main/resources/generate_map.py` para atualizar `empresa_nome_map.json`.
+*   **Ontologia (`.ttl`)**: Se os dados em `src/main/resources/Datasets/dados_novos_*.xlsx` ou `src/main/resources/Templates/Informacoes_Empresas.xlsx` forem atualizados, os arquivos `.ttl` (especialmente `ontologiaB3.ttl` e, por consequência, `ontologiaB3_com_inferencia.ttl`) **DEVEM** ser regenerados. O processo para esta conversão Excel-para-RDF não está incluído neste repositório e deve ser realizado externamente. Após a regeneração, substitua os arquivos antigos em `src/main/resources/`. Se estiver usando Docker, reconstrua a imagem.
