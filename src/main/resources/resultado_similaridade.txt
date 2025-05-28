@@ -13,6 +13,13 @@ preço;precoFechamento
 preco;precoFechamento
 valor;precoFechamento
 
+preco minimo;precoMinimo
+minimo;precoMinimo
+menor preco;precoMinimo
+preco maximo;precoMaximo
+maximo;precoMaximo
+maior preco;precoMaximo
+
 preco de abertura;precoAbertura
 abertura;precoAbertura
 
