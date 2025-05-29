@@ -25,23 +25,11 @@
   "energia eletrica": "Utilidade_Publica,_Energia_Elétrica.",
   "eletrico": "Utilidade_Publica,_Energia_Elétrica.",
   "setor eletrico": "Utilidade_Publica,_Energia_Elétrica.",
-  
-  // --- ADICIONE AQUI OS MAPEAMENTOS PARA OS OUTROS SETORES DA SUA LISTA ---
-  // Exemplo para "Consumo Cíclico" (você precisa encontrar o label exato na ontologia)
-  // Se na ontologia o label for "Consumo_Ciclico_Varejo_e_Lazer."
   "consumo ciclico": "Consumo_Ciclico_Varejo_e_Lazer.", 
   "varejo": "Consumo_Ciclico_Varejo_e_Lazer.",
-  
-  // Exemplo para "Saúde"
-  // Se na ontologia for "Saude_Servicos_Medicos_e_Farmaceuticos."
   "saude": "Saude_Servicos_Medicos_e_Farmaceuticos.",
   "setor de saude": "Saude_Servicos_Medicos_e_Farmaceuticos.",
   "farmaceutico": "Saude_Servicos_Medicos_e_Farmaceuticos.",
-
-  // Exemplo para "Serviços"
-  // Se na ontologia for "Servicos_Diversos_e_Profissionais."
   "servicos": "Servicos_Diversos_e_Profissionais.",
   "servicos diversos": "Servicos_Diversos_e_Profissionais."
-
-  // ...e assim por diante para TODOS os setores da sua lista.
 }
