@@ -1,27 +1,13 @@
-<<<<<<< HEAD
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-# Adicionar rdfs e rdf se forem usados em alguma expansão ou inferência implícita,
-# mas não são estritamente necessários para esta query específica como está.
-# PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-# PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
 
 SELECT DISTINCT ?valor
 WHERE {
-  # 1. Encontra a instância do código de negociação pelo ticker
-  ?codigoInstancia b3:ticker #ENTIDADE_NOME# .  # Ex: "CBAV3"
-  
-  # 2. Encontra o valor mobiliário que é representado por esse código
+ 
+  ?codigoInstancia b3:ticker #ENTIDADE_NOME# .  
   ?valor_mobiliario b3:representadoPor ?codigoInstancia .
-  
-  # 3. O valor mobiliário foi negociado (instância de negociação/cotação)
   ?valor_mobiliario b3:negociado ?negociadoInst . 
-  
-  # 4. A instância de negociação ocorreu durante um pregão específico
   ?negociadoInst b3:negociadoDurante ?pregao .
-  
-  # 5. O pregão ocorreu na data especificada
-  ?pregao b3:ocorreEmData #DATA# .             # Ex: "2023-05-08"^^xsd:date
-  
-  # 6. A instância de negociação tem o preço/valor desejado
-  ?negociadoInst b3:#VALOR_DESEJADO# ?valor .    # Ex: b3:precoAbertura
+  ?pregao b3:ocorreEmData #DATA# .            
+  ?negociadoInst b3:#VALOR_DESEJADO# ?valor .    

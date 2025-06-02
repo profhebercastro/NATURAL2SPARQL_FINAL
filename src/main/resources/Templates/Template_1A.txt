@@ -1,25 +1,13 @@
-<<<<<<< HEAD
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  # 1. Encontra a empresa pelo seu nome/label formal
-  ?empresa rdfs:label #ENTIDADE_NOME# .  # Ex: "CSN Mineração S.A."
-
-  # 2. A empresa tem um valor mobiliário que foi negociado
-  # (Ajuste este caminho se a sua ontologia ligar ?empresa diretamente a ?negociadoInst ou ?cotacao)
+ 
+  ?empresa rdfs:label #ENTIDADE_NOME# .  
   ?empresa b3:temValorMobiliarioNegociado ?valor_mobiliario . 
-  
-  # 3. O valor mobiliário foi negociado (instância de negociação/cotação)
   ?valor_mobiliario b3:negociado ?negociadoInst . 
-  
-  # 4. A instância de negociação ocorreu durante um pregão específico
   ?negociadoInst b3:negociadoDurante ?pregao .
-  
-  # 5. O pregão ocorreu na data especificada
-  ?pregao b3:ocorreEmData #DATA# .          # Ex: "2023-05-08"^^xsd:date
-  
-  # 6. A instância de negociação tem o preço/valor desejado
-  ?negociadoInst b3:#VALOR_DESEJADO# ?valor . # Ex: b3:precoFechamento
+  ?pregao b3:ocorreEmData #DATA# .          
+  ?negociadoInst b3:#VALOR_DESEJADO# ?valor . 
