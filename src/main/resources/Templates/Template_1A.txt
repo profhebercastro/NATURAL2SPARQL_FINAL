@@ -5,7 +5,6 @@ PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 SELECT DISTINCT ?valor ?empresaLabelFound (STR(?empresaLabelFound) AS ?labelAsString)
 WHERE {
   ?empresa rdfs:label ?empresaLabelFound .
-  #ENTIDADE_NOME# será "CSN MINERAÇÃO S.A."
   FILTER(STRBEFORE(STR(?empresaLabelFound), "@") = #ENTIDADE_NOME# || STR(?empresaLabelFound) = #ENTIDADE_NOME# ) 
 
   ?empresa b3:temValorMobiliarioNegociado ?valor_mobiliario . 
