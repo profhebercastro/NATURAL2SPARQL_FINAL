@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
@@ -25,5 +26,3 @@ WHERE {
   # Combina os resultados das duas opções
   BIND(COALESCE(?ticker_a, ?ticker_b) AS ?ticker)
   FILTER(BOUND(?ticker)) # Garante que um ticker foi encontrado
-}
-LIMIT 20

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
@@ -22,5 +23,3 @@ WHERE {
   
   # 6. A instância de negociação tem o preço/valor desejado
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor . # Ex: b3:precoFechamento
-}
-LIMIT 10

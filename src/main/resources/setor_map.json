@@ -1,4 +1,5 @@
 {
+
   // --- 1. Mapeando para: "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao." ---
   "petroleo gas e biocombustiveis": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
   "petroleo e gas": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
@@ -127,4 +128,5 @@
   // "linha branca": "Consumo_Ciclico_Comercio_Eletrodomesticos",
   // Se não, mapeie para "Consumo_Nao_Ciclico." ou outro dos 11, ou omita.
   "eletrodomesticos": "Consumo_Nao_Ciclico." // Exemplo de mapeamento para um genérico se específico não tem dados
-}
+
+  
