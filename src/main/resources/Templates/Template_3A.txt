@@ -1,0 +1,36 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+# Adicionando rdf: que pode ser útil, embora não diretamente usado na query atual.
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+
+SELECT DISTINCT ?valor AS ?ticker ?empresaLabel 
+WHERE {
+  # 1. Encontra a empresa que atua em um determinado setorUri
+  ?empresa b3:atuaEm ?setorUri .
+  
+  # 2. O setorUri tem um rdfs:label que corresponde ao #SETOR# fornecido
+  ?setorUri rdfs:label ?setorLabelFromOntology .
+  FILTER(STR(?setorLabelFromOntology) = #SETOR#)  # Ex: "Utilidade_Publica,_Energia_Elétrica."
+ 
+  # 3. Pega o nome/label da empresa
+  ?empresa rdfs:label ?empresaLabel .
+  
+  # 4. Lógica para obter o ticker da empresa (similar ao Template_2A)
+  OPTIONAL { 
+    ?empresa b3:temValorMobiliarioNegociado ?vmOpt .
+    ?vmOpt b3:representadoPor ?codOpt .
+    ?codOpt b3:ticker ?tickerViaVm .
+  }
+  OPTIONAL {
+    ?empresa b3:representadoPor ?codDirOpt . 
+    ?codDirOpt b3:ticker ?tickerViaDireto .
+  }
+    
+  BIND(COALESCE(?tickerViaVm, ?tickerViaDireto) AS ?tickerBruto)
+  FILTER(BOUND(?tickerBruto)) # Garante que a empresa tem um ticker
+  FILTER REGEX(STR(?tickerBruto), "^[A-Z]{4}[0-9]{1,2}$", "i") # Valida o formato do ticker
+  
+  BIND(?tickerBruto AS ?valor) # Renomeia para ?valor para consistência com outros templates, ou pode deixar ?tickerBruto
+}
+ORDER BY ?empresaLabel ?valor
+LIMIT 100

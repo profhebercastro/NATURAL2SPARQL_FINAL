@@ -1,0 +1,725 @@
+{
+    "3rpetroleum": "3R PETROLEUM ÓLEO E GÁS S.A.", // Supondo que este é o rdfs:label
+    "rrrp3": "RRRP3",
+    "3tentos": "TRÊS TENTOS AGROINDUSTRIAL S.A.", // rdfs:label
+    "tten3": "TTEN3",
+    "aalr3": "AALR3",
+    "alliar": "ALLIAR - CENTRO DE IMAGEM DIAGNÓSTICOS S.A.", // rdfs:label
+    "abcb4": "ABCB4",
+    "abcbrasil": "BANCO ABC BRASIL S.A.", // rdfs:label
+    "abev3": "ABEV3",
+    "ambev": "AMBEV S.A.", // rdfs:label
+    "acoaltona": "AÇO ALTONA S.A.", // rdfs:label
+    "ealt4": "EALT4",
+    "aeri3": "AERI3",
+    "aeris": "AERIS INDÚSTRIA E COMÉRCIO DE EQUIPAMENTOS PARA GERAÇÃO DE ENERGIA S.A.", // rdfs:label
+    "aesb3": "AESB3",
+    "aesbrasil": "AES BRASIL ENERGIA S.A.", // rdfs:label
+    "aflt3": "AFLT3",
+    "afluentet": "AFLUENTE TRANSMISSÃO DE ENERGIA ELÉTRICA S.A.", // rdfs:label
+    "agro3": "AGRO3",
+    "brasilagro": "BRASILAGRO - COMPANHIA BRASILEIRA DE PROPRIEDADES AGRÍCOLAS", // rdfs:label
+    "agrogalaxy": "AGROGALAXY PARTICIPAÇÕES S.A.", // rdfs:label
+    "agxy3": "AGXY3",
+    "alfaconsorc": "ALFA HOLDINGS S.A.", // Exemplo, pode ser mais específico se tiver label próprio
+    "brge3": "BRGE3",
+    "alfafinanc": "ALFA FINANCEIRA S.A. - CFI", // rdfs:label
+    "criv3": "CRIV3",
+    "criv4": "CRIV4",
+    "alfaholding": "ALFA HOLDINGS S.A.", // rdfs:label
+    "rpad3": "RPAD3",
+    "rpad5": "RPAD5",
+    "rpad6": "RPAD6",
+    "alfainvest": "ALFA INVESTIMENTOS S.A. - BANCO DE INVESTIMENTO", // rdfs:label
+    "briv3": "BRIV3",
+    "briv4": "BRIV4",
+    "alianscsonae": "ALIANSCSONAE SHOPPING CENTERS S.A.", // rdfs:label
+    "also3": "ALSO3",
+    "alld3": "ALLD3",
+    "allied": "ALLIED TECNOLOGIA S.A.", // rdfs:label
+    "alpa3": "ALPA3",
+    "alpa4": "ALPA4",
+    "alpargatas": "ALPARGATAS S.A.", // rdfs:label
+    "alper": "ALPER CONSULTORIA E CORRETORA DE SEGUROS S.A.", // rdfs:label
+    "aper3": "APER3",
+    "alphaville": "ALPHAVILLE S.A.", // rdfs:label
+    "avll3": "AVLL3",
+    "alpk3": "ALPK3",
+    "estapar": "ALLPARK EMPREENDIMENTOS PARTICIPAÇÕES E SERVIÇOS S.A.", // rdfs:label
+    "alupar": "ALUPAR INVESTIMENTO S.A.", // rdfs:label
+    "alup11": "ALUP11",
+    // "alup3", "alup4" já estão cobertos como tickers se a chave for o próprio ticker
+    "amar3": "AMAR3",
+    "lojasmarisa": "MARISA LOJAS S.A.", // rdfs:label
+    "amazonia": "BANCO DA AMAZONIA S.A.", // rdfs:label
+    "baza3": "BAZA3",
+    "ambipar": "AMBIPAR PARTICIPAÇÕES E EMPREENDIMENTOS S.A.", // rdfs:label
+    "ambp3": "AMBP3",
+    "amer3": "AMER3",
+    "americanas": "AMERICANAS S.A. - EM RECUPERACAO JUDICIAL", // rdfs:label
+    "amplaenerg": "AMPLA ENERGIA E SERVICOS S.A.", // rdfs:label (ou o nome da CEB que usa CBEE3)
+    "cbee3": "CBEE3",
+    "anim3": "ANIM3",
+    "anima": "ANIMA HOLDING S.A.", // rdfs:label
+    "arezzoco": "AREZZO INDÚSTRIA E COMÉRCIO S.A.", // rdfs:label
+    "arzz3": "ARZZ3",
+    "armac": "ARMAC LOCAÇÃO, LOGÍSTICA E SERVIÇOS S.A.", // rdfs:label
+    "arml3": "ARML3",
+    "asai3": "ASAI3",
+    "assai": "SENDAS DISTRIBUIDORA S.A.", // rdfs:label
+    "atmasa": "ATMASA PARTICIPAÇÕES S.A.", // rdfs:label
+    "atmp3": "ATMP3",
+    "atom3": "ATOM3",
+    "atompar": "ATOM EMPREENDIMENTOS E PARTICIPAÇÕES S.A.", // rdfs:label
+    "aure3": "AURE3",
+    "auren": "AUREN ENERGIA S.A.", // rdfs:label
+    "azev3": "AZEV3",
+    "azev4": "AZEV4",
+    "azevedo": "AZEVEDO & TRAVASSOS S.A.", // rdfs:label
+    "azul": "AZUL S.A.", // rdfs:label
+    "azul4": "AZUL4",
+    "bahema": "BAHEMA EDUCAÇÃO S.A.", // rdfs:label
+    "bahi3": "BAHI3",
+    "balm3": "BALM3",
+    "balm4": "BALM4",
+    "baumer": "BAUMER S.A.", // rdfs:label
+    "bancobmg": "BANCO BMG S.A.", // rdfs:label
+    "bmgb4": "BMGB4",
+    "bancopan": "BANCO PAN S.A.", // rdfs:label
+    "bpan4": "BPAN4",
+    "banese": "BANCO DO ESTADO DE SERGIPE S.A.", // rdfs:label
+    "bgip3": "BGIP3",
+    "banestes": "BANCO DO ESTADO DO ESPIRITO SANTO S.A.", // rdfs:label
+    "bees3": "BEES3",
+    "bees4": "BEES4",
+    "banrisul": "BANCO DO ESTADO DO RIO GRANDE DO SUL S.A.", // rdfs:label
+    "brsr3": "BRSR3",
+    "brsr5": "BRSR5",
+    "brsr6": "BRSR6",
+    "bardella": "BARDELLA S.A. INDUSTRIAS MECANICAS", // rdfs:label
+    "bdll3": "BDLL3",
+    "bdll4": "BDLL4",
+    "bbas3": "BBAS3",
+    "brasil": "BANCO DO BRASIL S.A.", // rdfs:label (para Banco do Brasil)
+    "bbdc3": "BBDC3",
+    "bbdc4": "BBDC4",
+    "bradesco": "BANCO BRADESCO S.A.", // rdfs:label
+    "bbse3": "BBSE3",
+    "bbseguridade": "BB SEGURIDADE PARTICIPAÇÕES S.A.", // rdfs:label
+    "beef3": "BEEF3",
+    "minerva": "MINERVA S.A.", // rdfs:label
+    "bemobitech": "BEMOBI TECH ESPAÇO DIGITAL S.A.", // rdfs:label
+    "bmob3": "BMOB3",
+    "bicmonark": "BICICLETAS MONARK S.A.", // rdfs:label
+    "bmks3": "BMKS3",
+    "biom3": "BIOM3",
+    "biomm": "BIOMM S.A.", // rdfs:label
+    "blau": "BLAU FARMACÊUTICA S.A.", // rdfs:label
+    "blau3": "BLAU3",
+    "bmeb3": "BMEB3",
+    "bmeb4": "BMEB4",
+    "mercbrasil": "BANCO MERCANTIL DO BRASIL S.A.", // rdfs:label
+    "bmin4": "BMIN4",
+    "mercinvest": "MERCANTIL DO BRASIL FINANCEIRA S.A. - CFI", // rdfs:label
+    "boas3": "BOAS3",
+    "boavista": "BOA VISTA SERVIÇOS S.A.", // rdfs:label
+    "boasafra": "BOA SAFRA SEMENTES S.A.", // rdfs:label (ou usar SOJA3 como chave?)
+    "soja3": "SOJA3",
+    "bobr4": "BOBR4",
+    "bombril": "BOMBRIL S.A.", // rdfs:label
+    "bpac11": "BPAC11",
+    "bpac3": "BPAC3",
+    "bpac5": "BPAC5",
+    "btgpbanco": "BANCO BTG PACTUAL S.A.", // rdfs:label
+    "bradespar": "BRADESPAR S.A.", // rdfs:label
+    "brap3": "BRAP3",
+    "brap4": "BRAP4",
+    "braskem": "BRASKEM S.A.", // rdfs:label
+    "brkm3": "BRKM3",
+    "brkm5": "BRKM5",
+    "brbbanco": "BRB - BANCO DE BRASILIA S.A.", // rdfs:label
+    "bsli3": "BSLI3",
+    "bsli4": "BSLI4",
+    "brbi11": "BRBI11",
+    "brpartners": "BR PARTNERS BANCO DE INVESTIMENTO S.A.", // rdfs:label
+    "brf": "BRF S.A.", // rdfs:label
+    "brfs3": "BRFS3",
+    "brge3": "BRGE3", // Alfa Consorcio
+    "brisanet": "BRISANET PARTICIPAÇÕES S.A.", // rdfs:label
+    "brit3": "BRIT3",
+    "brpr3": "BRPR3",
+    "brpropert": "BR PROPERTIES S.A.", // rdfs:label
+    "caixaseguri": "CAIXA SEGURIDADE PARTICIPAÇÕES S.A.", // rdfs:label
+    "cxse3": "CXSE3",
+    "camb3": "CAMB3",
+    "cambuci": "CAMBUCI S.A.", // rdfs:label
+    "camil": "CAMIL ALIMENTOS S.A.", // rdfs:label
+    "caml3": "CAML3",
+    "carrefourbr": "ATACADÃO S.A.", // rdfs:label (Nome oficial do Carrefour Brasil na B3)
+    "crfb3": "CRFB3",
+    "cash3": "CASH3",
+    "meliuz": "MÉLIUZ S.A.", // rdfs:label
+    "cba": "COMPANHIA BRASILEIRA DE ALUMÍNIO", // rdfs:label
+    "cbav3": "CBAV3",
+    "ccr": "CCR S.A.", // rdfs:label
+    "ccro3": "CCRO3",
+    "ceab3": "CEAB3",
+    "ceamodas": "C&A MODAS S.A.", // rdfs:label
+    "ceb": "CEB DISTRIBUIÇÃO S.A.", // rdfs:label
+    "cebr3": "CEBR3",
+    "cebr5": "CEBR5",
+    "cebr6": "CEBR6",
+    "cedo3": "CEDO3",
+    "cedo4": "CEDO4",
+    "cedro": "CIA DE FIAÇÃO E TECIDOS CEDRO E CACHOEIRA", // rdfs:label
+    "ceeb3": "CEEB3", // Coelba
+    "coelba": "COMPANHIA DE ELETRICIDADE DO ESTADO DA BAHIA COELBA", // rdfs:label
+    "celesc": "CENTRAIS ELETRICAS DE SANTA CATARINA S.A. - CELESC", // rdfs:label
+    "clsc3": "CLSC3",
+    "clsc4": "CLSC4",
+    "cemig": "COMPANHIA ENERGÉTICA DE MINAS GERAIS - CEMIG", // rdfs:label
+    "cmig3": "CMIG3",
+    "cmig4": "CMIG4",
+    "cgas5": "CGAS5",
+    "comgas": "COMPANHIA DE GÁS DE SÃO PAULO - COMGÁS", // rdfs:label
+    "cgra3": "CGRA3",
+    "cgra4": "CGRA4",
+    "grazziotin": "GRAZZIOTIN S.A.", // rdfs:label
+    "ciel3": "CIEL3",
+    "cielo": "CIELO S.A.", // rdfs:label
+    "clearsale": "CLEARSALE S.A.", // rdfs:label
+    "clsa3": "CLSA3",
+    "cmin3": "CMIN3",
+    "csnmineracao": "CSN MINERAÇÃO S.A.", // rdfs:label
+    "csn": "CSN Mineração S.A.",         // CHAVE GENÉRICA PARA CSN Mineração
+    "coce5": "COCE5",
+    "coelce": "COMPANHIA ENERGÉTICA DO CEARÁ - COELCE", // rdfs:label
+    "cogn3": "COGN3",
+    "cogna": "COGNA EDUCAÇÃO S.A.", // rdfs:label
+    "copasa": "COMPANHIA DE SANEAMENTO DE MINAS GERAIS COPASA MG", // rdfs:label
+    "csmg3": "CSMG3",
+    "copel": "COPEL - COMPANHIA PARANAENSE DE ENERGIA", // rdfs:label
+    "cple11": "CPLE11",
+    "cple3": "CPLE3",
+    "cple6": "CPLE6",
+    "cosan": "COSAN S.A.", // rdfs:label
+    "csan3": "CSAN3",
+    "cosern": "COMPANHIA ENERGÉTICA DO RIO GRANDE DO NORTE COSERN", // rdfs:label
+    "csrn3": "CSRN3",
+    "coteminas": "CIA DE TECIDOS NORTE DE MINAS COTEMINAS", // rdfs:label
+    "ctnm3": "CTNM3",
+    "ctnm4": "CTNM4",
+    "cpfe3": "CPFE3",
+    "cpflenergia": "CPFL ENERGIA S.A.", // rdfs:label
+    "cristal": "CRISTAL Pigmentos do Brasil S.A.", // rdfs:label
+    "crpg5": "CRPG5",
+    "crpg6": "CRPG6",
+    "cruzeiroedu": "CRUZEIRO DO SUL EDUCACIONAL S.A.", // rdfs:label
+    "csed3": "CSED3",
+    "csab4": "CSAB4", // Seg Al Bahia
+    "segalbahia": "SEG AL BAHIA", // rdfs:label
+    "csna3": "CSNA3",
+    "sidnacional": "COMPANHIA SIDERÚRGICA NACIONAL", // rdfs:label (CSN Siderúrgica)
+    "csud3": "CSUD3",
+    "csudigital": "CSU DIGITAL S.A.", // rdfs:label
+    "ctka4": "CTKA4", // Karsten
+    "karsten": "KARSTEN S.A.", // rdfs:label
+    "ctsa3": "CTSA3",
+    "ctsa4": "CTSA4",
+    "santanense": "COMPANHIA DE TECIDOS SANTANENSE", // rdfs:label
+    "cury": "CURY CONSTRUTORA E INCORPORADORA S.A.", // rdfs:label
+    "cury3": "CURY3",
+    "cvcb3": "CVCB3",
+    "cvcbrasil": "CVC BRASIL OPERADORA E AGÊNCIA DE VIAGENS S.A.", // rdfs:label
+    "cyre3": "CYRE3",
+    "cyrelarealt": "CYRELA BRAZIL REALTY S.A. EMPREENDIMENTOS E PARTICIPAÇÕES", // rdfs:label
+    "d1000vfarma": "D1000 VAREJO FARMA PARTICIPAÇÕES S.A.", // rdfs:label
+    "dmvf3": "DMVF3",
+    "dasa": "DIAGNOSTICOS DA AMERICA S.A.", // rdfs:label
+    "dasa3": "DASA3",
+    "desk3": "DESK3",
+    "desktop": "DESKTOP S.A.", // rdfs:label
+    "dexco": "DEXCO S.A.", // rdfs:label
+    "dxco3": "DXCO3",
+    "dexp3": "DEXP3",
+    "dexp4": "DEXP4",
+    "dexxospar": "DEXXOS PARTICIPAÇÕES S.A.", // rdfs:label
+    "dimed": "DIMED S.A. DISTRIBUIDORA DE MEDICAMENTOS", // rdfs:label
+    "pncl3": "PNVL3", // Pague Menos (na verdade PNVL3 é Panvel/Dimed)
+    "paguemenos": "EMPREENDIMENTOS PAGUE MENOS S.A.", // rdfs:label para PGMN3
+    "pgmn3": "PGMN3",
+    "direcional": "DIRECIONAL ENGENHARIA S.A.", // rdfs:label
+    "dirr3": "DIRR3",
+    "dohl4": "DOHL4",
+    "dohler": "DOHLER S.A.", // rdfs:label
+    "dotz": "DOTZ S.A.", // rdfs:label
+    "dotz3": "DOTZ3",
+    "ecor3": "ECOR3",
+    "ecorodovias": "ECORODOVIAS INFRAESTRUTURA E LOGÍSTICA S.A.", // rdfs:label
+    "egie3": "EGIE3",
+    "engiebrasil": "ENGIE BRASIL ENERGIA S.A.", // rdfs:label
+    "ektr4": "EKTR4",
+    "elektro": "ELEKTRO REDES S.A.", // rdfs:label
+    "elet3": "ELET3",
+    "elet5": "ELET5",
+    "elet6": "ELET6",
+    "eletrobras": "CENTRAIS ELETRICAS BRASILEIRAS SA - ELETROBRAS", // rdfs:label
+    "eletromidia": "ELETROMIDIA S.A.", // rdfs:label
+    "elmd3": "ELMD3",
+    "eletropar": "ELETROPAR S.A.", // rdfs:label
+    "lipr3": "LIPR3",
+    "emae": "EMAE - EMPRESA METROPOLITANA DE ÁGUAS E ENERGIA S.A.", // rdfs:label
+    "emae4": "EMAE4",
+    "embpar": "EMBPAR PARTICIPACOES S.A.", // rdfs:label
+    "epar3": "EPAR3",
+    "embr3": "EMBR3",
+    "embraer": "EMBRAER S.A.", // rdfs:label
+    "enat3": "ENAT3",
+    "enautapart": "ENAUTA PARTICIPAÇÕES S.A.", // rdfs:label
+    "enbr3": "ENBR3",
+    "energiasbr": "ENERGIAS DO BRASIL S.A.", // rdfs:label
+    "energisa": "ENERGISA S.A.", // rdfs:label
+    "engi11": "ENGI11",
+    "engi3": "ENGI3",
+    "engi4": "ENGI4",
+    "enev3": "ENEV3",
+    "eneva": "ENEVA S.A.", // rdfs:label
+    "enjoei": "ENJOEI.COM.BR ATIVIDADES DE INTERNET S.A.", // rdfs:label
+    "enju3": "ENJU3",
+    "eqpa3": "EQPA3",
+    "eqtlpara": "EQUATORIAL PARA DISTRIBUIDORA DE ENERGIA S.A.", // rdfs:label
+    "eqtl3": "EQTL3",
+    "equatorial": "EQUATORIAL ENERGIA S.A.", // rdfs:label
+    "espa3": "ESPA3",
+    "espacolaser": "ESPAÇOLASER SERVIÇOS ESTÉTICOS S.A.", // rdfs:label
+    "estr3": "ESTR3",
+    "estr4": "ESTR4",
+    "estrela": "MANUFATURA DE BRINQUEDOS ESTRELA S.A.", // rdfs:label
+    "eter3": "ETER3",
+    "eternit": "ETERNIT S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "euca3": "EUCA3",
+    "euca4": "EUCA4",
+    "eucatex": "EUCATEX S.A. INDÚSTRIA E COMÉRCIO", // rdfs:label
+    "even": "EVEN CONSTRUTORA E INCORPORADORA S.A.", // rdfs:label
+    "even3": "EVEN3",
+    "eztc3": "EZTC3",
+    "eztec": "EZTEC EMPREENDIMENTOS E PARTICIPAÇÕES S.A.", // rdfs:label
+    "ferbasa": "CIA DE FERRO LIGAS DA BAHIA - FERBASA", // rdfs:label
+    "fesa4": "FESA4",
+    "ferheringer": "FERTILIZANTES HERINGER S.A.", // rdfs:label
+    "fher3": "FHER3",
+    "fiqe3": "FIQE3",
+    "unifique": "UNIFIQUE TELECOMUNICACOES S.A.", // rdfs:label
+    "fleury": "FLEURY S.A.", // rdfs:label
+    "flry3": "FLRY3",
+    "fras3": "FRAS3",
+    "frasle": "FRAS-LE S.A.", // rdfs:label
+    "frta3": "FRTA3",
+    "pomifrutas": "POMIFRUTAS S.A.", // rdfs:label
+    "gafisa": "GAFISA S.A.", // rdfs:label
+    "gfsa3": "GFSA3",
+    "generalshopp": "GENERAL SHOPPING E OUTLETS DO BRASIL S.A.", // rdfs:label
+    "gshp3": "GSHP3",
+    "gepa3": "GEPA3",
+    "gepa4": "GEPA4",
+    "gerparanap": "GERDAU PARANAPANEMA", // rdfs:label
+    "gerdau": "Gerdau S.A.", // Label para Template_1A/2A
+    "ggbr3": "GGBR3",
+    "ggbr4": "GGBR4",
+    "gerdaumet": "METALURGICA GERDAU S.A.", // rdfs:label
+    "goau3": "GOAU3",
+    "goau4": "GOAU4",
+    "getninjas": "GETNINJAS S.A.", // rdfs:label
+    "ninj3": "NINJ3",
+    "ggps3": "GGPS3",
+    "gps": "GPS PARTICIPAÇÕES E EMPREENDIMENTOS S.A.", // rdfs:label
+    "gmat3": "GMAT3",
+    "grupomateus": "GRUPO MATEUS S.A.", // rdfs:label
+    "gol": "GOL LINHAS AÉREAS INTELIGENTES S.A.", // rdfs:label
+    "goll4": "GOLL4",
+    "grendene": "GRENDENE S.A.", // rdfs:label
+    "grnd3": "GRND3",
+    "gruponatura": "NATURA &CO HOLDING S.A.", // rdfs:label
+    "ntco3": "NTCO3",
+    "gruposbf": "GRUPO SBF S.A.", // rdfs:label
+    "sbfg3": "SBFG3",
+    "gruposoma": "GRUPO DE MODA SOMA S.A.", // rdfs:label
+    "soma3": "SOMA3",
+    "guar3": "GUAR3",
+    "guararapes": "LOJAS RIACHUELO S.A.", // rdfs:label (Guararapes é a holding)
+    "habitasul": "HABITASUL IMPULSIONADORA DE NEGOCIOS S.A.", // rdfs:label
+    "hbts5": "HBTS5",
+    "haga": "HAGA S.A. INDUSTRIA E COMERCIO", // rdfs:label
+    "haga3": "HAGA3",
+    "haga4": "HAGA4",
+    "hapv3": "HAPV3",
+    "hapvida": "HAPVIDA PARTICIPAÇÕES E INVESTIMENTOS S.A.", // rdfs:label
+    "hbor3": "HBOR3",
+    "helbor": "HELBOR EMPREENDIMENTOS S.A.", // rdfs:label
+    "hbre3": "HBRE3",
+    "hbrrealty": "HBR REALTY EMPREENDIMENTOS IMOBILIÁRIOS S.A.", // rdfs:label
+    "hbsa3": "HBSA3",
+    "hidrovias": "HIDROVIAS DO BRASIL S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "hercules": "CIA INDUSTRIAL HERCULES", // rdfs:label
+    "heta4": "HETA4",
+    "hoot4": "HOOT4",
+    "hoteisothon": "HOTÉIS OTHON S.A.", // rdfs:label
+    "hype3": "HYPE3",
+    "hypera": "HYPERA S.A.", // rdfs:label
+    "ifcm3": "IFCM3",
+    "infracomm": "INFRACOMM S.A.", // rdfs:label
+    "igb": "IGB ELETRONICA S.A. - EM RECUPERACAO JUDICIAL", // rdfs:label
+    "igbr3": "IGBR3",
+    "igti11": "IGTI11",
+    "igti3": "IGTI3",
+    "igti4": "IGTI4",
+    "iguatemi": "IGUATEMI S.A.", // rdfs:label
+    "imc": "INTERNATIONAL MEAL COMPANY ALIMENTAÇÃO S.A.", // rdfs:label
+    "meal3": "MEAL3",
+    "inep3": "INEP3",
+    "inep4": "INEP4",
+    "inepar": "INEPAR INDUSTRIA E CONSTRUCOES S.A. - EM RECUPERACAO JUDICIAL", // rdfs:label
+    "intb3": "INTB3",
+    "intelbras": "INTELBRAS S.A. INDÚSTRIA DE TELECOMUNICAÇÃO ELETRÔNICA BRASILEIRA", // rdfs:label
+    "iochpmaxion": "IOCHP-MAXION S.A.", // rdfs:label
+    "mypk3": "MYPK3",
+    "irani": "CELULOSE IRANI S.A.", // rdfs:label
+    "rani3": "RANI3",
+    "irbbrasilre": "IRB-BRASIL RESSEGUROS S.A.", // rdfs:label
+    "irbr3": "IRBR3",
+    "itau": "ITAÚ UNIBANCO HOLDING S.A.", // rdfs:label para a Holding
+    "itausa": "ITAÚSA S.A.", // rdfs:label
+    "itsa3": "ITSA3",
+    "itsa4": "ITSA4",
+    "itaunibanco": "ITAÚ UNIBANCO HOLDING S.A.", // rdfs:label para o banco em si
+    "itub3": "ITUB3",
+    "itub4": "ITUB4",
+    "jall3": "JALL3",
+    "jallesmachad": "JALLES MACHADO S.A.", // rdfs:label
+    "jbs": "JBS S.A.", // rdfs:label
+    "jbss3": "JBSS3",
+    "jfen3": "JFEN3",
+    "joaofortes": "JOÃO FORTES ENGENHARIA S.A.", // rdfs:label
+    "jhsf3": "JHSF3",
+    "jhsfpart": "JHSF PARTICIPAÇÕES S.A.", // rdfs:label
+    "jopa3": "JOPA3",
+    "josapar": "JOSAPAR JOAQUIM OLIVEIRA S.A. PARTICIPAÇÕES", // rdfs:label
+    "jsl": "JSL S.A.", // rdfs:label
+    "jslg3": "JSLG3",
+    "kepl3": "KEPL3",
+    "keplerweber": "KEPLER WEBER S.A.", // rdfs:label
+    "klabin": "KLABIN S.A.", // rdfs:label
+    "klbn11": "KLBN11",
+    "klbn3": "KLBN3",
+    "klbn4": "KLBN4",
+    "korasaude": "KORA SAÚDE PARTICIPAÇÕES S.A.", // rdfs:label
+    "krsa3": "KRSA3",
+    "land3": "LAND3", // Terra Santa
+    "terrasantapa": "TERRA SANTA AGRO S.A.", // rdfs:label
+    "lavv3": "LAVV3",
+    "lavvi": "LAVVI EMPREENDIMENTOS IMOBILIÁRIOS S.A.", // rdfs:label
+    "leve3": "LEVE3",
+    "metalleve": "MAHLE METAL LEVE S.A.", // rdfs:label
+    "light": "LIGHT S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "ligt3": "LIGT3",
+    "ljqq3": "LJQQ3",
+    "queroquero": "LOJAS QUERO-QUERO S.A.", // rdfs:label
+    "localiza": "LOCALIZA RENT A CAR S.A.", // rdfs:label
+    "rent3": "RENT3",
+    "locaweb": "LOCAWEB SERVIÇOS DE INTERNET S.A.", // rdfs:label
+    "lwsa3": "LWSA3",
+    "logcomprop": "LOG COMMERCIAL PROPERTIES E PARTICIPAÇÕES S.A.", // rdfs:label
+    "logg3": "LOGG3",
+    "login": "LOG-IN LOGÍSTICA INTERMODAL S.A.", // rdfs:label
+    "logn3": "LOGN3",
+    "lojasrenner": "LOJAS RENNER S.A.", // rdfs:label
+    "lren3": "LREN3",
+    "lopesbrasil": "LOPES BRASIL - CONSULTORIA DE IMÓVEIS S.A.", // rdfs:label
+    "lpsb3": "LPSB3",
+    "lupa3": "LUPA3",
+    "lupatech": "LUPATECH S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "luxm4": "LUXM4", // Trevisa
+    "trevisa": "TREVISA INVESTIMENTOS S.A.", // rdfs:label
+    "lvtc3": "LVTC3", // WDC Networks
+    "wdcnetworks": "WDC NETWORKS S.A.", // rdfs:label
+    "magazluiza": "MAGAZINE LUIZA S.A.", // rdfs:label
+    "mglu3": "MGLU3",
+    "mangelsindl": "MANGELS INDUSTRIAL S.A.", // rdfs:label
+    "mgel4": "MGEL4",
+    "marcopolo": "MARCOPOLO S.A.", // rdfs:label
+    "pomo3": "POMO3",
+    "pomo4": "POMO4",
+    "marfrig": "MARFRIG GLOBAL FOODS S.A.", // rdfs:label
+    "mrfg3": "MRFG3",
+    "matd3": "MATD3",
+    "materdei": "REDE MATER DEI DE SAÚDE S.A.", // rdfs:label
+    "mbly3": "MBLY3",
+    "mobly": "MOBLY S.A.", // rdfs:label
+    "mdia3": "MDIA3",
+    "mdiasbranco": "M. DIAS BRANCO S.A. INDÚSTRIA E COMÉRCIO DE ALIMENTOS", // rdfs:label
+    "mdne3": "MDNE3",
+    "mouradubeux": "MOURA DUBEUX ENGENHARIA S.A.", // rdfs:label
+    "mega3": "MEGA3", // Omega Energia
+    "omegaenergia": "OMEGA ENERGIA S.A.", // rdfs:label
+    "melhorsp": "MELHORAMENTOS DE SÃO PAULO", // rdfs:label
+    "mspa4": "MSPA4",
+    "melk3": "MELK3",
+    "melnick": "MELNICK DESENVOLVIMENTO IMOBILIÁRIO S.A.", // rdfs:label
+    "merc4": "MERC4", // Mercantil Financeira
+    "mercfinanc": "MERCANTIL DO BRASIL FINANCEIRA S.A. - CFI", // rdfs:label (já tem para BMIN4)
+    "metisa": "METALURGICA INVESTIMENTOS S.A.", // rdfs:label
+    "mtsa4": "MTSA4",
+    "mills": "MILLS ESTRUTURAS E SERVIÇOS DE ENGENHARIA S.A.", // rdfs:label
+    "mils3": "MILS3",
+    "minupar": "MINUPAR PARTICIPAÇÕES S.A.", // rdfs:label
+    "mnpr3": "MNPR3",
+    "mitrerealty": "MITRE REALTY EMPREENDIMENTOS E PARTICIPAÇÕES S.A.", // rdfs:label
+    "mtre3": "MTRE3",
+    "mlas3": "MLAS3",
+    "multilaser": "MULTILASER INDUSTRIAL S.A.", // rdfs:label
+    "mndl3": "MNDL3",
+    "mundial": "MUNDIAL S.A. - PRODUTOS DE CONSUMO", // rdfs:label
+    "moar3": "MOAR3",
+    "montaranha": "METALURGICA MOEMA S.A. - EM RECUPERACAO JUDICIAL", // rdfs:label
+    "modalmais": "BANCO MODAL S.A.", // rdfs:label
+    "modl3": "MODL3",
+    "movi3": "MOVI3",
+    "movida": "MOVIDA PARTICIPAÇÕES S.A.", // rdfs:label
+    "mrv": "MRV ENGENHARIA E PARTICIPAÇÕES S.A.", // rdfs:label
+    "mrve3": "MRVE3",
+    "mult3": "MULT3",
+    "multiplan": "MULTIPLAN EMPREENDIMENTOS IMOBILIÁRIOS S.A.", // rdfs:label
+    "mwet4": "MWET4", // Wetzel
+    "wetzel": "WETZEL S.A.", // rdfs:label
+    "neoe3": "NEOE3",
+    "neoenergia": "NEOENERGIA S.A.", // rdfs:label
+    "neogrid": "NEOGRID PARTICIPAÇÕES S.A.", // rdfs:label
+    "ngrd3": "NGRD3",
+    "nexp3": "NEXP3",
+    "nexpe": "NEXPE PARTICIPAÇÕES S.A.", // rdfs:label
+    "nord3": "NORD3",
+    "nordonmet": "NORDON INDUSTRIAS METALURGICAS S.A.", // rdfs:label
+    "nutr3": "NUTR3",
+    "nutriplant": "NUTRIPLANT INDUSTRIA E COMERCIO S.A.", // rdfs:label
+    "oceanpact": "OCEANPACT SERVIÇOS MARÍTIMOS S.A.", // rdfs:label
+    "opct3": "OPCT3",
+    "odontoprev": "ODONTOPREV S.A.", // rdfs:label
+    "odpv3": "ODPV3",
+    "ofsa3": "OFSA3",
+    "ourofino": "OURO FINO SAÚDE ANIMAL PARTICIPAÇÕES S.A.", // rdfs:label
+    "oi": "OI S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "oibr3": "OIBR3",
+    "oibr4": "OIBR4",
+    "onco3": "ONCO3",
+    "oncoclinicas": "ONCOCLÍNICAS DO BRASIL SERVIÇOS MÉDICOS S.A.", // rdfs:label
+    "orizon": "ORIZON VALORIZAÇÃO DE RESÍDUOS S.A.", // rdfs:label
+    "orvr3": "ORVR3",
+    "osxb3": "OSXB3",
+    "osxbrasil": "OSX BRASIL S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "pacucarcbd": "COMPANHIA BRASILEIRA DE DISTRIBUIÇÃO", // rdfs:label (Pão de Açúcar)
+    "pcar3": "PCAR3",
+    "padtec": "PADTEC S.A.", // rdfs:label
+    "pdtc3": "PDTC3",
+    "paralbahia": "PARTICIPACOES ALIANCA DA BAHIA", // rdfs:label
+    "peab3": "PEAB3",
+    "peab4": "PEAB4",
+    "paranapanema": "PARANAPANEMA S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "pmam3": "PMAM3",
+    "pdgr3": "PDGR3",
+    "pdgrealt": "PDG REALTY S.A. EMPREENDIMENTOS E PARTICIPAÇÕES - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "petmanguinh": "REFINARIA DE PETRÓLEOS DE MANGUINHOS S.A.", // rdfs:label
+    "rpmg3": "RPMG3",
+    "petr3": "PETR3",
+    "petr4": "PETR4",
+    "petrobras": "PETRÓLEO BRASILEIRO S.A. - PETROBRAS", // rdfs:label
+    "petroleobrasileiro": "PETRÓLEO BRASILEIRO S.A. - PETROBRAS",
+    "petrorecsa": "PETRORECONCAVO S.A.", // rdfs:label
+    "recv3": "RECV3",
+    "petrorio": "PRIO S.A.", // rdfs:label
+    "prio3": "PRIO3",
+    "pettenati": "PETTENATI S.A. INDÚSTRIA TÊXTIL", // rdfs:label
+    "ptnt3": "PTNT3",
+    "ptnt4": "PTNT4",
+    "petz": "PETZ - CENTRO VETERINÁRIO S.A.", // rdfs:label
+    "petz3": "PETZ3",
+    "pfrm3": "PFRM3",
+    "profarma": "PROFARMA DISTRIBUIDORA DE PRODUTOS FARMACÊUTICOS S.A.", // rdfs:label
+    "pine": "BANCO PINE S.A.", // rdfs:label
+    "pine4": "PINE4",
+    "planoeplano": "PLANO&PLANO DESENVOLVIMENTO IMOBILIÁRIO S.A.", // rdfs:label
+    "plpl3": "PLPL3",
+    "plas3": "PLAS3",
+    "plascarpart": "PLASCAR PARTICIPAÇÕES INDUSTRIAIS S.A.", // rdfs:label
+    "port3": "PORT3", // Wilson Sons
+    "wilsonsons": "WILSON SONS LIMITED", // rdfs:label
+    "portobello": "PORTOBELLO S.A.", // rdfs:label
+    "ptbl3": "PTBL3",
+    "portoseguro": "PORTO SEGURO S.A.", // rdfs:label
+    "pssa3": "PSSA3",
+    "posi3": "POSI3",
+    "positivotec": "POSITIVO TECNOLOGIA S.A.", // rdfs:label
+    "ppla": "PORTOBELLO S.A.", // PPLA11 é Portobello, mas o nome é o mesmo
+    "ppla11": "PPLA11",
+    "priner": "PRINER SERVIÇOS INDUSTRIAIS S.A.", // rdfs:label
+    "prnr3": "PRNR3",
+    "qual3": "QUAL3",
+    "qualicorp": "QUALICORP CONSULTORIA E CORRETORA DE SEGUROS S.A.", // rdfs:label
+    "radl3": "RADL3",
+    "raiadrogasil": "RAIA DROGASIL S.A.", // rdfs:label
+    "rail3": "RAIL3",
+    "rumo": "RUMO S.A.", // rdfs:label
+    "raiz4": "RAIZ4",
+    "raizen": "RAÍZEN S.A.", // rdfs:label
+    "randonpart": "RANDON S.A. IMPLEMENTOS E PARTICIPAÇÕES", // rdfs:label
+    "rapt3": "RAPT3",
+    "rapt4": "RAPT4",
+    "rcsl3": "RCSL3",
+    "rcsl4": "RCSL4",
+    "recrusul": "RECRUSUL S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "rdni3": "RDNI3",
+    "rni": "RNI NEGÓCIOS IMOBILIÁRIOS S.A.", // rdfs:label
+    "rdor3": "RDOR3",
+    "rededor": "REDE D'OR SÃO LUIZ S.A.", // rdfs:label
+    "rede3": "REDE3",
+    "redeenergia": "REDE ENERGIA PARTICIPAÇÕES S.A.", // rdfs:label
+    "renova": "RENOVA ENERGIA S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "rnew11": "RNEW11",
+    "rnew3": "RNEW3",
+    "rnew4": "RNEW4",
+    "riosulense": "METALURGICA RIOSULENSE S.A.", // rdfs:label
+    "rsul4": "RSUL4",
+    "romi": "INDÚSTRIAS ROMI S.A.", // rdfs:label
+    "romi3": "ROMI3",
+    "rossiresid": "ROSSI RESIDENCIAL S.A.", // rdfs:label
+    "rsid3": "RSID3",
+    "sabesp": "CIA DE SANEAMENTO BÁSICO DO ESTADO DE SÃO PAULO - SABESP", // rdfs:label
+    "sbsp3": "SBSP3",
+    "sanb11": "SANB11",
+    "sanb3": "SANB3",
+    "sanb4": "SANB4",
+    "santanderbr": "BANCO SANTANDER (BRASIL) S.A.", // rdfs:label
+    "sanepar": "CIA DE SANEAMENTO DO PARANÁ - SANEPAR", // rdfs:label
+    "sapr11": "SAPR11",
+    "sapr3": "SAPR3",
+    "sapr4": "SAPR4",
+    "sansuy": "SANSUY S.A. INDÚSTRIA DE PLÁSTICOS", // rdfs:label
+    "snsy3": "SNSY3",
+    "snsy5": "SNSY5",
+    "santosbrp": "SANTOS BRASIL PARTICIPAÇÕES S.A.", // rdfs:label
+    "stbp3": "STBP3",
+    "saocarlos": "SÃO CARLOS EMPREENDIMENTOS E PARTICIPAÇÕES S.A.", // rdfs:label
+    "scar3": "SCAR3",
+    "saomartinho": "SÃO MARTINHO S.A.", // rdfs:label
+    "smto3": "SMTO3",
+    "saraivalivr": "SARAIVA E SICILIANO S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "sled3": "SLED3",
+    "sled4": "SLED4",
+    "schulz": "SCHULZ S.A.", // rdfs:label
+    "shul4": "SHUL4",
+    "seer3": "SEER3",
+    "sereduca": "SER EDUCACIONAL S.A.", // rdfs:label
+    "seql3": "SEQL3",
+    "sequoialog": "SEQUOIA LOGÍSTICA E TRANSPORTES S.A.", // rdfs:label
+    "sgps3": "SGPS3", // Springs
+    "springs": "SPRINGS GLOBAL PARTICIPAÇÕES S.A.", // rdfs:label
+    "show3": "SHOW3", // Time for Fun
+    "timeforfun": "T4F ENTRETENIMENTO S.A.", // rdfs:label
+    "simh3": "SIMH3",
+    "simpar": "SIMPAR S.A.", // rdfs:label
+    "sinqia": "SINQIA S.A.", // rdfs:label
+    "sqia3": "SQIA3",
+    "slcagricola": "SLC AGRÍCOLA S.A.", // rdfs:label
+    "slce3": "SLCE3",
+    "smartfit": "SMART FIT ESCOLA DE GINÁSTICA E DANÇA S.A.", // rdfs:label
+    "smft3": "SMFT3",
+    "suzano": "SUZANO S.A.", // rdfs:label
+    "suzb3": "SUZB3",
+    "syne3": "SYNE3",
+    "synproptec": "SYN PROP & TECH S.A.", // rdfs:label
+    "taee11": "TAEE11",
+    "taee3": "TAEE3",
+    "taee4": "TAEE4",
+    "taesa": "TRANSMISSORA ALIANÇA DE ENERGIA ELÉTRICA S.A. - TAESA", // rdfs:label
+    "tasa3": "TASA3",
+    "tasa4": "TASA4",
+    "taurusarmas": "TAURUS ARMAS S.A.", // rdfs:label
+    "tc": "TC TRADERS CLUB S.A.", // rdfs:label
+    "trad3": "TRAD3",
+    "tcsa3": "TCSA3",
+    "tecnisa": "TECNISA S.A.", // rdfs:label
+    "technos": "TECHNOS S.A.", // rdfs:label
+    "tecn3": "TECN3",
+    "tegma": "TEGMA GESTÃO LOGÍSTICA S.A.", // rdfs:label
+    "tgma3": "TGMA3",
+    "teka": "TEKA - TECELAGEM KUEHNRICH S.A.", // rdfs:label
+    "teka4": "TEKA4",
+    "telb3": "TELB3",
+    "telb4": "TELB4",
+    "telebras": "TELECOMUNICAÇÕES BRASILEIRAS S.A. - TELEBRÁS", // rdfs:label
+    "telefbrasil": "TELEFÔNICA BRASIL S.A.", // rdfs:label (Vivo)
+    "vivt3": "VIVT3",
+    "tend3": "TEND3",
+    "tenda": "CONSTRUTORA TENDA S.A.", // rdfs:label
+    "texrenaux": "INDÚSTRIAS TÊXTEIS RENAUXVIEW S.A.", // rdfs:label
+    "txrx4": "TXRX4",
+    "tfco4": "TFCO4", // Track & Field
+    "trackfield": "TRACK & FIELD CO S.A.", // rdfs:label
+    "tim": "TIM S.A.", // rdfs:label
+    "tims3": "TIMS3",
+    "tots3": "TOTS3",
+    "totvs": "TOTVS S.A.", // rdfs:label
+    "tpis3": "TPIS3",
+    "triunfopart": "TRIUNFO PARTICIPAÇÕES E INVESTIMENTOS S.A.", // rdfs:label
+    "tranpaulist": "ISA CTEEP - COMPANHIA DE TRANSMISSÃO DE ENERGIA ELÉTRICA PAULISTA", // rdfs:label
+    "trpl3": "TRPL3",
+    "trpl4": "TRPL4",
+    "tris3": "TRIS3",
+    "trisul": "TRISUL S.A.", // rdfs:label
+    "tupy": "TUPY S.A.", // rdfs:label
+    "tupy3": "TUPY3",
+    "ucas3": "UCAS3",
+    "unipar": "UNIPAR CARBOCLORO S.A.", // rdfs:label
+    "unip3": "UNIP3",
+    "unip5": "UNIP5",
+    "unip6": "UNIP6",
+    "usim3": "USIM3",
+    "usim5": "USIM5",
+    "usiminas": "USINAS SIDERÚRGICAS DE MINAS GERAIS S.A. - USIMINAS", // rdfs:label
+    "vale": "Vale S.A.", // Label para Template_1A/2A
+    "vale3": "VALE3",
+    "valid": "VALID SOLUÇÕES S.A.", // rdfs:label
+    "vlid3": "VLID3",
+    "vamo3": "VAMO3",
+    "vamos": "VAMOS LOCAÇÃO DE CAMINHÕES, MÁQUINAS E EQUIPAMENTOS S.A.", // rdfs:label
+    "vbbr3": "VBBR3",
+    "vibra": "VIBRA ENERGIA S.A.", // rdfs:label
+    "veste": "VESTE S.A. ESTILO", // rdfs:label
+    "vste3": "VSTE3",
+    "via": "VIA S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "viia3": "VIIA3",
+    "vitt3": "VITT3",
+    "vittia": "VITTIA FERTILIZANTES E BIOLÓGICOS S.A.", // rdfs:label
+    "viva3": "VIVA3",
+    "vivara": "VIVARA PARTICIPAÇÕES S.A.", // rdfs:label
+    "viveo": "VIVEO - CIRONICAR DISTRIBUIDORA DE PRODUTOS HOSPITALARES S.A.", // rdfs:label
+    "vveo3": "VVEO3",
+    "viver": "VIVER INCORPORADORA E CONSTRUTORA S.A. - EM RECUPERAÇÃO JUDICIAL", // rdfs:label
+    "vivr3": "VIVR3",
+    "vulc3": "VULC3",
+    "vulcabras": "VULCABRAS S.A.", // rdfs:label
+    "weg": "WEG S.A.", // rdfs:label
+    "wege3": "WEGE3",
+    "west3": "WEST3",
+    "westwing": "WESTWING COMÉRCIO VAREJISTA S.A.", // rdfs:label
+    "whirlpool": "WHIRLPOOL S.A.", // rdfs:label
+    "whrl3": "WHRL3",
+    "whrl4": "WHRL4",
+    "wizc3": "WIZC3",
+    "wizco": "WIZ COPARTICIPAÇÕES E CORRETAGEM DE SEGUROS S.A.", // rdfs:label
+    "wlmindcom": "WLM INDÚSTRIA E COMÉRCIO S.A.", // rdfs:label
+    "wlmm4": "WLMM4",
+    "yduq3": "YDUQ3",
+    "yduqspart": "YDUQS PARTICIPAÇÕES S.A.", // rdfs:label
+    "zamp": "ZAMP S.A.", // rdfs:label
+    "zamp3": "ZAMP3"
+}
