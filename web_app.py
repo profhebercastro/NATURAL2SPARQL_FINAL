@@ -20,17 +20,13 @@ BASE_APP_DIR = "/app"
 PLN_PROCESSOR_SCRIPT_PATH = os.path.join(BASE_APP_DIR, "src", "main", "resources", "pln_processor.py")
 CWD_FOR_PLN = os.path.join(BASE_APP_DIR, "src", "main", "resources")
 SPARQL_TEMPLATES_DIR = os.path.join(BASE_APP_DIR, "src", "main", "resources", "Templates")
-
-# ATENÇÃO: Verifique se este é o caminho correto no container Docker.
-# Se 'ontologiaB3_com_inferencia.ttl' está na raiz do seu projeto, este caminho está correto.
-# Se estiver dentro de 'src/main/resources', o caminho seria os.path.join(CWD_FOR_PLN, "ontologiaB3_com_inferencia.ttl")
 ONTOLOGY_FILE_PATH = os.path.join(BASE_APP_DIR, "ontologiaB3_com_inferencia.ttl")
 flask_logger.info(f"Caminho configurado para a ontologia: {ONTOLOGY_FILE_PATH}")
 
 # Carregar a ontologia
 graph = Graph()
 NS_B3 = Namespace("https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#")
-NS_STOCK = Namespace("https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#") # Pode ser o mesmo que NS_B3
+NS_STOCK = Namespace("https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#")
 NS_RDF = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 NS_RDFS = Namespace("http://www.w3.org/2000/01/rdf-schema#")
 NS_XSD = Namespace("http://www.w3.org/2001/XMLSchema#")
@@ -98,24 +94,30 @@ def processar_pergunta_completa():
         output_str_pln = process_pln.stdout.strip() if process_pln.stdout.strip() else process_pln.stderr.strip()
 
         flask_logger.debug(f"Saída bruta PLN (stdout): {process_pln.stdout.strip()}")
-        flask_logger.debug(f"Saída bruta PLN (stderr): {process_pln.stderr.strip()}") # Erros do script PLN podem vir aqui
+        flask_logger.debug(f"Saída bruta PLN (stderr): {process_pln.stderr.strip()}")
         flask_logger.info(f"Código de saída do PLN: {process_pln.returncode}")
 
-        if process_pln.returncode != 0:
-            flask_logger.error(f"PLN executado com erro (código {process_pln.returncode}). Saída: {output_str_pln}")
-            # Mesmo com erro, tenta parsear o JSON, pois o PLN pode retornar um erro estruturado
-            # Mas se não conseguir, o erro genérico abaixo será usado.
-
+        if process_pln.returncode != 0 and not output_str_pln.strip().startswith('{"erro":'): # Se erro e não é um JSON de erro do PLN
+            flask_logger.error(f"PLN executado com erro (código {process_pln.returncode}) e saída não é JSON de erro. Saída: {output_str_pln}")
+            # Retornar um erro genérico se a saída do PLN não for um JSON de erro esperado
+            return jsonify({"erro": f"Erro no processador PLN (código {process_pln.returncode}). Detalhes nos logs do servidor.", 
+                            "sparqlQuery": "N/A (Erro no PLN)", "debug_pln_output": output_str_pln}), 500
+        
         if not output_str_pln:
             flask_logger.error("PLN não produziu saída (stdout/stderr).")
             return jsonify({"erro": "PLN não produziu saída.", "sparqlQuery": "N/A (Erro no PLN)"}), 500
 
         pln_output_json_obj = json.loads(output_str_pln)
-        flask_logger.info(f"PLN output (parsed JSON): {json.dumps(pln_output_json_obj, ensure_ascii=False)}") # Log do JSON completo
+        flask_logger.info(f"PLN output (parsed JSON): {json.dumps(pln_output_json_obj, ensure_ascii=False)}")
 
         if "erro" in pln_output_json_obj:
             flask_logger.error(f"Erro estruturado retornado pelo PLN: {pln_output_json_obj['erro']}")
-            return jsonify(pln_output_json_obj), 400 # Erro de input/lógica do PLN
+            # Retorna o erro do PLN para o frontend, incluindo a query se disponível (pode ser "N/A")
+            return jsonify({
+                "erro": pln_output_json_obj['erro'], 
+                "sparqlQuery": pln_output_json_obj.get("sparqlQuery", "N/A (Erro no PLN antes da query)"),
+                "debug_pln_output": pln_output_json_obj # Envia todo o output do PLN para debug no frontend
+            }), 400 # Normalmente 400 para erro de input/lógica do PLN
 
         if "template_nome" not in pln_output_json_obj or "mapeamentos" not in pln_output_json_obj:
             flask_logger.error(f"Saída do PLN inesperada ou incompleta: {pln_output_json_obj}")
@@ -124,7 +126,7 @@ def processar_pergunta_completa():
     except json.JSONDecodeError as jde:
         flask_logger.error(f"Erro ao decodificar JSON do PLN: {jde}. Saída PLN: {output_str_pln}", exc_info=True)
         return jsonify({"erro": "Erro ao decodificar saída do PLN.", "sparqlQuery": "N/A (Erro na decodificação PLN)", "debug_pln_output": output_str_pln}), 500
-    except FileNotFoundError: # Especificamente para o caso do script python não ser encontrado
+    except FileNotFoundError: 
         flask_logger.error(f"Erro: Script PLN '{PLN_PROCESSOR_SCRIPT_PATH}' não encontrado.", exc_info=True)
         return jsonify({"erro": f"Erro crítico: Script PLN não encontrado.", "sparqlQuery": "N/A (Erro de configuração)"}), 500
     except Exception as e_pln:
@@ -138,7 +140,11 @@ def processar_pergunta_completa():
     sparql_query_string_final = "Consulta SPARQL não pôde ser gerada."
     sparql_query_template_content = "Template SPARQL não carregado."
     try:
-        template_filename = f"{template_nome}.txt"
+        if not template_nome: # Adicionado para segurança
+            flask_logger.error("Nome do template retornado pelo PLN é nulo ou vazio.")
+            return jsonify({"erro": "PLN não retornou um nome de template válido.", "sparqlQuery": "N/A"}), 500
+
+        template_filename = f"{template_nome}.txt" # template_nome já deve ter underscore do PLN
         template_file_path = os.path.join(SPARQL_TEMPLATES_DIR, template_filename)
         flask_logger.info(f"Tentando carregar template SPARQL de: {template_file_path}")
 
@@ -154,37 +160,38 @@ def processar_pergunta_completa():
 
         for placeholder_key, valor_raw in mapeamentos.items():
             valor_sparql_formatado = None
-            valor_str_raw = str(valor_raw) # Garantir que é string
+            valor_str_raw = str(valor_raw) 
 
-            # Log antes da substituição para ver o que será substituído
             flask_logger.info(f"Para template '{template_nome}', placeholder '{placeholder_key}', valor raw do PLN: '{valor_str_raw}'")
 
             if str(placeholder_key) not in sparql_query_string_final:
                 flask_logger.debug(f"Placeholder '{placeholder_key}' do PLN não encontrado no template '{template_nome}'. Ignorando.")
                 continue
 
-            # Lógica de formatação de valor para SPARQL
             if placeholder_key == "#DATA#":
-                # Validação simples de data (YYYY-MM-DD) - ajuste conforme necessário
                 if re.match(r"^\d{4}-\d{2}-\d{2}$", valor_str_raw):
                     valor_sparql_formatado = f'"{valor_str_raw}"^^xsd:date'
                 else:
-                    flask_logger.warning(f"Valor para #DATA# ('{valor_str_raw}') não parece ser uma data válida YYYY-MM-DD. Usando como string literal.")
-                    valor_sparql_formatado = f'"{valor_str_raw}"' # Fallback para string se não for data
-            elif placeholder_key == "#ENTIDADE_NOME#": # Para nomes de empresa, tickers, etc. que vão como strings no SPARQL
+                    flask_logger.warning(f"Valor para #DATA# ('{valor_str_raw}') não parece ser uma data YYYY-MM-DD. Usando como string literal.")
+                    valor_sparql_formatado = f'"{valor_str_raw}"' 
+            elif placeholder_key == "#ENTIDADE_NOME#": 
                 valor_escapado = valor_str_raw.replace('\\', '\\\\').replace('"', '\\"')
                 valor_sparql_formatado = f'"{valor_escapado}"'
-            elif placeholder_key == "#VALOR_DESEJADO#": # Para predicados como b3:precoFechamento
-                if ":" not in valor_str_raw and not valor_str_raw.startswith("<"): # Se não for URI completo ou prefixed name
-                    valor_sparql_formatado = f'b3:{valor_str_raw}' # Adiciona prefixo default 'b3:'
-                else:
-                    valor_sparql_formatado = valor_str_raw # Assume que já está formatado (ex: stock:precoFechamento)
-            elif placeholder_key == "#SETOR#": # Especificamente para o filtro de setor
+            
+            # ----- CORREÇÃO PARA #VALOR_DESEJADO# -----
+            elif placeholder_key == "#VALOR_DESEJADO#":
+                # O valor_str_raw (vindo do PLN, ex: "precoFechamento") é o nome local da propriedade.
+                # O prefixo (ex: b3:) já está no template SPARQL (ex: b3:#VALOR_DESEJADO#).
+                # Então, não adicionamos o prefixo aqui.
+                valor_sparql_formatado = valor_str_raw 
+            # ----- FIM DA CORREÇÃO -----
+
+            elif placeholder_key == "#SETOR#": 
                 valor_escapado = valor_str_raw.replace('\\', '\\\\').replace('"', '\\"')
-                valor_sparql_formatado = f'"{valor_escapado}"' # Será usado como string literal no FILTER
-            else: # Fallback para outros placeholders genéricos (tratar como string)
+                valor_sparql_formatado = f'"{valor_escapado}"'
+            else: 
                 if str(placeholder_key).startswith("#") and str(placeholder_key).endswith("#"):
-                    flask_logger.warning(f"Placeholder '{placeholder_key}' não possui formatação explícita definida. Tratando como string literal SPARQL.")
+                    flask_logger.warning(f"Placeholder '{placeholder_key}' não possui formatação explícita. Tratando como string literal SPARQL.")
                     valor_escapado = valor_str_raw.replace('\\', '\\\\').replace('"', '\\"')
                     valor_sparql_formatado = f'"{valor_escapado}"'
                 else:
@@ -204,14 +211,12 @@ def processar_pergunta_completa():
             for ph_restante in placeholders_restantes:
                 encontrado_nao_comentado = False
                 for linha in linhas_query:
-                    if ph_restante in linha and not linha.strip().startswith("#"): # Ignora linhas comentadas
-                        encontrado_nao_comentado = True
-                        break
+                    if ph_restante in linha and not linha.strip().startswith("#"):
+                        encontrado_nao_comentado = True; break
                 if encontrado_nao_comentado:
                     placeholders_nao_comentados.append(ph_restante)
-            
             if placeholders_nao_comentados:
-                flask_logger.warning(f"AVISO: Query final AINDA CONTÉM placeholders NÃO COMENTADOS não substituídos: {', '.join(placeholders_nao_comentados)}. Isso pode levar a erros na consulta SPARQL.")
+                flask_logger.warning(f"AVISO: Query final AINDA CONTÉM placeholders NÃO COMENTADOS: {', '.join(placeholders_nao_comentados)}.")
 
     except Exception as e_template:
         flask_logger.error(f"Erro ao processar template SPARQL '{template_nome}': {e_template}", exc_info=True)
@@ -220,7 +225,7 @@ def processar_pergunta_completa():
     resposta_formatada_final = "Não foi possível executar a consulta ou não houve resultados."
     try:
         if not graph or len(graph) == 0:
-            flask_logger.error("ONTOLOGIA NÃO CARREGADA OU VAZIA. Não é possível executar a consulta SPARQL. Verifique o carregamento da ontologia e o arquivo.")
+            flask_logger.error("ONTOLOGIA NÃO CARREGADA OU VAZIA. Não é possível executar a consulta SPARQL.")
             return jsonify({"erro": "Falha crítica: Ontologia não disponível para consulta.", "sparqlQuery": sparql_query_string_final}), 500
 
         query_obj = prepareQuery(sparql_query_string_final, initNs=INIT_NS)
@@ -229,13 +234,12 @@ def processar_pergunta_completa():
 
         resultados_json_list = []
         if qres.type == 'SELECT':
-            all_rows_from_select = list(qres) # Materializa resultados
+            all_rows_from_select = list(qres)
             num_resultados = len(all_rows_from_select)
             flask_logger.info(f"--- {template_nome}: Número de linhas/resultados SELECT encontrados: {num_resultados} ---")
 
             if num_resultados == 0:
                  flask_logger.info(f"A consulta SELECT para o template '{template_nome}' não retornou resultados. Query:\n{sparql_query_string_final}")
-                 # Isso é importante para a Pergunta 4. Se aqui for 0, o problema está na query/dados, não no código de formatação.
             
             for row_data in all_rows_from_select:
                 row_dict = {}
@@ -243,22 +247,21 @@ def processar_pergunta_completa():
                     for var_name in row_data.labels:
                         value = row_data[var_name]
                         row_dict[str(var_name)] = str(value) if value is not None else None
-                else: # Fallback menos provável
-                    for i, item in enumerate(row_data):
-                        row_dict[f"var_{i}"] = str(item) if item is not None else None
-                if row_dict:
-                    resultados_json_list.append(row_dict)
+                else: 
+                    for i, item in enumerate(row_data): row_dict[f"var_{i}"] = str(item) if item is not None else None
+                if row_dict: resultados_json_list.append(row_dict)
 
             if not resultados_json_list:
                 resposta_formatada_final = "Nenhum resultado encontrado."
             else:
-                # Para a pergunta 4, que espera uma lista de tickers, esta formatação pode ser útil
-                if template_nome == "Template_3A" and all('valor' in res for res in resultados_json_list):
+                if template_nome == "Template_3A" and all('ticker' in res for res in resultados_json_list): # Ajustado para 'ticker' se você mudou no SELECT AS
+                    tickers_list = sorted(list(set(res['ticker'] for res in resultados_json_list if res.get('ticker'))))
+                    if tickers_list: resposta_formatada_final = json.dumps(tickers_list, ensure_ascii=False)
+                    else: resposta_formatada_final = json.dumps(resultados_json_list, ensure_ascii=False)
+                elif template_nome == "Template_3A" and all('valor' in res for res in resultados_json_list): # Fallback se ainda for 'valor'
                     tickers_list = sorted(list(set(res['valor'] for res in resultados_json_list if res.get('valor'))))
-                    if tickers_list:
-                         resposta_formatada_final = json.dumps(tickers_list, ensure_ascii=False)
-                    else: # Se 'valor' não estava presente ou estava None/vazio em todos
-                         resposta_formatada_final = json.dumps(resultados_json_list, ensure_ascii=False) # Fallback para lista de dicts
+                    if tickers_list: resposta_formatada_final = json.dumps(tickers_list, ensure_ascii=False)
+                    else: resposta_formatada_final = json.dumps(resultados_json_list, ensure_ascii=False)
                 else:
                     resposta_formatada_final = json.dumps(resultados_json_list, ensure_ascii=False)
 
@@ -269,12 +272,10 @@ def processar_pergunta_completa():
         
         elif qres.type == 'CONSTRUCT' or qres.type == 'DESCRIBE':
             resposta_serializada = qres.serialize(format='turtle')
-            if not resposta_serializada.strip():
-                resposta_formatada_final = "Nenhum resultado para CONSTRUCT/DESCRIBE."
-            else:
-                resposta_formatada_final = resposta_serializada # Retorna como string Turtle
+            if not resposta_serializada.strip(): resposta_formatada_final = "Nenhum resultado para CONSTRUCT/DESCRIBE."
+            else: resposta_formatada_final = resposta_serializada
         else:
-            resposta_formatada_final = f"Tipo de consulta não suportado para formatação de resposta: {qres.type}"
+            resposta_formatada_final = f"Tipo de consulta não suportado para formatação: {qres.type}"
 
         flask_logger.info(f"Consulta SPARQL executada (Template: {template_nome}). Tipo: {qres.type}. Resposta (início): {str(resposta_formatada_final)[:300]}...")
 
@@ -289,9 +290,6 @@ def processar_pergunta_completa():
     })
 
 if __name__ == '__main__':
-    # Render define a variável de ambiente PORT
-    local_port = int(os.environ.get("PORT", 8080)) # Usar 8080 como padrão local se PORT não estiver definida
+    local_port = int(os.environ.get("PORT", 8080)) 
     flask_logger.info(f"Iniciando servidor Flask em http://0.0.0.0:{local_port}")
-    # debug=False é crucial para produção. Gunicorn (ou similar) é usado no Render.
-    # Para testes locais, você pode mudar debug=True temporariamente, mas NUNCA em produção.
     app.run(host='0.0.0.0', port=local_port, debug=False)
