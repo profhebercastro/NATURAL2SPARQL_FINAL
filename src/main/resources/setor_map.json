@@ -1,36 +1,29 @@
 {
-
-  // --- 1. Mapeando para: "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao." ---
   "petroleo gas e biocombustiveis": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
   "petroleo e gas": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
   "oleo e gas": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
   "exploracao refino e distribuicao de petroleo": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
   "biocombustiveis": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
-  "gas (petroleo)": "Petróleo._Gás_e_Biocombustiveis,_Exploracao_Refino_e_Distribuicao.", // Para diferenciar de gás de utilidade pública
-  // "Petroleo._Gas_e_Biocombustiveis_Petroleo._Gas_e_Biocombustiveis_Equipamentos_e_Servicos" -> não está nos 11 com dados
-
-  // --- 2. Mapeando para: "Utilidade_Publica,_Energia_Elétrica." ---
+  "gas (petroleo)": "Petróleo._Gás_e_Biocombustiveis,_Exploracao_Refino_e_Distribuicao.",
+  "equipamentos e servicos de petroleo e gas": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
   "utilidade publica energia eletrica": "Utilidade_Publica,_Energia_Elétrica.",
   "energia eletrica": "Utilidade_Publica,_Energia_Elétrica.",
   "eletrico": "Utilidade_Publica,_Energia_Elétrica.",
   "setor eletrico": "Utilidade_Publica,_Energia_Elétrica.",
-  "utilidade publica": "Utilidade_Publica,_Energia_Elétrica.", // Genérico, pode pegar mais do que só energia
-  // Para "Água e Saneamento" e "Gás" (de utilidade pública), se não têm labels próprios com dados nos 11:
-  "agua e saneamento": "Utilidade_Publica,_Energia_Elétrica.", // Temporário, idealmente teriam labels próprios com dados
-  "saneamento": "Utilidade_Publica,_Energia_Elétrica.",       // Temporário
-  "gas utilidade publica": "Utilidade_Publica,_Energia_Elétrica.", // Temporário
-
-  // --- 3. Mapeando para: "Financeiro,_Intermediarios_Financeiros,_Bancos." ---
+  "utilidade publica": "Utilidade_Publica,_Energia_Elétrica.",
+  "agua e saneamento": "Utilidade_Publica,_Energia_Elétrica.",
+  "saneamento": "Utilidade_Publica,_Energia_Elétrica.",
+  "gas utilidade publica": "Utilidade_Publica,_Energia_Elétrica.",
   "financeiro intermediarios financeiros bancos": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "financeiro": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "setor financeiro": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "intermediarios financeiros": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "bancos": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "bancario": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
-  "seguradoras": "Financeiro,_Intermediarios_Financeiros,_Bancos.", // Assumindo que caem aqui se não houver label específico com dados
+  "seguradoras": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "corretoras": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
-  "holdings financeiras": "Financeiro,_Intermediarios_Financeiros,_Bancos.", // "Holdings Diversificadas" não está nos 11
-  "exploracao de imoveis (financeiro)": "Financeiro,_Intermediarios_Financeiros,_Bancos.", // Se for aspecto financeiro
+  "holdings financeiras": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
+  "exploracao de imoveis": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "servicos financeiros": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "previdencia e seguros": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "resseguradoras": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
@@ -38,8 +31,7 @@
   "financeiras": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "gestao de recursos e investimentos": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "asset management": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
-
-  // --- 4. Mapeando para: "Consumo_Nao_Ciclico." ---
+  "imobiliarias": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
   "consumo nao ciclico": "Consumo_Nao_Ciclico.",
   "consumo essencial": "Consumo_Nao_Ciclico.",
   "alimentos": "Consumo_Nao_Ciclico.",
@@ -53,80 +45,111 @@
   "produtos de limpeza": "Consumo_Nao_Ciclico.",
   "produtos de uso pessoal": "Consumo_Nao_Ciclico.",
   "cosmeticos": "Consumo_Nao_Ciclico.",
-  "acucar e alcool (consumo)": "Consumo_Nao_Ciclico.", // Se o álcool para consumo
-  "agricultura (consumo)": "Consumo_Nao_Ciclico.", // Se produtos agrícolas para consumo direto
-  "agropecuaria (consumo)": "Consumo_Nao_Ciclico.",
-
-  // --- 5. Mapeando para: "Comunicações,_Telecomunicações." ---
+  "acucar e alcool": "Consumo_Nao_Ciclico.",
+  "agricultura": "Consumo_Nao_Ciclico.",
+  "agropecuaria": "Consumo_Nao_Ciclico.",
+  "agro": "Consumo_Nao_Ciclico.",
   "comunicacoes telecomunicacoes": "Comunicações,_Telecomunicações.",
   "comunicacoes": "Comunicações,_Telecomunicações.",
   "telecomunicacoes": "Comunicações,_Telecomunicações.",
   "telecom": "Comunicações,_Telecomunicações.",
   "telefonia": "Comunicações,_Telecomunicações.",
-  "midia": "Comunicações,_Telecomunicações.", // Se mídia e publicidade devem cair aqui
+  "midia": "Comunicações,_Telecomunicações.",
   "publicidade e propaganda": "Comunicações,_Telecomunicações.",
   "marketing": "Comunicações,_Telecomunicações.",
-
-  // --- 6. & 11. Mapeando para: "Materiais_Basicos,_Mineracao,_Minerais_Metalicos." (3 emp)
-  //      e "Materiais_Basicos,_Mineracao,_Minerais_Metalicos._" (1 emp, com ponto extra) ---
-  // Vamos mapear o termo genérico para o que tem mais empresas, e criar uma chave específica para o outro.
   "materiais basicos": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
   "mineracao": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
   "minerais metalicos": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
   "metais": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
-  "mineracao metalicos com ponto": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos._", // Específico para o label com ponto
-  // Mapeando outros materiais básicos para o label mais populoso de mineração se não houver um específico
-  "quimicos basicos": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
-  "petroquimicos basicos": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
-  "madeira e papel (basico)": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
-  "celulose (basico)": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
-
-  // --- 7. Mapeando para: "Tecnologia_da_Informação,_Computadores_e_Equipamentos" ---
+  "mineracao com ponto": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos._",
+  "siderurgia": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._",
+  "metalurgia": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._",
+  "quimicos": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
+  "petroquimicos": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
+  "madeira": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
+  "papel e celulose": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
+  "embalagens": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
+  "fertilizantes e defensivos": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
+  "artefatos de ferro e aco": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._",
+  "ferro e aco": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._",
   "tecnologia da informacao": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
   "ti": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
-  "tec info": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
-  "computadores e equipamentos de ti": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
-  "hardware de ti": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
-  "software de ti": "Tecnologia_da_Informação,_Computadores_e_Equipamentos", // Se programas e serviços de TI caem aqui
-  "programas e servicos de ti": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
-
-  // --- 8. Mapeando para: "Bens_Industriais,_Transporte,_Transporte_Rodoviário" ---
+  "computadores e equipamentos": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
+  "hardware": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
+  "software": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
+  "programas e servicos": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
   "bens industriais transporte rodoviario": "Bens_Industriais,_Transporte,_Transporte_Rodoviário",
   "transporte rodoviario": "Bens_Industriais,_Transporte,_Transporte_Rodoviário",
   "rodoviario": "Bens_Industriais,_Transporte,_Transporte_Rodoviário",
   "exploracao de rodovias": "Bens_Industriais,_Transporte,_Transporte_Rodoviário",
   "logistica rodoviaria": "Bens_Industriais,_Transporte,_Transporte_Rodoviário",
-
-  // --- 9. Mapeando para: "Bens_Industriais,_Transporte,_Transporte_Aéreo" ---
   "bens industriais transporte aereo": "Bens_Industriais,_Transporte,_Transporte_Aéreo",
   "transporte aereo": "Bens_Industriais,_Transporte,_Transporte_Aéreo",
   "aereo": "Bens_Industriais,_Transporte,_Transporte_Aéreo",
   "companhias aereas": "Bens_Industriais,_Transporte,_Transporte_Aéreo",
-
-  // --- 10. Mapeando para: "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._" ---
-  "materiais basicos siderurgia e metalurgia siderurgia": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._",
-  "siderurgia": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._",
-  "metalurgia": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._", // Se metalurgia também cai aqui
-  "ferro e aco": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._",
-  "artefatos de ferro e aco": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia._",
-
-  // --- Setores da sua lista extensa que NÃO têm correspondente nos 11 labels com dados ---
-  // Ações: Encontre o label EXATO na ontologia que os representa E QUE TENHA EMPRESAS,
-  // ou mapeie para o super-setor mais próximo dos 11, ou omita (resultará em erro de setor não encontrado).
-  // Os valores abaixo são exemplos e provavelmente resultarão em 0 empresas se esses labels não existirem ou não tiverem dados.
-
-  "acessorios": "Consumo_Nao_Ciclico.", // Ex: Mapeando para um genérico existente. Ideal: encontrar label específico.
-  // "consumo ciclico": "Consumo_Ciclico_Label_Real_Da_Ontologia_Com_Dados", // VOCÊ PRECISA ENCONTRAR ESTE LABEL
-  // "varejo": "Consumo_Ciclico_Label_Real_Da_Ontologia_Com_Dados",
-  // "automotivo": "Consumo_Ciclico_Label_Real_Da_Ontologia_Com_Dados",
-  // "construcao civil": "Bens_Industriais_Construcao_Label_Real_Com_Dados",
-  // "servicos": "Servicos_Geral_Label_Real_Com_Dados"
-
-  // Exemplo para um setor que você tinha na lista de "ligações", mas não nos 11 com dados:
-  // Se "Consumo_Ciclico_Comercio_Eletrodomesticos" realmente existe na ontologia:
-  // "eletrodomesticos": "Consumo_Ciclico_Comercio_Eletrodomesticos",
-  // "linha branca": "Consumo_Ciclico_Comercio_Eletrodomesticos",
-  // Se não, mapeie para "Consumo_Nao_Ciclico." ou outro dos 11, ou omita.
-  "eletrodomesticos": "Consumo_Nao_Ciclico." // Exemplo de mapeamento para um genérico se específico não tem dados
-
-  
+  "acessorios": "Consumo_Nao_Ciclico.",
+  "aluguel de carros": "Bens_Industriais,_Transporte,_Transporte_Rodoviário",
+  "locacao de veiculos": "Bens_Industriais,_Transporte,_Transporte_Rodoviário",
+  "armas e municoes": "Bens_Industriais_Maquinas_e_Equipamentos_Armas_e_Municoes",
+  "artefatos de cobre": "Materiais_Basicos_Siderurgia_e_Metalurgia_Artefatos_de_Cobre",
+  "cobre": "Materiais_Basicos_Siderurgia_e_Metalurgia_Artefatos_de_Cobre",
+  "atividades esportivas": "Consumo_Ciclico_Viagens_e_Lazer_Atividades_Esportivas",
+  "esportes": "Consumo_Ciclico_Viagens_e_Lazer_Atividades_Esportivas",
+  "automoveis e motocicletas": "Consumo_Ciclico_Automoveis_e_Motocicletas_Automoveis_e_Motocicletas",
+  "automotivo": "Consumo_Ciclico_Automoveis_e_Motocicletas_Automoveis_e_Motocicletas",
+  "bens industriais": "Bens_Industriais_Transporte_Transporte_Rodoviário",
+  "bicicletas": "Consumo_Ciclico_Viagens_e_Lazer_Bicicletas",
+  "brinquedos e jogos": "Consumo_Ciclico_Viagens_e_Lazer_Brinquedos_e_Jogos",
+  "calcados": "Consumo_Ciclico_Tecidos._Vestuario_e_Calcados_Calcados",
+  "construcao civil": "Bens_Industriais_Construcao_e_Engenharia_Produtos_para_Construcao",
+  "construcao e engenharia": "Bens_Industriais_Construcao_e_Engenharia_Produtos_para_Construcao",
+  "construcao pesada": "Bens_Industriais_Construcao_e_Engenharia_Construcao_Pesada",
+  "consumo ciclico": "Consumo_Ciclico_Comercio_Eletrodomesticos",
+  "varejo": "Consumo_Ciclico_Comercio_Produtos_Diversos",
+  "diversos": "Materiais_Basicos_Materiais_Diversos_Materiais_Diversos",
+  "eletrodomesticos": "Consumo_Ciclico_Comercio_Eletrodomesticos",
+  "equipamentos": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
+  "equipamentos e servicos": "Tecnologia_da_Informação,_Computadores_e_Equipamentos",
+  "fios e tecidos": "Consumo_Ciclico_Tecidos._Vestuario_e_Calcados_Fios_e_Tecidos",
+  "textil": "Consumo_Ciclico_Tecidos._Vestuario_e_Calcados_Fios_e_Tecidos",
+  "holdings": "Financeiro_Holdings_Diversificadas_Holdings_Diversificadas",
+  "hoteis e restaurantes": "Consumo_Ciclico_Hoteis_e_Restaurantes_Hotelaria",
+  "hotelaria": "Consumo_Ciclico_Hoteis_e_Restaurantes_Hotelaria",
+  "incorporacoes": "Consumo_Ciclico_Construcao_Civil_Incorporacoes",
+  "maq e equip construcao e agricolas": "Bens_Industriais_Maquinas_e_Equipamentos_Maq._e_Equip._Construcao_e_Agricolas",
+  "maquinas agricolas": "Bens_Industriais_Maquinas_e_Equipamentos_Maq._e_Equip._Construcao_e_Agricolas",
+  "maq e equip industriais": "Bens_Industriais_Maquinas_e_Equipamentos_Maq._e_Equip._Industriais",
+  "maquinas industriais": "Bens_Industriais_Maquinas_e_Equipamentos_Maq._e_Equip._Industriais",
+  "maquinas e equipamentos": "Bens_Industriais_Maquinas_e_Equipamentos_Maq._e_Equip._Industriais",
+  "commodities": "Materiais_Basicos_Mineracao_Minerais_Metalicos.",
+  "materiais diversos": "Materiais_Basicos_Materiais_Diversos_Materiais_Diversos",
+  "material aeronautico e de defesa": "Bens_Industriais_Material_de_Transporte_Material_Aeronautico_e_de_Defesa",
+  "material de transporte": "Bens_Industriais_Comercio_Material_de_Transporte",
+  "material rodoviario": "Bens_Industriais_Material_de_Transporte_Material_Rodoviario",
+  "motores compressores e outros": "Bens_Industriais_Maquinas_e_Equipamentos_Motores_._Compressores_e_Outros",
+  "moveis": "Consumo_Ciclico_Utilidades_Domesticas_Moveis",
+  "celulose": "Materiais_Basicos_Madeira_e_Papel_Papel_e_Celulose",
+  "producao de eventos e shows": "Consumo_Ciclico_Viagens_e_Lazer_Producao_de_Eventos_e_Shows",
+  "eventos": "Consumo_Ciclico_Viagens_e_Lazer_Producao_de_Eventos_e_Shows",
+  "produtos para construcao": "Bens_Industriais_Construcao_e_Engenharia_Produtos_para_Construcao",
+  "programas de fidelizacao": "Consumo_Ciclico_Diversos_Programas_de_Fidelizacao",
+  "quimicos diversos": "Materiais_Basicos_Quimicos_Quimicos_Diversos",
+  "restaurante e similares": "Consumo_Ciclico_Hoteis_e_Restaurantes_Restaurante_e_Similares",
+  "restaurantes": "Consumo_Ciclico_Hoteis_e_Restaurantes_Restaurante_e_Similares",
+  "saude": "Saude_Serv.Med.Hospit..Analises_e_Diagnosticos_Serv.Med.Hospit..Analises_e_Diagnosticos",
+  "setor de saude": "Saude_Serv.Med.Hospit..Analises_e_Diagnosticos_Serv.Med.Hospit..Analises_e_Diagnosticos",
+  "serv med hosp analises e diagnosticos": "Saude_Serv.Med.Hospit..Analises_e_Diagnosticos_Serv.Med.Hospit..Analises_e_Diagnosticos",
+  "servicos": "Bens_Industriais_Servicos_Servicos_Diversos",
+  "servicos diversos": "Bens_Industriais_Servicos_Servicos_Diversos",
+  "servicos educacionais": "Consumo_Ciclico_Diversos_Servicos_Educacionais",
+  "educacao": "Consumo_Ciclico_Diversos_Servicos_Educacionais",
+  "moda": "Consumo_Ciclico_Comercio_Tecidos._Vestuario_e_Calcados",
+  "transporte": "Bens_Industriais_Transporte_Transporte_Rodoviário",
+  "transporte ferroviario": "Bens_Industriais_Transporte_Transporte_Ferroviario",
+  "transporte hidroviario": "Bens_Industriais_Transporte_Transporte_Hidroviario",
+  "utensilios domesticos": "Consumo_Ciclico_Utilidades_Domesticas_Utensilios_Domesticos",
+  "utilidades domesticas": "Consumo_Ciclico_Utilidades_Domesticas_Utensilios_Domesticos",
+  "vestuario": "Consumo_Ciclico_Tecidos._Vestuario_e_Calcados_Vestuario",
+  "viagens e lazer": "Consumo_Ciclico_Viagens_e_Lazer_Viagens_e_Turismo",
+  "viagens e turismo": "Consumo_Ciclico_Viagens_e_Lazer_Viagens_e_Turismo"
+}

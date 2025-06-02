@@ -1,28 +1,21 @@
-<<<<<<< HEAD
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker
 WHERE {
-  # 1. Encontra a empresa pelo seu nome/label formal
-  ?empresa rdfs:label #ENTIDADE_NOME# .  # Ex: "Gerdau S.A."
-
-  # 2. A empresa tem um valor mobiliário ou é representada por um código
-  # Opção A: Empresa -> temValorMobiliarioNegociado -> ValorMobiliario -> representadoPor -> Codigo -> ticker
+ 
+  ?empresa rdfs:label #ENTIDADE_NOME# . 
   OPTIONAL {
     ?empresa b3:temValorMobiliarioNegociado ?vm_a .
     ?vm_a b3:representadoPor ?codigo_a .
     ?codigo_a b3:ticker ?ticker_a .
-    FILTER REGEX(STR(?ticker_a), "^[A-Z]{4}[0-9]{1,2}$", "i") # Valida formato do ticker
+    FILTER REGEX(STR(?ticker_a), "^[A-Z]{4}[0-9]{1,2}$", "i") 
   }
-  
-  # Opção B: Empresa -> representadoPor -> Codigo -> ticker (mais direto)
   OPTIONAL {
     ?empresa b3:representadoPor ?codigo_b .
     ?codigo_b b3:ticker ?ticker_b .
-    FILTER REGEX(STR(?ticker_b), "^[A-Z]{4}[0-9]{1,2}$", "i") # Valida formato do ticker
+    FILTER REGEX(STR(?ticker_b), "^[A-Z]{4}[0-9]{1,2}$", "i") 
   }
 
-  # Combina os resultados das duas opções
   BIND(COALESCE(?ticker_a, ?ticker_b) AS ?ticker)
-  FILTER(BOUND(?ticker)) # Garante que um ticker foi encontrado
+  FILTER(BOUND(?ticker)) 
