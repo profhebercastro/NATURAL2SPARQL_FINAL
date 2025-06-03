@@ -4,7 +4,7 @@ PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  ?empresaPrincipal rdfs:label #ENTIDADE_NOME# .
+  ?empresaPrincipal rdfs:label #ENTIDADE_NOME#@pt .  # <<-- MODIFICAÇÃO AQUI
   ?empresaPrincipal b3:temValorMobiliarioNegociado ?entidadeEmpresaVM .
   ?entidadeEmpresaVM b3:temValorMobiliarioNegociado ?vmNegociado .
   ?vmNegociado b3:negociado ?negociadoInst . 

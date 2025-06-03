@@ -45,14 +45,14 @@ logger.info(f"Caminho mapa setores: {SETOR_MAP_JSON_PATH}")
 
 # --- Carregamento de Recursos ---
 def exit_with_json_error(error_message, template_id_info=None, mapeamentos_info=None, exit_code=1):
-    logger.error(f"ERRO CRÍTICO PLN: {error_message}")
+    logger.error(f"ERRO PLN: {error_message}") # Mudado de CRÍTICO para ERRO
     error_payload = {
         "erro": error_message, 
         "template_nome": template_id_info if template_id_info else None, 
         "mapeamentos": mapeamentos_info if mapeamentos_info else {}
     }
-    print(json.dumps(error_payload, ensure_ascii=False))
-    sys.exit(exit_code)
+    print(json.dumps(error_payload, ensure_ascii=False)) 
+    sys.exit(exit_code) # Usar exit_code 1 para erros de configuração que impedem o PLN de funcionar
 
 nlp = None
 try:
@@ -70,22 +70,18 @@ try:
         exit_with_json_error(f"Configuração crítica: Arquivo de mapa de empresas JSON não encontrado em: {MAPA_EMPRESAS_JSON_PATH}")
     with open(MAPA_EMPRESAS_JSON_PATH, 'r', encoding='utf-8') as f:
         empresa_nome_map_raw = json.load(f)
-        # Chaves normalizadas (lower, sem acentos, sem espaços internos da chave original)
-        # VALORES SÃO ASSUMIDOS COMO STRINGS ÚNICAS (LABEL OU TICKER)
-        empresa_nome_map = {normalizar_texto(k.replace(" ", "")): v[0] if isinstance(v, list) and v else v 
+        # Chaves normalizadas. VALORES SÃO STRINGS ÚNICAS (LABEL OU TICKER).
+        empresa_nome_map = {normalizar_texto(k.replace(" ", "")): v 
                             for k, v in empresa_nome_map_raw.items()}
-        # A linha acima foi ajustada: se v for uma lista, pega o primeiro elemento, senão pega v.
-        # Isso é para compatibilidade se o seu JSON ainda tiver listas como ["CMIN3"].
-        # Idealmente, os valores seriam strings diretas: "csn": "CSN Mineração S.A." ou "cmin3": "CMIN3"
     logger.info(f"Mapa de empresas JSON carregado (chaves normalizadas): {len(empresa_nome_map)} mapeamentos.")
     if not empresa_nome_map: logger.warning(f"Mapa de empresas JSON ({MAPA_EMPRESAS_JSON_PATH}) está vazio.")
 except Exception as e:
-    exit_with_json_error(f"Configuração crítica: Erro ao carregar mapa de empresas JSON ({MAPA_EMPRESAS_JSON_PATH}): {str(e)}")
+    exit_with_json_error(f"Configuração crítica: Erro ao carregar mapa de empresas JSON ({MAPA_EMPRESAS_JSON_PATH}): {type(e).__name__} - {str(e)}")
 
 sinonimos_map = {} 
 try:
     if not os.path.exists(SINONIMOS_PATH):
-        logger.warning(f"Arquivo de sinônimos ({SINONIMOS_PATH}) não encontrado. Mapeamento de #VALOR_DESEJADO# pode falhar.")
+        logger.warning(f"Arquivo de sinônimos ({SINONIMOS_PATH}) não encontrado.")
     else:
         with open(SINONIMOS_PATH, 'r', encoding='utf-8') as f_sin:
             for line_s in f_sin:
@@ -94,8 +90,8 @@ try:
                 parts_s = line_s.split(';')
                 if len(parts_s) == 2 and parts_s[0].strip() and parts_s[1].strip():
                     sinonimos_map[normalizar_texto(parts_s[0].strip())] = parts_s[1].strip()
-        logger.info(f"Dicionário de sinônimos (para #VALOR_DESEJADO#) carregado (chaves normalizadas): {len(sinonimos_map)} chaves.")
-        if not sinonimos_map and os.path.exists(SINONIMOS_PATH): logger.warning(f"Dicionário de sinônimos ({SINONIMOS_PATH}) carregado, mas vazio.")
+        logger.info(f"Dicionário de sinônimos carregado: {len(sinonimos_map)} chaves.")
+        if not sinonimos_map and os.path.exists(SINONIMOS_PATH): logger.warning(f"Dicionário de sinônimos ({SINONIMOS_PATH}) vazio.")
 except Exception as e_sin:
     logger.error(f"Erro (não crítico) ao carregar dicionário de sinônimos ({SINONIMOS_PATH}): {str(e_sin)}")
 
@@ -106,10 +102,10 @@ try:
     with open(SETOR_MAP_JSON_PATH, 'r', encoding='utf-8') as f_set:
         setor_map_raw = json.load(f_set)
         setor_map_global = {normalizar_texto(k): v for k, v in setor_map_raw.items()} 
-    logger.info(f"Mapa de setores JSON carregado (chaves normalizadas, valores originais do JSON): {len(setor_map_global)} mapeamentos.")
-    if not setor_map_global: logger.warning(f"Mapa de setores JSON ({SETOR_MAP_JSON_PATH}) está vazio. Mapeamento de #SETOR# falhará.")
+    logger.info(f"Mapa de setores JSON carregado: {len(setor_map_global)} mapeamentos.")
+    if not setor_map_global: logger.warning(f"Mapa de setores JSON ({SETOR_MAP_JSON_PATH}) vazio.")
 except Exception as e_set:
-    exit_with_json_error(f"Configuração crítica: Erro ao carregar mapa de setores JSON ({SETOR_MAP_JSON_PATH}): {str(e_set)}")
+    exit_with_json_error(f"Configuração crítica: Erro ao carregar mapa de setores JSON ({SETOR_MAP_JSON_PATH}): {type(e).__name__} - {str(e_set)}")
 
 def extrair_entidades_data(doc_spacy):
     entidades_ner_dict = {"ORG": [], "DATE": [], "LOC": [], "MISC": [], "PER": []}
@@ -212,9 +208,9 @@ def extract_and_normalize_setor(pergunta_original_texto):
     candidatos_a_chave_norm.extend(sorted(setor_map_global.keys(), key=len, reverse=True))
     seen = set()
     candidatos_a_chave_norm_unicos = [x for x in candidatos_a_chave_norm if not (x in seen or seen.add(x))]
-    logger.debug(f"Candidatos únicos a chave de setor (para busca por keyword): {candidatos_a_chave_norm_unicos[:10]}...") # Log apenas os primeiros 10
+    # logger.debug(f"Candidatos únicos a chave de setor (para busca por keyword): {candidatos_a_chave_norm_unicos[:10]}...")
     for key_norm_candidata in candidatos_a_chave_norm_unicos:
-        # logger.debug(f"Testando keyword candidata do mapa: '{key_norm_candidata}' contra pergunta_norm: '{pergunta_norm}'") # Pode ser muito verboso
+        # logger.debug(f"Testando keyword candidata do mapa: '{key_norm_candidata}' contra pergunta_norm: '{pergunta_norm}'")
         if re.search(r'\b' + re.escape(key_norm_candidata) + r'\b', pergunta_norm):
             setor_final_para_ontologia = setor_map_global.get(key_norm_candidata) 
             if setor_final_para_ontologia:
@@ -226,10 +222,9 @@ def extract_and_normalize_setor(pergunta_original_texto):
     # logger.debug(f"Conteúdo de setor_map_global (primeiras 5 chaves): {list(setor_map_global.keys())[:5]}")
     return None
 
-# ----- FUNÇÃO mapear_placeholders AJUSTADA -----
 def mapear_placeholders(ent_ner, data_iso, kw_val_detectadas_norm, tid_corrigido, p_orig_txt):
     maps = {}
-    tipo_ent_dbg = "N/A" # Default
+    tipo_ent_dbg = "N/A" 
     ent_nome_final = None
 
     if data_iso: 
@@ -241,54 +236,56 @@ def mapear_placeholders(ent_ner, data_iso, kw_val_detectadas_norm, tid_corrigido
     if org_detectada_ner:
         chave_map_empresa = normalizar_texto(org_detectada_ner).replace(" ", "")
         logger.debug(f"Processando ORG NER: '{org_detectada_ner}' (chave normalizada para mapa: '{chave_map_empresa}')")
-        valor_mapeado_empresa = empresa_nome_map.get(chave_map_empresa) # Retorna None se não encontrar
+        valor_mapeado_empresa_str = empresa_nome_map.get(chave_map_empresa) 
 
-        if valor_mapeado_empresa: # Se encontrou algo no mapa
-            logger.info(f"Chave '{chave_map_empresa}' encontrada no mapa. Valor: '{valor_mapeado_empresa}'")
-            # Agora, valor_mapeado_empresa é uma STRING (label ou ticker)
-            is_ticker_mapeado = re.match(r"^[A-Z]{4}\d{1,2}$", valor_mapeado_empresa.upper())
+        if valor_mapeado_empresa_str: 
+            logger.info(f"Chave '{chave_map_empresa}' encontrada no mapa. Valor: '{valor_mapeado_empresa_str}'")
+            is_ticker_mapeado = isinstance(valor_mapeado_empresa_str, str) and \
+                                re.match(r"^[A-Z]{4}\d{1,2}$", valor_mapeado_empresa_str.upper())
 
-            if tid_corrigido == "Template_1A" or tid_corrigido == "Template_2A": # Esperam LABEL
-                if not is_ticker_mapeado: # O valor mapeado NÃO é um ticker, então assumimos que é o label
-                    ent_nome_final = valor_mapeado_empresa
-                    tipo_ent_dbg = f"LABEL_EMPRESA (Do mapa '{chave_map_empresa}'->'{valor_mapeado_empresa}' para {tid_corrigido})"
-                else: # O mapa retornou um ticker, mas T1A/T2A esperam LABEL
-                    logger.warning(f"{tid_corrigido}: Chave '{chave_map_empresa}' mapeou para TICKER '{valor_mapeado_empresa}', mas esperava LABEL. Usando NER ORG '{org_detectada_ner}' como fallback para label.")
-                    ent_nome_final = org_detectada_ner # Usa o texto original da NER como fallback
+            if tid_corrigido == "Template_1A" or tid_corrigido == "Template_2A": 
+                if not is_ticker_mapeado and isinstance(valor_mapeado_empresa_str, str): 
+                    ent_nome_final = valor_mapeado_empresa_str
+                    tipo_ent_dbg = f"LABEL_EMPRESA (Do mapa '{chave_map_empresa}'->'{valor_mapeado_empresa_str}' para {tid_corrigido})"
+                else: 
+                    logger.warning(f"{tid_corrigido}: Chave '{chave_map_empresa}' mapeou para TICKER/Outro ('{valor_mapeado_empresa_str}'), mas esperava LABEL. Usando NER ORG '{org_detectada_ner}' como fallback.")
+                    ent_nome_final = org_detectada_ner 
                     tipo_ent_dbg = f"LABEL_EMPRESA_FALLBACK_NER (De NER '{org_detectada_ner}' para {tid_corrigido})"
             
-            elif tid_corrigido == "Template_1B": # Espera TICKER
-                if is_ticker_mapeado: # O valor mapeado É um ticker
-                    ent_nome_final = valor_mapeado_empresa.upper()
-                    tipo_ent_dbg = f"TICKER (Do mapa '{chave_map_empresa}'->'{valor_mapeado_empresa}' para T1B)"
-                else: # O mapa retornou um LABEL, mas T1B espera TICKER. Tenta usar o NER ORG se ele for um ticker.
-                    logger.warning(f"T1B: Chave '{chave_map_empresa}' mapeou para LABEL '{valor_mapeado_empresa}', mas esperava TICKER.")
-                    if re.match(r"^[A-Z]{4}\d{1,2}$", org_detectada_ner.upper()):
+            elif tid_corrigido == "Template_1B": 
+                if is_ticker_mapeado: 
+                    ent_nome_final = valor_mapeado_empresa_str.upper()
+                    tipo_ent_dbg = f"TICKER (Do mapa '{chave_map_empresa}'->'{valor_mapeado_empresa_str}' para T1B)"
+                else: 
+                    logger.warning(f"T1B: Chave '{chave_map_empresa}' mapeou para LABEL/Outro ('{valor_mapeado_empresa_str}'), mas esperava TICKER.")
+                    if isinstance(org_detectada_ner, str) and re.match(r"^[A-Z]{4}\d{1,2}$", org_detectada_ner.upper()):
                         ent_nome_final = org_detectada_ner.upper()
                         tipo_ent_dbg = f"TICKER_FALLBACK_NER (De NER '{org_detectada_ner}' para T1B)"
                     else:
-                        tipo_ent_dbg = f"ERRO_TIPO_T1B (Mapa deu LABEL, NER ORG '{org_detectada_ner}' não é ticker)"
-                        logger.error(f"T1B: Não foi possível obter ticker para '{org_detectada_ner}'. Mapeamento: '{valor_mapeado_empresa}'.")
+                        tipo_ent_dbg = f"ERRO_TIPO_T1B (Mapa deu '{valor_mapeado_empresa_str}', NER ORG '{org_detectada_ner}' não é ticker)"
+                        logger.error(f"T1B: Não foi possível obter ticker para '{org_detectada_ner}'.")
         
-        else: # Chave não encontrada no mapa de empresas
+        else: 
             logger.info(f"Chave '{chave_map_empresa}' (de NER '{org_detectada_ner}') NÃO encontrada no mapa de empresas.")
-            # Se a própria NER ORG for um ticker, usar para T1B
-            if tid_corrigido == "Template_1B" and re.match(r"^[A-Z]{4}\d{1,2}$", org_detectada_ner.upper()):
-                ent_nome_final = org_detectada_ner.upper()
-                tipo_ent_dbg = f"TICKER (De NER '{org_detectada_ner}' diretamente, não mapeado, para T1B)"
-            # Se for T1A/T2A, usar o texto NER como label
-            elif tid_corrigido == "Template_1A" or tid_corrigido == "Template_2A":
-                ent_nome_final = org_detectada_ner
-                tipo_ent_dbg = f"LABEL_EMPRESA (De NER '{org_detectada_ner}' diretamente, não mapeado, para {tid_corrigido})"
+            if isinstance(org_detectada_ner, str): # Verifica se org_detectada_ner é uma string válida
+                if tid_corrigido == "Template_1B" and re.match(r"^[A-Z]{4}\d{1,2}$", org_detectada_ner.upper()):
+                    ent_nome_final = org_detectada_ner.upper()
+                    tipo_ent_dbg = f"TICKER (De NER '{org_detectada_ner}' diretamente, para T1B)"
+                elif tid_corrigido == "Template_1A" or tid_corrigido == "Template_2A":
+                    ent_nome_final = org_detectada_ner
+                    tipo_ent_dbg = f"LABEL_EMPRESA (De NER '{org_detectada_ner}' diretamente, para {tid_corrigido})"
+                else:
+                    tipo_ent_dbg = f"ENTIDADE_NAO_MAPEADA_E_NAO_TICKER_PARA_T1B (NER '{org_detectada_ner}' para {tid_corrigido})"
             else:
-                tipo_ent_dbg = f"ENTIDADE_NAO_MAPEADA (NER '{org_detectada_ner}' para {tid_corrigido})"
+                tipo_ent_dbg = "NER_ORG_INVALIDO_OU_AUSENTE"
+                logger.warning(f"NER ORG não detectou uma string válida para processamento: {org_detectada_ner}")
 
-    # Fallback final para T1B se ainda não tiver ticker e houver um na pergunta original
+
     if not ent_nome_final and tid_corrigido == "Template_1B":
         match_ticker_fallback_txt = re.search(r'\b([A-Z]{4}\d{1,2})\b', p_orig_txt.upper())
         if match_ticker_fallback_txt:
             ent_nome_final = match_ticker_fallback_txt.group(1)
-            tipo_ent_dbg = f"TICKER (Regex Fallback da pergunta original '{p_orig_txt}' para T1B)"
+            tipo_ent_dbg = f"TICKER (Regex Fallback da pergunta original para T1B)"
             logger.info(f"Usando ticker de fallback da pergunta original: '{ent_nome_final}'")
 
     if ent_nome_final: 
@@ -308,12 +305,10 @@ def mapear_placeholders(ent_ner, data_iso, kw_val_detectadas_norm, tid_corrigido
         if setor_mapeado_ontologia: 
             maps["#SETOR#"] = setor_mapeado_ontologia
             logger.info(f"  Placeholder #SETOR# => '{setor_mapeado_ontologia}'")
-        else:
-            logger.warning(f"Placeholder #SETOR# não pôde ser mapeado para template {tid_corrigido} (Pergunta: '{p_orig_txt}')")
+        # Não logar warning aqui se não encontrar, a validação no main() fará isso se for essencial
     
     logger.debug(f"Mapeamentos placeholders finais: {maps}")
     return maps, tipo_ent_dbg
-# ----- FIM DA FUNÇÃO mapear_placeholders AJUSTADA -----
 
 def main(pergunta_usuario_java):
     logger.info(f"* INÍCIO Main PLN: '{pergunta_usuario_java}' *")
@@ -326,8 +321,15 @@ def main(pergunta_usuario_java):
     template_id_com_espaco, similaridade_score = selecionar_template(pergunta_usuario_java, PERGUNTAS_INTERESSE_PATH)
     
     if not template_id_com_espaco: 
-        exit_with_json_error(f"Não foi possível selecionar template para: '{pergunta_usuario_java}'", 
-                             template_id_info=template_id_com_espaco)
+        # Retorna um JSON de erro para o web_app.py, que deve resultar em HTTP 400 ou similar
+        # Não usa exit_with_json_error para não dar sys.exit(1) que o web_app pode tratar como falha do script
+        logger.error(f"Não foi possível selecionar template para: '{pergunta_usuario_java}'")
+        print(json.dumps({
+            "erro": f"Não foi possível selecionar um template adequado para a pergunta.",
+            "template_nome": None,
+            "mapeamentos": {}
+        }, ensure_ascii=False))
+        sys.exit(0) # Saída 0 pois o PLN processou, mas não encontrou template
 
     template_id_corrigido = template_id_com_espaco.replace(" ", "_")
     logger.info(f"Template selecionado (original): '{template_id_com_espaco}', Corrigido para: '{template_id_corrigido}' (Similaridade aprox.: {similaridade_score:.3f})")
@@ -351,29 +353,31 @@ def main(pergunta_usuario_java):
     else: 
         logger.warning(f"Template ID '{template_id_corrigido}' não está na config de validação de placeholders. Validação não realizada.")
 
+    _debug_info_completo = {
+        "pergunta_original_recebida": pergunta_usuario_java,
+        "ner_spacy_detectadas": entidades_ner, "data_iso_detectada": data_iso,
+        "keywords_valor_detectadas_mapa": keywords_valor_norm,
+        "template_score_similaridade": round(similaridade_score, 3),
+        "tipo_entidade_principal_debug": tipo_ent_debug
+    }
+
     if faltando_essenciais_list:
         msg_erro_faltando = f"Informação essencial faltando para template '{template_id_corrigido}': {', '.join(faltando_essenciais_list)}."
         logger.error(msg_erro_faltando)
+        _debug_info_completo["faltando_essenciais"] = faltando_essenciais_list
         print(json.dumps({
-            "template_nome": template_id_corrigido, "mapeamentos": map_placeholders_final, "erro": msg_erro_faltando, 
-            "_debug_info": {"pergunta_original_recebida": pergunta_usuario_java, "faltando_essenciais": faltando_essenciais_list, 
-                            "tipo_entidade_principal_debug": tipo_ent_debug, "ner_spacy_detectadas": entidades_ner, 
-                            "data_iso_detectada": data_iso, "keywords_valor_detectadas_mapa": keywords_valor_norm,
-                            "template_score_similaridade": round(similaridade_score, 3)
-                           }
+            "template_nome": template_id_corrigido, 
+            "mapeamentos": map_placeholders_final, 
+            "erro": msg_erro_faltando, 
+            "_debug_info": _debug_info_completo
         }, ensure_ascii=False))
         sys.exit(0) 
     
     logger.info(f"Validação de placeholders OK para '{template_id_corrigido}'.")
     resposta_final_obj = {
-        "template_nome": template_id_corrigido, "mapeamentos": map_placeholders_final,
-        "_debug_info": {
-             "pergunta_original_recebida": pergunta_usuario_java,
-             "ner_spacy_detectadas": entidades_ner, "data_iso_detectada": data_iso,
-             "keywords_valor_detectadas_mapa": keywords_valor_norm,
-             "template_score_similaridade": round(similaridade_score, 3),
-             "tipo_entidade_principal_debug": tipo_ent_debug
-         }
+        "template_nome": template_id_corrigido, 
+        "mapeamentos": map_placeholders_final,
+        "_debug_info": _debug_info_completo
     }
     print(json.dumps(resposta_final_obj, ensure_ascii=False))
     logger.info(f"* FIM Main PLN: JSON enviado. Status 0. *")
@@ -383,7 +387,16 @@ if __name__ == "__main__":
     logger.info(f"--- INICIANDO SCRIPT PLN_PROCESSOR.PY (PID: {os.getpid()}), CWD: {os.getcwd()}, Args: {sys.argv} ---")
     if len(sys.argv) > 1:
         pergunta_completa_usuario = " ".join(sys.argv[1:])
-        try: main(pergunta_completa_usuario)
-        except SystemExit: raise
-        except Exception as e_main: exit_with_json_error(f"Erro crítico não tratado na execução principal do PLN: {type(e_main).__name__} - {str(e_main)}")
-    else: exit_with_json_error("Nenhuma pergunta fornecida ao script PLN.")
+        try: 
+            main(pergunta_completa_usuario)
+        except SystemExit as se: # Captura sys.exit() para permitir saída controlada
+            # Se exit_code for 1 (de exit_with_json_error), já logou e imprimiu JSON
+            # Se for 0 (de main), é uma saída normal ou erro lógico já formatado em JSON
+            if se.code != 0 : 
+                 logger.error(f"Script PLN encerrado com código: {se.code}")
+            # Não precisa fazer nada aqui, pois o JSON já foi impresso e o log já ocorreu.
+            pass # Simplesmente permite que o script termine com o código de saída.
+        except Exception as e_main: 
+            exit_with_json_error(f"Erro crítico não tratado na execução principal do PLN: {type(e_main).__name__} - {str(e_main)}")
+    else: 
+        exit_with_json_error("Nenhuma pergunta fornecida ao script PLN.")
