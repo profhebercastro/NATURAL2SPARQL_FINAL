@@ -4,14 +4,11 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT DISTINCT ?valor AS ?ticker ?empresaLabel 
 WHERE {
- 
   ?empresa b3:atuaEm ?setorUri .
-  
   ?setorUri rdfs:label ?setorLabelFromOntology .
-  FILTER(STR(?setorLabelFromOntology) = #SETOR#)  
+  FILTER(STR(?setorLabelFromOntology) = #SETOR#) 
   ?empresa rdfs:label ?empresaLabel .
-  
-   OPTIONAL { 
+  OPTIONAL { 
     ?empresa b3:temValorMobiliarioNegociado ?vmOpt .
     ?vmOpt b3:representadoPor ?codOpt .
     ?codOpt b3:ticker ?tickerViaVm .
@@ -20,11 +17,10 @@ WHERE {
     ?empresa b3:representadoPor ?codDirOpt . 
     ?codDirOpt b3:ticker ?tickerViaDireto .
   }
-    
   BIND(COALESCE(?tickerViaVm, ?tickerViaDireto) AS ?tickerBruto)
-  FILTER(BOUND(?tickerBruto))
-  FILTER REGEX(STR(?tickerBruto), "^[A-Z]{4}[0-9]{1,2}$", "i") 
-  
+  FILTER(BOUND(?tickerBruto)) 
+  FILTER REGEX(STR(?tickerBruto), "^[A-Z]{4}[0-9]{1,2}$", "i")
   BIND(?tickerBruto AS ?valor) 
+}
 ORDER BY ?empresaLabel ?valor
 LIMIT 100

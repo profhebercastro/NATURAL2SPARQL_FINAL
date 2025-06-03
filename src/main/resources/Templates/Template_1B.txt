@@ -1,17 +1,13 @@
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
-SELECT DISTINCT ?valor ?empresaLabelFound (STR(?empresaLabelFound) AS ?labelAsString)
+SELECT DISTINCT ?valor
 WHERE {
-  ?empresa rdfs:label ?empresaLabelFound .
-  #ENTIDADE_NOME# será "CSN MINERAÇÃO S.A."
-  FILTER(STRBEFORE(STR(?empresaLabelFound), "@") = #ENTIDADE_NOME# || STR(?empresaLabelFound) = #ENTIDADE_NOME# ) 
-
-  ?empresa b3:temValorMobiliarioNegociado ?valor_mobiliario . 
+  ?codigoInstancia b3:ticker #ENTIDADE_NOME# .
+  ?valor_mobiliario b3:representadoPor ?codigoInstancia .
   ?valor_mobiliario b3:negociado ?negociadoInst . 
   ?negociadoInst b3:negociadoDurante ?pregao .
-  ?pregao b3:ocorreEmData #DATA# .          
+  ?pregao b3:ocorreEmData #DATA# .
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
-} 
+}
 LIMIT 10

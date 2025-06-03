@@ -3,19 +3,19 @@ PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker
 WHERE {
- 
-  ?empresa rdfs:label #ENTIDADE_NOME# . 
+  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
   OPTIONAL {
     ?empresa b3:temValorMobiliarioNegociado ?vm_a .
     ?vm_a b3:representadoPor ?codigo_a .
     ?codigo_a b3:ticker ?ticker_a .
-    FILTER REGEX(STR(?ticker_a), "^[A-Z]{4}[0-9]{1,2}$", "i") 
+    FILTER REGEX(STR(?ticker_a), "^[A-Z]{4}[0-9]{1,2}$", "i")
   }
   OPTIONAL {
     ?empresa b3:representadoPor ?codigo_b .
     ?codigo_b b3:ticker ?ticker_b .
-    FILTER REGEX(STR(?ticker_b), "^[A-Z]{4}[0-9]{1,2}$", "i") 
+    FILTER REGEX(STR(?ticker_b), "^[A-Z]{4}[0-9]{1,2}$", "i")
   }
-
   BIND(COALESCE(?ticker_a, ?ticker_b) AS ?ticker)
-  FILTER(BOUND(?ticker)) 
+  FILTER(BOUND(?ticker))
+}
+LIMIT 20
