@@ -38,7 +38,7 @@ PERGUNTAS_INTERESSE_PATH = os.path.join(RESOURCES_DIR, "perguntas_de_interesse.t
 MAPA_EMPRESAS_JSON_PATH = os.path.join(RESOURCES_DIR, "empresa_nome_map.json")
 SETOR_MAP_JSON_PATH = os.path.join(RESOURCES_DIR, "setor_map.json")
 
-logger.info(f"Caminho sinônimos/intenções: {SINONIMOS_PATH}") # Renomeado para refletir duplo uso
+logger.info(f"Caminho sinônimos/intenções: {SINONIMOS_PATH}")
 logger.info(f"Caminho perguntas interesse: {PERGUNTAS_INTERESSE_PATH}")
 logger.info(f"Caminho mapa empresas: {MAPA_EMPRESAS_JSON_PATH}")
 logger.info(f"Caminho mapa setores: {SETOR_MAP_JSON_PATH}")
@@ -77,7 +77,6 @@ try:
 except Exception as e:
     exit_with_json_error(f"Configuração crítica: Erro ao carregar mapa de empresas JSON ({MAPA_EMPRESAS_JSON_PATH}): {type(e).__name__} - {str(e)}")
 
-# Este mapa agora é para #VALOR_DESEJADO# e para identificar intenção de "código"
 termos_mapeados_map = {} 
 try:
     if not os.path.exists(SINONIMOS_PATH):
@@ -107,9 +106,9 @@ try:
 except Exception as e_set:
     exit_with_json_error(f"Configuração crítica: Erro ao carregar mapa de setores JSON ({SETOR_MAP_JSON_PATH}): {type(e).__name__} - {str(e_set)}")
 
-def extrair_entidades_data_e_termos(doc_spacy): # Renomeado para clareza
+def extrair_entidades_data_e_termos(doc_spacy):
     entidades_ner_dict = {"ORG": [], "DATE": [], "LOC": [], "MISC": [], "PER": []}
-    termos_detectados_norm = [] # Para keywords de valor desejado ou intenção de código
+    termos_detectados_norm = [] 
     data_formatada_iso = None
     for ent in spacy.util.filter_spans(doc_spacy.ents):
         if ent.label_ in entidades_ner_dict and ent.text not in entidades_ner_dict[ent.label_]:
@@ -128,14 +127,12 @@ def extrair_entidades_data_e_termos(doc_spacy): # Renomeado para clareza
         except ValueError as ve: logger.warning(f"Não foi possível parsear data '{date_str}': {ve}")
     
     texto_norm_para_termos = normalizar_texto(doc_spacy.text)
-    # termos_mapeados_map contém tanto #VALOR_DESEJADO# quanto intenção de código
     for termo_norm_mapa in sorted(termos_mapeados_map.keys(), key=len, reverse=True): 
          if re.search(r'\b' + re.escape(termo_norm_mapa) + r'\b', texto_norm_para_termos):
-             termos_detectados_norm.append(termo_norm_mapa) # Adiciona a CHAVE normalizada
+             termos_detectados_norm.append(termo_norm_mapa)
     return entidades_ner_dict, data_formatada_iso, termos_detectados_norm
 
 def selecionar_template(pergunta_usuario_original, path_perguntas_interesse):
-    # ... (nenhuma mudança necessária aqui, ela retorna o template_id com espaço) ...
     pergunta_usuario_norm_para_match = normalizar_texto(pergunta_usuario_original)
     map_id_por_exemplo_original = {} 
     lista_exemplos_norm_para_difflib = []
@@ -182,7 +179,6 @@ def selecionar_template(pergunta_usuario_original, path_perguntas_interesse):
     return None, 0.0
 
 def extract_and_normalize_setor(pergunta_original_texto):
-    # ... (nenhuma mudança necessária aqui se setor_map.json estiver correto) ...
     logger.debug(f"--- Iniciando extract_and_normalize_setor para: '{pergunta_original_texto}' ---")
     setor_extraido_bruto_norm_para_chave = None 
     pergunta_norm = normalizar_texto(pergunta_original_texto) 
@@ -212,7 +208,9 @@ def extract_and_normalize_setor(pergunta_original_texto):
     candidatos_a_chave_norm.extend(sorted(setor_map_global.keys(), key=len, reverse=True))
     seen = set()
     candidatos_a_chave_norm_unicos = [x for x in candidatos_a_chave_norm if not (x in seen or seen.add(x))]
+    # logger.debug(f"Candidatos únicos a chave de setor (para busca por keyword): {candidatos_a_chave_norm_unicos[:10]}...")
     for key_norm_candidata in candidatos_a_chave_norm_unicos:
+        # logger.debug(f"Testando keyword candidata do mapa: '{key_norm_candidata}' contra pergunta_norm: '{pergunta_norm}'")
         if re.search(r'\b' + re.escape(key_norm_candidata) + r'\b', pergunta_norm):
             setor_final_para_ontologia = setor_map_global.get(key_norm_candidata) 
             if setor_final_para_ontologia:
@@ -221,9 +219,10 @@ def extract_and_normalize_setor(pergunta_original_texto):
             else: 
                 logger.warning(f"Keyword '{key_norm_candidata}' encontrada, mas não tem valor no setor_map_global.")
     logger.info(f"Nenhum termo de setor pôde ser extraído ou mapeado de: '{pergunta_original_texto}'")
+    # logger.debug(f"Conteúdo de setor_map_global (primeiras 5 chaves): {list(setor_map_global.keys())[:5]}")
     return None
 
-def mapear_placeholders(ent_ner, data_iso, termos_detectados_norm, tid_corrigido, p_orig_txt):
+def mapear_placeholders(ent_ner, data_iso, termos_detectados_norm_arg, tid_corrigido, p_orig_txt): # Renomeado argumento
     maps = {}
     tipo_ent_dbg = "N/A" 
     ent_nome_final = None
@@ -265,6 +264,7 @@ def mapear_placeholders(ent_ner, data_iso, termos_detectados_norm, tid_corrigido
                     else:
                         tipo_ent_dbg = f"ERRO_TIPO_T1B (Mapa deu '{valor_mapeado_empresa_str}', NER ORG '{org_detectada_ner}' não é ticker)"
                         logger.error(f"T1B: Não foi possível obter ticker para '{org_detectada_ner}'.")
+        
         else: 
             logger.info(f"Chave '{chave_map_empresa}' (de NER '{org_detectada_ner}') NÃO encontrada no mapa de empresas.")
             if isinstance(org_detectada_ner, str):
@@ -290,42 +290,45 @@ def mapear_placeholders(ent_ner, data_iso, termos_detectados_norm, tid_corrigido
     if ent_nome_final: 
         maps["#ENTIDADE_NOME#"] = ent_nome_final
         logger.info(f"  Placeholder #ENTIDADE_NOME# => '{ent_nome_final}' (Tipo Detecção: {tipo_ent_dbg})")
-    # Não logar warning aqui se não preenchido, a validação no main() cuidará disso.
 
-    # --- Lógica para #VALOR_DESEJADO# usando termos_detectados_norm e termos_mapeados_map ---
+    # --- Lógica CORRIGIDA para #VALOR_DESEJADO# ---
     valor_desejado_final = None
-    if termos_detectados_norm:
-        # Priorizar termos mais específicos para #VALOR_DESEJADO#
-        term_priority_order = ["preco medio", "media de preco", "medio", 
-                               "total negocios", "quantidade de acoes", "quantidade negociada", "numero de negocios", "negocios realizados",
-                               "volume financeiro", "volume negociado", "volume de acoes (financeiro)", "volume total", "volume"]
+    if termos_detectados_norm_arg: # Usando o nome do argumento da função
+        term_priority_order = [
+            "preco medio", "media de preco", "medio", 
+            "total negocios", "quantidade de acoes", "quantidade negociada", "numero de negocios", "negocios realizados",
+            "volume financeiro", "volume negociado", "volume de acoes (financeiro)", "volume total", "volume",
+            "preco minimo", "minima", "menor preco", "valor minimo",
+            "preco maximo", "maxima", "maior preco", "valor maximo",
+            "preco de fechamento", "fechamento", "ultimo preco", "preco final", "cotação", "cotacao",
+            "preco de abertura", "abertura",
+            "preco" # Termo genérico por último
+        ]
         
-        # Adiciona os outros termos detectados que não estão na lista de prioridade,
-        # mas que estão no termos_mapeados_map e não são 'type_codigo'
-        for term in kw_val_detectadas_norm: # kw_val_detectadas_norm é o nome antigo de termos_detectados_norm
-            if term not in term_priority_order and termos_mapeados_map.get(term) != 'type_codigo':
-                term_priority_order.append(term)
+        # Constrói a ordem de checagem: termos prioritários primeiro, depois os outros detectados
+        # que não são 'type_codigo' e não estavam na lista de prioridade
+        actual_detected_terms_for_value_check = []
+        for term_p in term_priority_order:
+            if term_p in termos_detectados_norm_arg: # Se o termo prioritário foi detectado
+                actual_detected_terms_for_value_check.append(term_p)
+        
+        for term_d in termos_detectados_norm_arg: # Adiciona outros termos detectados
+            if term_d not in actual_detected_terms_for_value_check and termos_mapeados_map.get(term_d) != 'type_codigo':
+                actual_detected_terms_for_value_check.append(term_d)
+        
+        logger.debug(f"Ordem de checagem para #VALOR_DESEJADO#: {actual_detected_terms_for_value_check}")
 
-        for term_key_norm in term_priority_order:
-            if term_key_norm in termos_detectados_norm: # Verifica se o termo priorizado foi detectado
-                mapped_value = termos_mapeados_map.get(term_key_norm)
-                if mapped_value and mapped_value != 'type_codigo':
-                    valor_desejado_final = mapped_value
-                    logger.info(f"  Placeholder #VALOR_DESEJADO# => '{valor_desejado_final}' (Termo prioritário: '{term_key_norm}')")
-                    break # Encontrou o mais prioritário
-        
-        if not valor_desejado_final and termos_detectados_norm[0] in termos_mapeados_map: # Fallback para o primeiro detectado
-            mapped_value = termos_mapeados_map.get(termos_detectados_norm[0])
-            if mapped_value and mapped_value != 'type_codigo':
-                 valor_desejado_final = mapped_value
-                 logger.info(f"  Placeholder #VALOR_DESEJADO# (fallback) => '{valor_desejado_final}' (Termo: '{termos_detectados_norm[0]}')")
+        for term_key_norm in actual_detected_terms_for_value_check:
+            mapped_value = termos_mapeados_map.get(term_key_norm)
+            if mapped_value and mapped_value != 'type_codigo': # Garante que é um valor desejado e não uma intenção de código
+                valor_desejado_final = mapped_value
+                logger.info(f"  Placeholder #VALOR_DESEJADO# => '{valor_desejado_final}' (Termo usado: '{term_key_norm}')")
+                break # Encontrou o mais prioritário/relevante
         
         if valor_desejado_final:
             maps["#VALOR_DESEJADO#"] = valor_desejado_final
         else:
-            # Se ainda não tem #VALOR_DESEJADO# mas o template é 1A ou 1B, pode ser um problema
-            # A validação no main() pegará se for essencial.
-            logger.warning(f"Nenhum termo mapeado para #VALOR_DESEJADO# (excluindo type_codigo). Termos detectados: {termos_detectados_norm}")
+            logger.warning(f"Nenhum termo mapeado para #VALOR_DESEJADO# (excluindo type_codigo). Termos detectados: {termos_detectados_norm_arg}")
 
     if tid_corrigido == "Template_3A":
         setor_mapeado_ontologia = extract_and_normalize_setor(p_orig_txt)
@@ -341,7 +344,7 @@ def main(pergunta_usuario_java):
     if not nlp: exit_with_json_error("PLN Interno: Modelo spaCy não carregado.")
 
     doc_spacy_obj = nlp(pergunta_usuario_java)
-    entidades_ner, data_iso, termos_detectados_norm = extrair_entidades_data_e_termos(doc_spacy_obj)
+    entidades_ner, data_iso, termos_detectados_norm = extrair_entidades_data_e_termos(doc_spacy_obj) # Nome da variável corrigido
     logger.debug(f"  Extraído: NER:{entidades_ner}, Data ISO:{data_iso}, Termos (norm):{termos_detectados_norm}")
 
     template_id_com_espaco, similaridade_score = selecionar_template(pergunta_usuario_java, PERGUNTAS_INTERESSE_PATH)
@@ -357,13 +360,8 @@ def main(pergunta_usuario_java):
     template_id_corrigido = template_id_com_espaco.replace(" ", "_")
     logger.info(f"Template selecionado (original): '{template_id_com_espaco}', Corrigido para: '{template_id_corrigido}' (Similaridade aprox.: {similaridade_score:.3f})")
     
-    # Verifica se a intenção é buscar código ANTES de mapear placeholders
-    # Se Template_2A é selecionado, a intenção de "código" já está implícita pelo template.
-    # A lógica de keywords_valor_detectadas_mapa para "type_codigo" pode ser removida se a seleção de T2A for robusta.
-    # Por enquanto, vamos assumir que T2A é selecionado corretamente e não precisamos de "type_codigo" no #VALOR_DESEJADO#.
-    
     map_placeholders_final, tipo_ent_debug = mapear_placeholders(
-        entidades_ner, data_iso, termos_detectados_norm, template_id_corrigido, pergunta_usuario_java
+        entidades_ner, data_iso, termos_detectados_norm, template_id_corrigido, pergunta_usuario_java # Nome da variável corrigido
     )
     
     placeholders_essenciais_por_template = {
@@ -384,7 +382,7 @@ def main(pergunta_usuario_java):
     _debug_info_completo = {
         "pergunta_original_recebida": pergunta_usuario_java,
         "ner_spacy_detectadas": entidades_ner, "data_iso_detectada": data_iso,
-        "keywords_valor_detectadas_mapa": termos_detectados_norm, # Renomeado para consistência
+        "keywords_valor_detectadas_mapa": termos_detectados_norm, 
         "template_score_similaridade": round(similaridade_score, 3),
         "tipo_entidade_principal_debug": tipo_ent_debug
     }
