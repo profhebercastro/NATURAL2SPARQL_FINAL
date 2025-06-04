@@ -1,18 +1,26 @@
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT DISTINCT ?individualTicker
+SELECT DISTINCT ?ticker
 WHERE {
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt . 
+  ?empresa rdfs:label #ENTIDADE_NOME# . # 
 
-  ?empresa b3:representadoPor ?codigoInst . 
-  ?codigoInst b3:ticker ?tickerConcatenado . 
+  
+  OPTIONAL {
+    ?empresa b3:temValorMobiliarioNegociado ?vm .
+    ?vm b3:representadoPor ?codigoVM .
+    ?codigoVM b3:ticker ?tickerVM .
+    FILTER(REGEX(STR(?tickerVM), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+  }
+  
 
-  # Para extrair os tickers individuais, precisamos de uma solução mais complexa
-  # Se você puder listar todos os tickers e depois filtrar, seria:
-  ?qualquerCodigo b3:ticker ?individualTicker .
-  FILTER(CONTAINS(STR(?tickerConcatenado), STR(?individualTicker)))
-  FILTER(REGEX(STR(?individualTicker), "^[A-Z]{4}[0-9]{1,2}$"))
+  OPTIONAL {
+    ?empresa b3:representadoPor ?codigoDireto .
+    ?codigoDireto b3:ticker ?tickerDireto .
+    FILTER(REGEX(STR(?tickerDireto), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+  }
+  
+  BIND(COALESCE(?tickerVM, ?tickerDireto) AS ?ticker)
+  FILTER(BOUND(?ticker))
 }
-LIMIT 10
+LIMIT 20
