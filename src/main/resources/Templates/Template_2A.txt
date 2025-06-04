@@ -1,26 +1,18 @@
+PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#> 
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+# PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#> 
 
-SELECT DISTINCT ?ticker
+SELECT DISTINCT ?individualTicker
 WHERE {
-  ?empresaPrincipal rdfs:label #ENTIDADE_NOME# .
-
-  OPTIONAL {
-    ?empresaPrincipal b3:temValorMobiliarioNegociado ?entidadeCMIN3_VM . 
-    ?entidadeCMIN3_VM b3:representadoPor ?codigoGGBR3_Inst .             
-    ?codigoGGBR3_Inst b3:ticker ?tickerGGBR3 .                           
-    FILTER(REGEX(STR(?tickerGGBR3), "^[A-Z]{4}[0-9]{1,2}$", "i")) 
-  }
+  ?mainEntity rdfs:label #ENTIDADE_NOME# . 
+  ?mainEntity stock:representadoPor ?codigoCombinadoInst . 
+  ?codigoCombinadoInst stock:ticker ?combinedTickerString .
   
-  OPTIONAL {
-    ?empresaPrincipal b3:representadoPor ?codigoDiretoGGBR4_Inst . 
-    ?codigoDiretoGGBR4_Inst b3:ticker ?tickerGGBR4 .              
-    FILTER(REGEX(STR(?tickerGGBR4), "^[A-Z]{4}[0-9]{1,2}$", "i"))
-  }
-
-  BIND(COALESCE(?tickerGGBR3, ?tickerGGBR4) AS ?ticker)
-  FILTER(BOUND(?ticker)) 
+  ?anyCode rdf:type <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#Codigo_Negociacao> . 
+  ?anyCode stock:ticker ?individualTicker . 
+  
+  FILTER (BOUND(?combinedTickerString) && CONTAINS(?combinedTickerString, ?individualTicker))
+  FILTER REGEX(?individualTicker, "^[A-Z]{4}[0-9]{1,2}$")
 }
-ORDER BY ?ticker
 LIMIT 20
