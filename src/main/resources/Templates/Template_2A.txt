@@ -3,19 +3,30 @@ PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker
 WHERE {
-  ?empresa rdfs:label "GERDAU S.A."@pt . # Use o label exato com @pt
+  ?empresa rdfs:label #ENTIDADE_NOME#@pt . 
+
   OPTIONAL {
-    ?empresa b3:temValorMobiliarioNegociado ?vm .
-    ?vm b3:representadoPor ?codigoVM_Inst .
-    ?codigoVM_Inst b3:ticker ?tickerVM .
-    FILTER(REGEX(STR(?tickerVM), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+    ?empresa b3:temValorMobiliarioNegociado ?vmIntermediario . 
+    ?vmIntermediario b3:representadoPor ?codigoInst .
+    ?codigoInst b3:ticker ?tickerPath1 .
+    FILTER(REGEX(STR(?tickerPath1), "^[A-Z]{4}[0-9]{1,2}$", "i"))
   }
+
   OPTIONAL {
-    ?empresa b3:representadoPor ?codigoDireto_Inst .
-    ?codigoDireto_Inst b3:ticker ?tickerDireto .
-    FILTER(REGEX(STR(?tickerDireto), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+    ?empresa b3:temValorMobiliarioNegociado ?codigoInstVM . 
+    ?codigoInstVM b3:ticker ?tickerPath2 .
+    FILTER(REGEX(STR(?tickerPath2), "^[A-Z]{4}[0-9]{1,2}$", "i"))
   }
-  BIND(COALESCE(?tickerVM, ?tickerDireto) AS ?ticker)
+
+
+  OPTIONAL {
+    ?empresa b3:representadoPor ?codigoInstDireto .
+    ?codigoInstDireto b3:ticker ?tickerPath3 .
+    FILTER(REGEX(STR(?tickerPath3), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+  }
+  
+  BIND(COALESCE(?tickerPath1, ?tickerPath2, ?tickerPath3) AS ?ticker)
   FILTER(BOUND(?ticker))
 }
-ORDER BY ?ticker LIMIT 20
+ORDER BY ?ticker
+LIMIT 20
