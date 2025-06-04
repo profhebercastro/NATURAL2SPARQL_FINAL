@@ -1,37 +1,14 @@
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT DISTINCT ?ticker
+SELECT DISTINCT ?tickerLiteral AS ?ticker 
 WHERE {
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt . # Assumindo @pt nos labels
-
-  # Caminho 1: Empresa -> temVM -> EntidadeIntermediaria (que é o VM) -> representadoPor -> Codigo -> ticker
-  # (Este caminho funcionou para Gerdau)
-  OPTIONAL {
-    ?empresa b3:temValorMobiliarioNegociado ?vmIntermediario . 
-    ?vmIntermediario b3:representadoPor ?codigoInst1 .
-    ?codigoInst1 b3:ticker ?tickerPath1 .
-    FILTER(REGEX(STR(?tickerPath1), "^[A-Z]{4}[0-9]{1,2}$", "i"))
-  }
-
-  # Caminho 2: Empresa -> temVM (onde o VM já é a instância do código) -> ticker
-  # (Para casos onde o objeto de temValorMobiliarioNegociado já tem a propriedade ticker)
-  OPTIONAL {
-    ?empresa b3:temValorMobiliarioNegociado ?codigoInstVM . 
-    ?codigoInstVM b3:ticker ?tickerPath2 .
-    FILTER(REGEX(STR(?tickerPath2), "^[A-Z]{4}[0-9]{1,2}$", "i"))
-  }
-
-  # Caminho 3: Empresa -> representadoPor -> Codigo -> ticker
-  # (Para casos de ligação mais direta da empresa à instância do código)
-  OPTIONAL {
-    ?empresa b3:representadoPor ?codigoInstDireto .
-    ?codigoInstDireto b3:ticker ?tickerPath3 .
-    FILTER(REGEX(STR(?tickerPath3), "^[A-Z]{4}[0-9]{1,2}$", "i"))
-  }
-  
-  BIND(COALESCE(?tickerPath1, ?tickerPath2, ?tickerPath3) AS ?ticker)
-  FILTER(BOUND(?ticker))
+  ?empresaPrincipal rdfs:label #ENTIDADE_NOME#@pt .  
+  ?empresaPrincipal b3:temValorMobiliarioNegociado ?tickerVM_Entidade . 
+  ?tickerVM_Entidade b3:representadoPor ?codigoInst .                   
+  ?codigoInst b3:ticker ?tickerLiteral .                                
+  FILTER(REGEX(STR(?tickerLiteral), "^[A-Z]{4}[0-9]{1,2}$", "i"))
 }
-ORDER BY ?ticker
+ORDER BY ?tickerLiteral
 LIMIT 20
