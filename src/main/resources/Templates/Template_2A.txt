@@ -1,24 +1,26 @@
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT DISTINCT ?ticker
 WHERE {
-
-  ?empresa rdfs:label #ENTIDADE_NOME# . 
+  ?empresaPrincipal rdfs:label #ENTIDADE_NOME# .
 
   OPTIONAL {
-    ?empresa b3:temValorMobiliarioNegociado ?vm .
-    ?vm b3:representadoPor ?codigoVM_Inst .
-    ?codigoVM_Inst b3:ticker ?tickerVM .    
-    FILTER(REGEX(STR(?tickerVM), "^[A-Z]{4}[0-9]{1,2}$", "i")) 
-  
-    ?empresa b3:representadoPor ?codigoDireto_Inst . 
-    ?codigoDireto_Inst b3:ticker ?tickerDireto .    
-    FILTER(REGEX(STR(?tickerDireto), "^[A-Z]{4}[0-9]{1,2}$", "i")) 
+    ?empresaPrincipal b3:temValorMobiliarioNegociado ?entidadeCMIN3_VM . 
+    ?entidadeCMIN3_VM b3:representadoPor ?codigoGGBR3_Inst .             
+    ?codigoGGBR3_Inst b3:ticker ?tickerGGBR3 .                           
+    FILTER(REGEX(STR(?tickerGGBR3), "^[A-Z]{4}[0-9]{1,2}$", "i")) 
   }
   
-  BIND(COALESCE(?tickerVM, ?tickerDireto) AS ?ticker)
+  OPTIONAL {
+    ?empresaPrincipal b3:representadoPor ?codigoDiretoGGBR4_Inst . 
+    ?codigoDiretoGGBR4_Inst b3:ticker ?tickerGGBR4 .              
+    FILTER(REGEX(STR(?tickerGGBR4), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+  }
+
+  BIND(COALESCE(?tickerGGBR3, ?tickerGGBR4) AS ?ticker)
   FILTER(BOUND(?ticker)) 
 }
-ORDER BY ?ticker 
+ORDER BY ?ticker
 LIMIT 20
