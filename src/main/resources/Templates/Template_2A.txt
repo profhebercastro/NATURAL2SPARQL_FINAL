@@ -1,19 +1,21 @@
-PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#> 
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
-SELECT DISTINCT ?individualTicker
+SELECT DISTINCT ?ticker
 WHERE {
-  ?mainEntity rdfs:label #ENTIDADE_NOME# . 
-  ?mainEntity stock:representadoPor ?codigoCombinadoInst . 
-  ?codigoCombinadoInst stock:ticker ?combinedTickerString .
-  
-  
-  ?anyCode rdf:type stock:Codigo_Negociacao . 
-  ?anyCode stock:ticker ?individualTicker . 
-  
-  FILTER (BOUND(?combinedTickerString) && CONTAINS(STR(?combinedTickerString), STR(?individualTicker)))
-  FILTER REGEX(STR(?individualTicker), "^[A-Z]{4}[0-9]{1,2}$", "i")
+  ?empresa rdfs:label "GERDAU S.A."@pt . # Use o label exato com @pt
+  OPTIONAL {
+    ?empresa b3:temValorMobiliarioNegociado ?vm .
+    ?vm b3:representadoPor ?codigoVM_Inst .
+    ?codigoVM_Inst b3:ticker ?tickerVM .
+    FILTER(REGEX(STR(?tickerVM), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+  }
+  OPTIONAL {
+    ?empresa b3:representadoPor ?codigoDireto_Inst .
+    ?codigoDireto_Inst b3:ticker ?tickerDireto .
+    FILTER(REGEX(STR(?tickerDireto), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+  }
+  BIND(COALESCE(?tickerVM, ?tickerDireto) AS ?ticker)
+  FILTER(BOUND(?ticker))
 }
-ORDER BY ?individualTicker # Opcional
-LIMIT 20
+ORDER BY ?ticker LIMIT 20
