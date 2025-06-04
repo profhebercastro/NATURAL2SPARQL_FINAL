@@ -56,4 +56,4 @@ codigo da acao;type_codigo
 qual o codigo;type_codigo
 ticker da acao;type_codigo
 ticker;type_codigo
-simbolo da acao;type_codigo
+simbolo da acao;type_codigo0

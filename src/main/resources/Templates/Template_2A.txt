@@ -3,24 +3,22 @@ PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker
 WHERE {
-  ?empresa rdfs:label #ENTIDADE_NOME# . # 
 
-  
+  ?empresa rdfs:label #ENTIDADE_NOME# . 
+
   OPTIONAL {
     ?empresa b3:temValorMobiliarioNegociado ?vm .
-    ?vm b3:representadoPor ?codigoVM .
-    ?codigoVM b3:ticker ?tickerVM .
-    FILTER(REGEX(STR(?tickerVM), "^[A-Z]{4}[0-9]{1,2}$", "i"))
-  }
+    ?vm b3:representadoPor ?codigoVM_Inst .
+    ?codigoVM_Inst b3:ticker ?tickerVM .    
+    FILTER(REGEX(STR(?tickerVM), "^[A-Z]{4}[0-9]{1,2}$", "i")) 
   
-
-  OPTIONAL {
-    ?empresa b3:representadoPor ?codigoDireto .
-    ?codigoDireto b3:ticker ?tickerDireto .
-    FILTER(REGEX(STR(?tickerDireto), "^[A-Z]{4}[0-9]{1,2}$", "i"))
+    ?empresa b3:representadoPor ?codigoDireto_Inst . 
+    ?codigoDireto_Inst b3:ticker ?tickerDireto .    
+    FILTER(REGEX(STR(?tickerDireto), "^[A-Z]{4}[0-9]{1,2}$", "i")) 
   }
   
   BIND(COALESCE(?tickerVM, ?tickerDireto) AS ?ticker)
-  FILTER(BOUND(?ticker))
+  FILTER(BOUND(?ticker)) 
 }
+ORDER BY ?ticker 
 LIMIT 20
