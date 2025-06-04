@@ -1,32 +1,24 @@
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT DISTINCT ?ticker
+SELECT DISTINCT ?tickerLiteral
 WHERE {
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt . 
+  # 1. Encontra a entidade principal da empresa pelo seu label
+  ?empresaPrincipal rdfs:label #ENTIDADE_NOME#@pt . # Assumindo que os labels têm @pt
 
-  OPTIONAL {
-    ?empresa b3:temValorMobiliarioNegociado ?vmIntermediario . 
-    ?vmIntermediario b3:representadoPor ?codigoInst .
-    ?codigoInst b3:ticker ?tickerPath1 .
-    FILTER(REGEX(STR(?tickerPath1), "^[A-Z]{4}[0-9]{1,2}$", "i"))
-  }
+  # 2. Essa empresa principal tem um valor mobiliário.
+  #    Na sua modelagem, o objeto desta propriedade é o próprio URI do ticker/VM (ex: b3:GGBR3)
+  ?empresaPrincipal b3:temValorMobiliarioNegociado ?tickerVM_Entidade . 
 
-  OPTIONAL {
-    ?empresa b3:temValorMobiliarioNegociado ?codigoInstVM . 
-    ?codigoInstVM b3:ticker ?tickerPath2 .
-    FILTER(REGEX(STR(?tickerPath2), "^[A-Z]{4}[0-9]{1,2}$", "i"))
-  }
+  # 3. Essa entidade ticker/VM (ex: b3:GGBR3) é representada por um código.
+  ?tickerVM_Entidade b3:representadoPor ?codigoInst .
 
+  # 4. Esse código tem o literal do ticker.
+  ?codigoInst b3:ticker ?tickerLiteral .
 
-  OPTIONAL {
-    ?empresa b3:representadoPor ?codigoInstDireto .
-    ?codigoInstDireto b3:ticker ?tickerPath3 .
-    FILTER(REGEX(STR(?tickerPath3), "^[A-Z]{4}[0-9]{1,2}$", "i"))
-  }
-  
-  BIND(COALESCE(?tickerPath1, ?tickerPath2, ?tickerPath3) AS ?ticker)
-  FILTER(BOUND(?ticker))
+  # 5. Valida o formato do ticker.
+  FILTER(REGEX(STR(?tickerLiteral), "^[A-Z]{4}[0-9]{1,2}$", "i"))
 }
-ORDER BY ?ticker
+ORDER BY ?tickerLiteral
 LIMIT 20
