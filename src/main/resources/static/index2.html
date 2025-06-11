@@ -113,7 +113,7 @@
             <span>Natural2SPARQL</span>
         </div>
         <div class="header-actions">
-            <!-- Campo de Endpoint Remoto -->
+            <!-- Campo de Endpoint Remoto (Funcionalidade mantida, mas não usada pelo backend atual) -->
             <input type="text" id="sparqlEndpointInput" class="form-control" placeholder="Endpoint remoto (opcional)" style="width: 250px; background-color: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.4);">
             
             <!-- Botões de Download -->
@@ -173,7 +173,6 @@
             const downloadQueryBtn = document.getElementById('downloadQueryBtn');
             const downloadResultBtn = document.getElementById('downloadResultBtn');
             const userQuestionInput = document.getElementById('userQuestion');
-            const sparqlEndpointInput = document.getElementById('sparqlEndpointInput');
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
             const resultOutput = document.getElementById('resultOutput');
             const loadingSpinner = document.getElementById('loadingSpinner');
@@ -192,33 +191,47 @@
             }
 
             async function handleQueryGeneration() {
-                const question = userQuestionInput.value.trim();
-                const endpoint = sparqlEndpointInput.value.trim();
+                const pergunta = userQuestionInput.value.trim();
 
-                if (!question) {
+                if (!pergunta) {
                     alert("Por favor, digite uma pergunta.");
                     return;
                 }
 
                 toggleLoading(true);
+                resultOutput.style.color = '#495057'; // Reseta a cor do texto de erro
 
                 try {
-                    const response = await fetch('/process', {
+                    // 🔗 Endpoint que está sendo chamado no backend (AJUSTADO)
+                    const response = await fetch('/processar_pergunta', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ question, endpoint })
+                        // Corpo da requisição ajustado para o formato esperado pelo backend
+                        body: JSON.stringify({ pergunta: pergunta })
                     });
+                    
+                    const data = await response.json();
 
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`Erro do servidor (${response.status}): ${errorText}`);
+                    if (!response.ok || data.erro) {
+                        // Trata erros de forma explícita, mostrando a mensagem do backend
+                        const errorMessage = data.erro || `Erro do servidor (${response.status})`;
+                        throw new Error(errorMessage);
+                    }
+                    
+                    // Preenche os campos de saída com os dados recebidos
+                    sparqlQueryOutput.value = data.sparqlQuery || "Nenhuma consulta SPARQL foi gerada.";
+                    
+                    // Tenta formatar a resposta se for um JSON, senão exibe como texto puro
+                    try {
+                         const parsedAnswer = JSON.parse(data.resposta);
+                         resultOutput.value = JSON.stringify(parsedAnswer, null, 2);
+                    } catch (e) {
+                         resultOutput.value = data.resposta || "Nenhum resultado foi retornado.";
                     }
 
-                    const data = await response.json();
-                    sparqlQueryOutput.value = data.sparql_query || "Nenhuma consulta SPARQL foi gerada.";
-                    resultOutput.value = data.result || "Nenhum resultado foi retornado.";
                 } catch (error) {
                     console.error("Erro na requisição:", error);
+                    resultOutput.style.color = '#dc3545'; // Cor vermelha para erros
                     resultOutput.value = `Ocorreu um erro:\n${error.message}`;
                 } finally {
                     toggleLoading(false);
@@ -231,7 +244,6 @@
                 loadingSpinner.style.display = isLoading ? 'inline-block' : 'none';
             }
             
-            // Função para fazer o download de texto como um arquivo
             function downloadText(filename, text) {
                 if (!text || text.startsWith('A consulta SPARQL') || text.startsWith('O resultado aparece')) {
                     alert('Não há conteúdo para baixar.');
