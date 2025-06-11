@@ -9,24 +9,49 @@ from rdflib import Graph, Namespace
 from rdflib.plugins.sparql import prepareQuery
 
 # --- CONFIGURAÇÃO INICIAL ---
-# Configuração do logging
+# Configuração do logging para que a saída apareça nos logs do Render
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Inicialização do Flask. A pasta 'static' será usada para servir arquivos de interface.
+# Inicialização do Flask. A pasta 'static' será usada por padrão.
 app = Flask(__name__)
 
-# --- CONFIGURAÇÃO DE CAMINHOS RELATIVOS ---
 # Define o diretório base como o local onde o script web_app.py está.
+# Isso torna a aplicação portável e funciona em qualquer ambiente (local ou Render).
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# --- CÓDIGO DE DEBUG - ESTE É O BLOCO QUE ADICIONAMOS ---
+logging.info("--- INICIANDO VERIFICAÇÃO DE ARQUIVOS (DEBUG) ---")
+try:
+    # Lista tudo que está na pasta raiz da aplicação (em Render, será /app)
+    files_in_base_dir = os.listdir(BASE_DIR)
+    logging.info(f"Conteúdo encontrado no diretório base ('{BASE_DIR}'): {files_in_base_dir}")
+    
+    # Verifica especificamente se os arquivos e pastas cruciais existem
+    pln_exists = os.path.exists(os.path.join(BASE_DIR, "pln_processor.py"))
+    logging.info(f"VERIFICAÇÃO: O arquivo 'pln_processor.py' existe? -> {pln_exists}")
+
+    templates_dir_exists = os.path.exists(os.path.join(BASE_DIR, "templates_sparql"))
+    logging.info(f"VERIFICAÇÃO: A pasta 'templates_sparql' existe? -> {templates_dir_exists}")
+    
+    if templates_dir_exists:
+        files_in_templates_dir = os.listdir(os.path.join(BASE_DIR, "templates_sparql"))
+        logging.info(f"Conteúdo encontrado em 'templates_sparql': {files_in_templates_dir}")
+
+except Exception as e:
+    logging.error(f"Erro durante a verificação de arquivos de debug: {e}")
+logging.info("--- FIM DA VERIFICAÇÃO DE ARQUIVOS (DEBUG) ---")
+# --- FIM DO BLOCO DE DEBUG ---
+
+
+# --- CONFIGURAÇÃO DE CAMINHOS RELATIVOS ---
 PLN_PROCESSOR_SCRIPT_PATH = os.path.join(BASE_DIR, "pln_processor.py")
 SPARQL_TEMPLATES_DIR = os.path.join(BASE_DIR, "templates_sparql")
 ONTOLOGY_FILE_PATH = os.path.join(BASE_DIR, "ontologiaB3_com_inferencia.ttl")
 
-logging.info(f"Diretório base da aplicação: {BASE_DIR}")
 logging.info(f"Caminho do script PLN: {PLN_PROCESSOR_SCRIPT_PATH}")
 logging.info(f"Caminho dos templates SPARQL: {SPARQL_TEMPLATES_DIR}")
 logging.info(f"Caminho da ontologia: {ONTOLOGY_FILE_PATH}")
+
 
 # --- CARREGAMENTO DA ONTOLOGIA ---
 graph = Graph()
@@ -41,7 +66,7 @@ try:
         logging.warning("AVISO: A ontologia foi carregada, mas está vazia (0 triplas). Verifique o arquivo.")
 except Exception as e:
     logging.critical(f"Erro CRÍTICO ao carregar a ontologia: {e}", exc_info=True)
-    # Em um ambiente de produção, você poderia optar por encerrar a aplicação se a ontologia é essencial.
+
 
 # --- DEFINIÇÃO DAS ROTAS ---
 
@@ -53,6 +78,7 @@ def serve_index():
 
 @app.route('/processar_pergunta', methods=['POST'])
 def processar_pergunta_completa():
+    logging.info("Endpoint '/processar_pergunta' foi chamado.") # Log inicial da função
     data = request.get_json()
     if not data or 'pergunta' not in data:
         logging.warning("Requisição recebida sem 'pergunta' no corpo JSON.")
@@ -72,6 +98,9 @@ def processar_pergunta_completa():
         pln_output_json = json.loads(pln_output_str)
         logging.info(f"PLN retornou: {pln_output_json}")
 
+    except FileNotFoundError:
+        logging.error(f"Erro FATAL: O script PLN não foi encontrado no caminho '{PLN_PROCESSOR_SCRIPT_PATH}'. Verifique se o arquivo foi copiado para o container.")
+        return jsonify({"erro": "Erro de configuração interna do servidor (PLN não encontrado)."}), 500
     except subprocess.CalledProcessError as e:
         logging.error(f"Erro ao executar o script PLN (código {e.returncode}): {e.stderr.strip()}")
         return jsonify({"erro": f"Erro no processador de linguagem: {e.stderr.strip()}"}), 500
@@ -96,12 +125,11 @@ def processar_pergunta_completa():
 
         sparql_query_final = sparql_query_template
         for placeholder, value in mapeamentos.items():
-            # Simplificação da lógica de substituição. Ajuste se precisar de formatação específica.
-            formatted_value = f'"{str(value)}"' # Formatação padrão como string
+            formatted_value = f'"{str(value)}"'
             if placeholder == "#DATA#":
                  formatted_value = f'"{str(value)}"^^xsd:date'
             elif placeholder == "#VALOR_DESEJADO#":
-                 formatted_value = str(value) # Não colocar aspas
+                 formatted_value = str(value)
             
             sparql_query_final = sparql_query_final.replace(placeholder, formatted_value)
         
@@ -137,7 +165,6 @@ def processar_pergunta_completa():
         "sparqlQuery": sparql_query_final,
         "resposta": resposta_final
     })
-
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
