@@ -9,61 +9,46 @@ from rdflib import Graph, Namespace
 from rdflib.plugins.sparql import prepareQuery
 
 # --- CONFIGURAÇÃO INICIAL ---
-# Configuração do logging para que a saída apareça nos logs do Render
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Inicialização do Flask. A pasta 'static' será usada por padrão.
-app = Flask(__name__)
-
-# Define o diretório base como o local onde o script web_app.py está.
-# Isso torna a aplicação portável e funciona em qualquer ambiente (local ou Render).
+# Obtém o diretório raiz da aplicação (onde web_app.py está)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# --- CÓDIGO DE DEBUG - ESTE É O BLOCO QUE ADICIONAMOS ---
-logging.info("--- INICIANDO VERIFICAÇÃO DE ARQUIVOS (DEBUG) ---")
-try:
-    # Lista tudo que está na pasta raiz da aplicação (em Render, será /app)
-    files_in_base_dir = os.listdir(BASE_DIR)
-    logging.info(f"Conteúdo encontrado no diretório base ('{BASE_DIR}'): {files_in_base_dir}")
-    
-    # Verifica especificamente se os arquivos e pastas cruciais existem
-    pln_exists = os.path.exists(os.path.join(BASE_DIR, "pln_processor.py"))
-    logging.info(f"VERIFICAÇÃO: O arquivo 'pln_processor.py' existe? -> {pln_exists}")
+# --- DEFINIÇÃO DOS CAMINHOS CORRETOS (A PARTE MAIS IMPORTANTE) ---
+# Define o caminho para a pasta 'resources'
+RESOURCES_DIR = os.path.join(BASE_DIR, "src", "main", "resources")
 
-    templates_dir_exists = os.path.exists(os.path.join(BASE_DIR, "templates_sparql"))
-    logging.info(f"VERIFICAÇÃO: A pasta 'templates_sparql' existe? -> {templates_dir_exists}")
-    
-    if templates_dir_exists:
-        files_in_templates_dir = os.listdir(os.path.join(BASE_DIR, "templates_sparql"))
-        logging.info(f"Conteúdo encontrado em 'templates_sparql': {files_in_templates_dir}")
+# Define o caminho para a pasta 'static' DENTRO da pasta 'resources'
+STATIC_DIR = os.path.join(RESOURCES_DIR, "static")
 
-except Exception as e:
-    logging.error(f"Erro durante a verificação de arquivos de debug: {e}")
-logging.info("--- FIM DA VERIFICAÇÃO DE ARQUIVOS (DEBUG) ---")
-# --- FIM DO BLOCO DE DEBUG ---
+# Inicializa o Flask, informando a ele ONDE encontrar os arquivos estáticos (CSS, JS, index.html)
+app = Flask(__name__, static_folder=STATIC_DIR)
 
+# Caminhos para os outros recursos
+PLN_PROCESSOR_SCRIPT_PATH = os.path.join(RESOURCES_DIR, "pln_processor.py")
+# Assumindo que a pasta de templates está dentro de resources. Ajuste se o nome for diferente.
+SPARQL_TEMPLATES_DIR = os.path.join(RESOURCES_DIR, "templates_sparql") 
+ONTOLOGY_FILE_PATH = os.path.join(BASE_DIR, "ontologiaB3_com_inferencia.ttl") # Este já está na raiz
 
-# --- CONFIGURAÇÃO DE CAMINHOS RELATIVOS ---
-PLN_PROCESSOR_SCRIPT_PATH = os.path.join(BASE_DIR, "pln_processor.py")
-SPARQL_TEMPLATES_DIR = os.path.join(BASE_DIR, "templates_sparql")
-ONTOLOGY_FILE_PATH = os.path.join(BASE_DIR, "ontologiaB3_com_inferencia.ttl")
-
-logging.info(f"Caminho do script PLN: {PLN_PROCESSOR_SCRIPT_PATH}")
-logging.info(f"Caminho dos templates SPARQL: {SPARQL_TEMPLATES_DIR}")
-logging.info(f"Caminho da ontologia: {ONTOLOGY_FILE_PATH}")
+# --- CÓDIGO DE DEBUG para verificar se os caminhos estão corretos ---
+logging.info("--- INICIANDO VERIFICAÇÃO DE ARQUIVOS (ESTRUTURA ATUAL) ---")
+logging.info(f"VERIFICAÇÃO: O arquivo 'pln_processor.py' existe em '{PLN_PROCESSOR_SCRIPT_PATH}'? -> {os.path.exists(PLN_PROCESSOR_SCRIPT_PATH)}")
+logging.info(f"VERIFICAÇÃO: A pasta de templates existe em '{SPARQL_TEMPLATES_DIR}'? -> {os.path.exists(SPARQL_TEMPLATES_DIR)}")
+logging.info(f"VERIFICAÇÃO: A pasta estática existe em '{app.static_folder}'? -> {os.path.exists(app.static_folder)}")
+if os.path.exists(app.static_folder):
+    logging.info(f"Conteúdo da pasta estática: {os.listdir(app.static_folder)}")
+logging.info("--- FIM DA VERIFICAÇÃO DE ARQUIVOS ---")
 
 
 # --- CARREGAMENTO DA ONTOLOGIA ---
 graph = Graph()
 try:
-    logging.info(f"Carregando ontologia de: {ONTOLOGY_FILE_PATH}")
     if not os.path.exists(ONTOLOGY_FILE_PATH):
         raise FileNotFoundError(f"Arquivo de ontologia não encontrado em {ONTOLOGY_FILE_PATH}")
     
+    logging.info(f"Carregando ontologia de: {ONTOLOGY_FILE_PATH}")
     graph.parse(ONTOLOGY_FILE_PATH, format="turtle")
     logging.info(f"Ontologia carregada com {len(graph)} triplas.")
-    if len(graph) == 0:
-        logging.warning("AVISO: A ontologia foi carregada, mas está vazia (0 triplas). Verifique o arquivo.")
 except Exception as e:
     logging.critical(f"Erro CRÍTICO ao carregar a ontologia: {e}", exc_info=True)
 
@@ -72,46 +57,43 @@ except Exception as e:
 
 @app.route('/')
 def serve_index():
-    """Serve a página principal (index2.html) da pasta 'static'."""
-    logging.info("Tentando servir a página principal 'index2.html'.")
-    return send_from_directory('static', 'index2.html')
+    """Serve a página principal (index2.html) da pasta 'static' que foi configurada."""
+    logging.info(f"Tentando servir 'index2.html' da pasta estática configurada: {app.static_folder}")
+    return send_from_directory(app.static_folder, 'index2.html')
 
 @app.route('/processar_pergunta', methods=['POST'])
 def processar_pergunta_completa():
-    logging.info("Endpoint '/processar_pergunta' foi chamado.") # Log inicial da função
+    logging.info("Endpoint '/processar_pergunta' foi chamado.")
     data = request.get_json()
-    if not data or 'pergunta' not in data:
-        logging.warning("Requisição recebida sem 'pergunta' no corpo JSON.")
+    pergunta_usuario = data.get('pergunta')
+    if not pergunta_usuario:
         return jsonify({"erro": "Pergunta não fornecida"}), 400
 
-    pergunta_usuario = data['pergunta']
     logging.info(f"Recebida pergunta: '{pergunta_usuario}'")
 
     # 1. Chamar o script de PLN
     try:
-        logging.info(f"Executando script PLN: {PLN_PROCESSOR_SCRIPT_PATH}")
+        # IMPORTANTE: O diretório de trabalho (cwd) do subprocesso deve ser a pasta 'resources'
+        # para que o pln_processor.py encontre quaisquer outros arquivos que ele precise.
+        logging.info(f"Executando script PLN '{PLN_PROCESSOR_SCRIPT_PATH}' com CWD='{RESOURCES_DIR}'")
         process_pln = subprocess.run(
             ['python', PLN_PROCESSOR_SCRIPT_PATH, pergunta_usuario],
-            capture_output=True, text=True, check=True, cwd=BASE_DIR, env=dict(os.environ, PYTHONIOENCODING='utf-8')
+            capture_output=True, text=True, check=True, cwd=RESOURCES_DIR, env=dict(os.environ, PYTHONIOENCODING='utf-8')
         )
-        pln_output_str = process_pln.stdout.strip()
-        pln_output_json = json.loads(pln_output_str)
+        pln_output_json = json.loads(process_pln.stdout.strip())
         logging.info(f"PLN retornou: {pln_output_json}")
 
     except FileNotFoundError:
-        logging.error(f"Erro FATAL: O script PLN não foi encontrado no caminho '{PLN_PROCESSOR_SCRIPT_PATH}'. Verifique se o arquivo foi copiado para o container.")
-        return jsonify({"erro": "Erro de configuração interna do servidor (PLN não encontrado)."}), 500
+        logging.error(f"Erro FATAL: O script PLN não foi encontrado em '{PLN_PROCESSOR_SCRIPT_PATH}'. Verifique se o caminho e a estrutura de pastas estão corretos no repositório.")
+        return jsonify({"erro": "Erro de configuração interna: Script de processamento não encontrado."}), 500
     except subprocess.CalledProcessError as e:
         logging.error(f"Erro ao executar o script PLN (código {e.returncode}): {e.stderr.strip()}")
         return jsonify({"erro": f"Erro no processador de linguagem: {e.stderr.strip()}"}), 500
-    except json.JSONDecodeError:
-        logging.error(f"Erro ao decodificar a saída JSON do PLN. Saída recebida: {process_pln.stdout.strip()}")
-        return jsonify({"erro": "Formato de resposta do processador de linguagem inválido."}), 500
     except Exception as e:
         logging.error(f"Erro inesperado ao chamar o PLN: {e}", exc_info=True)
         return jsonify({"erro": "Erro interno no servidor ao processar a pergunta."}), 500
 
-    # 2. Montar a query SPARQL a partir do template
+    # O resto do código continua igual, pois agora ele usa os caminhos corretos
     template_nome = pln_output_json.get("template_nome")
     mapeamentos = pln_output_json.get("mapeamentos", {})
 
@@ -122,7 +104,7 @@ def processar_pergunta_completa():
         template_path = os.path.join(SPARQL_TEMPLATES_DIR, f"{template_nome}.txt")
         with open(template_path, 'r', encoding='utf-8') as f:
             sparql_query_template = f.read()
-
+        
         sparql_query_final = sparql_query_template
         for placeholder, value in mapeamentos.items():
             formatted_value = f'"{str(value)}"'
@@ -132,9 +114,7 @@ def processar_pergunta_completa():
                  formatted_value = str(value)
             
             sparql_query_final = sparql_query_final.replace(placeholder, formatted_value)
-        
         logging.info(f"Consulta SPARQL final gerada:\n{sparql_query_final}")
-
     except FileNotFoundError:
         logging.error(f"Arquivo de template não encontrado: {template_path}")
         return jsonify({"erro": f"Template SPARQL '{template_nome}' não encontrado no servidor."}), 500
@@ -142,30 +122,22 @@ def processar_pergunta_completa():
         logging.error(f"Erro ao montar a query SPARQL: {e}", exc_info=True)
         return jsonify({"erro": "Erro interno ao gerar a consulta."}), 500
     
-    # 3. Executar a query na ontologia
     if len(graph) == 0:
         return jsonify({"erro": "A ontologia não está carregada. Não é possível executar a consulta."}), 500
 
     try:
         query_obj = prepareQuery(sparql_query_final)
         qres = graph.query(query_obj)
-        
-        resultados = []
-        for row in qres:
-            resultados.append({str(var): str(val) for var, val in row.asdict().items()})
-        
+        resultados = [{str(var): str(val) for var, val in row.asdict().items()} for row in qres]
         resposta_final = json.dumps(resultados, ensure_ascii=False) if resultados else "Nenhum resultado encontrado."
         logging.info(f"Consulta executada com sucesso. {len(resultados)} resultados encontrados.")
-
     except Exception as e:
         logging.error(f"Erro ao executar a consulta SPARQL: {e}", exc_info=True)
         return jsonify({"erro": "Erro ao consultar a base de conhecimento.", "sparqlQuery": sparql_query_final}), 500
 
-    return jsonify({
-        "sparqlQuery": sparql_query_final,
-        "resposta": resposta_final
-    })
+    return jsonify({"sparqlQuery": sparql_query_final, "resposta": resposta_final})
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=True)
