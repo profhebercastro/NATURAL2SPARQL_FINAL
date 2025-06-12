@@ -42,17 +42,13 @@ def process_question_route():
         data = request.get_json()
         question = data.get('question', '').strip()
         if not question: return jsonify({"error": "Pergunta não fornecida."}), 400
-        
         logging.info(f"Gerando consulta para: '{question}'")
-
         pln_result = run_pln_processor(question)
         if "error" in pln_result: return jsonify({"sparql_query": "Erro no PLN", "error": pln_result["error"]}), 500
-
         template_name = pln_result.get("template_nome")
         entities = pln_result.get("mapeamentos", {})
         query_build = build_sparql_query(template_name, entities)
         if "error" in query_build: return jsonify({"sparql_query": "Erro na montagem", "error": query_build["error"]}), 500
-        
         return jsonify({"sparql_query": query_build["sparql_query"]})
     except Exception as e:
         logging.error(f"Erro em /process: {e}", exc_info=True)
@@ -65,13 +61,9 @@ def execute_query_route():
         query_string = data.get('sparql_query', '').strip()
         endpoint = data.get('endpoint', '').strip()
         if not query_string: return jsonify({"error": "Nenhuma consulta SPARQL fornecida."}), 400
-
         logging.info(f"Executando consulta (Endpoint: {endpoint or 'Local'})")
-        logging.debug(f"Query para executar:\n{query_string}")
-
         if endpoint: result = execute_remote_sparql(query_string, endpoint)
         else: result = execute_local_sparql(query_string)
-
         if "error" in result: return jsonify({"result": result["error"]}), 500
         return jsonify({"result": result.get("data", "Nenhum resultado.")})
     except Exception as e:
@@ -93,16 +85,16 @@ def build_sparql_query(template_name: str, entities: dict) -> dict:
     try:
         with open(template_path, 'r', encoding='utf-8') as f: final_query = f.read()
         for key, value in entities.items():
-            placeholder = key 
+            placeholder = key
+            escaped_value = str(value).replace('"', '\\"')
             if placeholder == "#ENTIDADE_NOME#" and '#ENTIDADE_NOME#@pt' in final_query:
-                escaped_value = str(value).replace('"', '\\"')
                 formatted_value = f'"{escaped_value}"@pt'
                 final_query = final_query.replace('#ENTIDADE_NOME#@pt', formatted_value)
                 continue
-            if placeholder == "#ENTIDADE_NOME#": formatted_value = f'"{str(value).replace("\"", "\\\"")}"'
-            elif placeholder == "#DATA#": formatted_value = f'"{value}"^^xsd:date'
+            if placeholder == "#ENTIDADE_NOME#": formatted_value = f'"{escaped_value}"'
+            elif placeholder == "#DATA#": formatted_value = f'"{escaped_value}"^^xsd:date'
             elif placeholder == "#VALOR_DESEJADO#": formatted_value = str(value)
-            elif placeholder == "#SETOR#": formatted_value = f'"{str(value).replace("\"", "\\\"")}"'
+            elif placeholder == "#SETOR#": formatted_value = f'"{escaped_value}"'
             else: continue
             final_query = final_query.replace(placeholder, formatted_value)
         return {"sparql_query": final_query}
