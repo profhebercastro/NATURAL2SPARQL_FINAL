@@ -95,7 +95,7 @@ def process_question():
 
 # --- 5. FUNÇÕES AUXILIARES ---
 def run_pln_processor(question: str) -> dict:
-    logging.info(f"Executando script PLN: {PLN_SCRIPT_PATH}")
+    logging.info(f"Executando script PLN: '{PLN_SCRIPT_PATH}' com CWD: '{RESOURCES_DIR}'")
     try:
         process = subprocess.run(
             ['python', PLN_SCRIPT_PATH, question],
@@ -124,7 +124,7 @@ def build_sparql_query(template_name: str, entities: dict) -> dict:
             final_query = final_query.replace(placeholder, formatted_value)
         return {"sparql_query": final_query}
     except FileNotFoundError:
-        return {"error": f"Template '{template_name}' não encontrado."}
+        return {"error": f"Template '{template_name}.txt' não encontrado em {TEMPLATES_DIR}."}
 
 def execute_local_sparql(query_string: str) -> dict:
     try:
