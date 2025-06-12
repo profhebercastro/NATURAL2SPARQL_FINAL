@@ -1,5 +1,4 @@
 # Arquivo: web_app.py
-# Local: / (raiz do projeto)
 
 import os
 import sys
@@ -15,7 +14,7 @@ import requests
 # --- 1. CONFIGURAÇÃO INICIAL E LOGGING ---
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- 2. CONFIGURAÇÃO DOS CAMINHOS (MANTENDO A ESTRUTURA ORIGINAL) ---
+# --- 2. CONFIGURAÇÃO DOS CAMINHOS ---
 APP_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCES_DIR = os.path.join(APP_BASE_DIR, 'src', 'main', 'resources')
 STATIC_DIR = os.path.join(RESOURCES_DIR, 'static')
@@ -23,12 +22,9 @@ PLN_SCRIPT_PATH = os.path.join(RESOURCES_DIR, 'pln_processor.py')
 TEMPLATES_DIR = os.path.join(RESOURCES_DIR, 'Templates')
 ONTOLOGY_PATH_LOCAL = os.path.join(APP_BASE_DIR, 'ontologiaB3_com_inferencia.ttl')
 
-# --- Verificação de sanidade dos caminhos ---
-logging.info("--- VERIFICANDO CAMINHOS ---")
-logging.info(f"  - Diretório Estático: {STATIC_DIR} (Existe? {os.path.isdir(STATIC_DIR)})")
-logging.info(f"  - Script PLN: {PLN_SCRIPT_PATH} (Existe? {os.path.isfile(PLN_SCRIPT_PATH)})")
-logging.info(f"  - Pasta de Templates: {TEMPLATES_DIR} (Existe? {os.path.isdir(TEMPLATES_DIR)})")
-logging.info(f"  - Ontologia Local: {ONTOLOGY_PATH_LOCAL} (Existe? {os.path.isfile(ONTOLOGY_PATH_LOCAL)})")
+logging.info(f"--- VERIFICANDO CAMINHOS (no início) ---")
+logging.info(f"  - SCRIPT PLN: {PLN_SCRIPT_PATH} (Existe? {os.path.isfile(PLN_SCRIPT_PATH)})")
+logging.info(f"  - PASTA TEMPLATES: {TEMPLATES_DIR} (Existe? {os.path.isdir(TEMPLATES_DIR)})")
 
 app = Flask(__name__, static_folder=STATIC_DIR)
 
@@ -42,14 +38,11 @@ NS = {
     "owl": Namespace("http://www.w3.org/2002/07/owl#")
 }
 if os.path.exists(ONTOLOGY_PATH_LOCAL):
-    logging.info(f"Carregando ontologia local de: {ONTOLOGY_PATH_LOCAL}")
-    try:
-        graph.parse(ONTOLOGY_PATH_LOCAL, format="turtle")
-        logging.info(f"Ontologia local carregada com {len(graph)} triplas.")
-    except Exception as e:
-        logging.error(f"ERRO CRÍTICO ao carregar ontologia: {e}", exc_info=True)
+    logging.info(f"Carregando ontologia de: {ONTOLOGY_PATH_LOCAL}")
+    graph.parse(ONTOLOGY_PATH_LOCAL, format="turtle")
+    logging.info(f"Ontologia carregada com {len(graph)} triplas.")
 else:
-    logging.warning(f"ARQUIVO DE ONTOLOGIA NÃO ENCONTRADO: {ONTOLOGY_PATH_LOCAL}")
+    logging.warning(f"ONTOLOGIA NÃO ENCONTRADA: {ONTOLOGY_PATH_LOCAL}")
 
 # --- 4. ROTAS ---
 @app.route('/')
@@ -64,7 +57,7 @@ def process_question():
         endpoint = data.get('endpoint', '').strip()
 
         if not question: return jsonify({"error": "Pergunta não fornecida."}), 400
-        logging.info(f"Pergunta: '{question}', Endpoint: '{endpoint or 'Local'}'")
+        logging.info(f"Processando: '{question}' (Endpoint: {endpoint or 'Local'})")
 
         pln_result = run_pln_processor(question)
         if "error" in pln_result:
@@ -77,21 +70,17 @@ def process_question():
             return jsonify({"sparql_query": "Erro na montagem", "result": query_build["error"]}), 500
         
         final_query = query_build["sparql_query"]
+        logging.info(f"Consulta SPARQL Gerada:\n{final_query}")
 
-        if endpoint:
-            result = execute_remote_sparql(final_query, endpoint)
-        else:
-            if len(graph) == 0:
-                raise Exception("A ontologia local não foi carregada ou está vazia.")
-            result = execute_local_sparql(final_query)
+        if endpoint: result = execute_remote_sparql(final_query, endpoint)
+        else: result = execute_local_sparql(final_query)
 
-        if "error" in result:
-             return jsonify({"sparql_query": final_query, "result": result["error"]}), 500
-        
+        if "error" in result: return jsonify({"sparql_query": final_query, "result": result["error"]}), 500
         return jsonify({"sparql_query": final_query, "result": result.get("data", "Nenhum resultado.")})
+
     except Exception as e:
-        logging.error(f"Erro inesperado em /process: {e}", exc_info=True)
-        return jsonify({"error": f"Erro interno no servidor: {e}"}), 500
+        logging.error(f"Erro em /process: {e}", exc_info=True)
+        return jsonify({"error": f"Erro interno: {e}"}), 500
 
 # --- 5. FUNÇÕES AUXILIARES ---
 def run_pln_processor(question: str) -> dict:
@@ -104,29 +93,53 @@ def run_pln_processor(question: str) -> dict:
         return json.loads(process.stdout)
     except subprocess.CalledProcessError as e:
         return {"error": f"Erro no script PLN (código {e.returncode}): {e.stderr}"}
-    except json.JSONDecodeError as e:
-        return {"error": f"Erro ao decodificar JSON do PLN. Saída recebida: {e.doc}"}
-    except FileNotFoundError:
-        return {"error": f"Script PLN não encontrado em '{PLN_SCRIPT_PATH}'."}
+    except Exception as e:
+        return {"error": f"Erro ao chamar PLN: {e}"}
 
 def build_sparql_query(template_name: str, entities: dict) -> dict:
+    """
+    Constrói a consulta SPARQL substituindo placeholders de forma inteligente.
+    """
     if not template_name: return {"error": "Nome do template não fornecido pelo PLN."}
-    template_path = os.path.join(TEMPLATES_DIR, f"{template_name}.txt")
+    
+    # Garante que o nome do arquivo seja consistente (sem espaços)
+    corrected_template_name = template_name.replace(" ", "_")
+    template_path = os.path.join(TEMPLATES_DIR, f"{corrected_template_name}.txt")
+    
     try:
-        with open(template_path, 'r', encoding='utf-8') as f: query_template = f.read()
+        with open(template_path, 'r', encoding='utf-8') as f:
+            query_template = f.read()
+
         final_query = query_template
+        
         for key, value in entities.items():
             placeholder = f"<{key}>"
-            if key == 'date':
+            formatted_value = ""
+
+            # ✅ LÓGICA DE SUBSTITUIÇÃO INTELIGENTE
+            # Chaves terminadas em '_prop' são tratadas como nomes de propriedades (sem aspas)
+            if key.endswith('_prop'):
+                formatted_value = str(value) # Ex: b3:precoFechamento
+            
+            # Chaves específicas como 'date' recebem formatação de tipo
+            elif key == 'date':
                 formatted_value = f'"{value}"^^xsd:date'
+            
+            # Todas as outras chaves são tratadas como strings literais (com aspas)
             else:
-                formatted_value = f'"{value}"'
+                escaped_value = str(value).replace('"', '\\"')
+                formatted_value = f'"{escaped_value}"'
+            
+            # Realiza a substituição na query
             final_query = final_query.replace(placeholder, formatted_value)
+                
         return {"sparql_query": final_query}
+
     except FileNotFoundError:
-        return {"error": f"Template '{template_name}.txt' não encontrado em {TEMPLATES_DIR}."}
+        return {"error": f"Template '{corrected_template_name}.txt' não encontrado em {TEMPLATES_DIR}."}
 
 def execute_local_sparql(query_string: str) -> dict:
+    if len(graph) == 0: return {"error": "Ontologia local não carregada."}
     try:
         q = prepareQuery(query_string, initNs=NS)
         results = [row.asdict() for row in graph.query(q)]
@@ -136,10 +149,7 @@ def execute_local_sparql(query_string: str) -> dict:
 
 def execute_remote_sparql(query_string: str, endpoint_url: str) -> dict:
     try:
-        response = requests.post(
-            endpoint_url, data={'query': query_string}, 
-            headers={'Accept': 'application/sparql-results+json'}, timeout=30
-        )
+        response = requests.post(endpoint_url, data={'query': query_string}, headers={'Accept': 'application/sparql-results+json'}, timeout=30)
         response.raise_for_status()
         return {"data": response.json()}
     except requests.exceptions.RequestException as e:
@@ -148,4 +158,4 @@ def execute_remote_sparql(query_string: str, endpoint_url: str) -> dict:
 # --- 6. INICIALIZAÇÃO DA APLICAÇÃO ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port)
