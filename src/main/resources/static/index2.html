@@ -4,51 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Natural2SPARQL</title>
-    <!-- Incluindo FontAwesome para os ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* Reset e estilos base */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #e9ecef;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* Barra do Cabeçalho */
-        header {
-            background-color: #0d6efd;
-            color: white;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #e9ecef; display: flex; flex-direction: column; min-height: 100vh; }
+        header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-        
-        /* ✅ NOVO ESTILO PARA O LOGO SVG */
-        .logo-svg {
-            height: 32px; 
-            width: auto; 
-        }
-
+        .logo-svg { height: 32px; width: auto; }
         .header-actions { display: flex; align-items: center; gap: 15px; }
-        .header-actions .icon-btn { background: none; border: 1px solid rgba(255,255,255,0.5); color: white; border-radius: 5px; padding: 5px 8px; cursor: pointer; font-size: 1rem; transition: background-color 0.2s; }
-        .header-actions .icon-btn:hover { background-color: rgba(255,255,255,0.2); }
+        .header-actions .icon-btn { background: none; border: 1px solid rgba(255,255,255,0.5); color: white; border-radius: 5px; padding: 5px 8px; cursor: pointer; font-size: 1rem; }
         .endpoint-group { display: flex; align-items: center; gap: 8px; }
         .endpoint-group .icon-link { font-size: 1.1rem; color: rgba(255,255,255,0.8); }
         #sparqlEndpointInput { width: 250px; background-color: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 6px 10px; }
-        #sparqlEndpointInput::placeholder { color: rgba(255,255,255,0.7); }
-        #sparqlEndpointInput:focus { outline: none; background-color: rgba(255,255,255,0.25); border-color: white; }
-
-        /* Estilos do conteúdo principal (mantidos) */
         main.container { width: 100%; max-width: 960px; margin: 40px auto; padding: 0 20px; flex-grow: 1; }
-        .card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; position: relative; }
         .card-title { font-size: 1.25rem; font-weight: 500; margin-bottom: 16px; }
         .form-control { width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ced4da; border-radius: 4px; background-color: #f8f9fa; }
         .form-control:focus { outline: none; border-color: #80bdff; box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25); }
@@ -56,17 +26,15 @@
         .btn { padding: 10px 20px; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-success { background-color: #198754; color: white; }
         .btn-danger { background-color: #dc3545; color: white; }
+        .btn-info { background-color: #0dcaf0; color: white; }
         .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .results-grid .card { margin-bottom: 0; }
         textarea.output { height: 200px; resize: vertical; background-color: #f8f9fa; color: #495057; }
         footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; }
-        .spinner { display: none; border: 3px solid #f3f3f3; border-top: 3px solid #198754; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
+        .spinner { display: none; border: 3px solid #f3f3f3; border-top: 3px solid currentColor; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
-    <!-- ✅ Cabeçalho ATUALIZADO -->
     <header>
         <div class="logo">
             <img src="https://cygri.github.io/rdf-logos/svg/sparql.svg" alt="SPARQL Logo" class="logo-svg">
@@ -77,39 +45,30 @@
                 <i class="fa-solid fa-link icon-link"></i>
                 <input type="text" id="sparqlEndpointInput" placeholder="Endpoint remoto (opcional)">
             </div>
-            <button id="downloadQueryBtn" class="icon-btn" title="Baixar Consulta SPARQL">
-                <i class="fa-solid fa-cloud-arrow-down"></i>
-            </button>
-            <button id="downloadResultBtn" class="icon-btn" title="Baixar Resultado">
-                <i class="fa-solid fa-download"></i>
-            </button>
+            <button id="downloadQueryBtn" class="icon-btn" title="Baixar Consulta SPARQL"><i class="fa-solid fa-cloud-arrow-down"></i></button>
+            <button id="downloadResultBtn" class="icon-btn" title="Baixar Resultado"><i class="fa-solid fa-download"></i></button>
         </div>
     </header>
 
-    <!-- Resto do corpo do HTML (mantido) -->
     <main class="container">
-        <!-- ... (código do main sem alterações) ... -->
         <div class="card">
             <div style="margin-bottom: 1rem;">
                 <label for="userQuestion" class="card-title">Digite sua pergunta</label>
                 <input type="text" id="userQuestion" class="form-control" placeholder="Entre com sua pergunta aqui">
             </div>
             <div class="button-group">
-                <button id="generateBtn" class="btn btn-success">
-                    <span id="btn-text">GERAR CONSULTA</span>
-                    <i class="fas fa-arrow-right"></i>
-                    <div class="spinner" id="loadingSpinner"></div>
-                </button>
-                <button id="clearBtn" class="btn btn-danger">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>LIMPAR</span>
-                </button>
+                <button id="generateBtn" class="btn btn-success"><span class="btn-text">GERAR CONSULTA</span><i class="fas fa-arrow-right"></i><div class="spinner"></div></button>
+                <button id="clearBtn" class="btn btn-danger"><i class="fas fa-sync-alt"></i><span>LIMPAR</span></button>
             </div>
         </div>
+
         <div class="results-grid">
             <div class="card">
-                <h3 class="card-title">Consulta SPARQL</h3>
-                <textarea id="sparqlQueryOutput" class="form-control output" readonly>A consulta SPARQL aparecerá aqui...</textarea>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="card-title" style="margin-bottom: 0;">Consulta SPARQL</h3>
+                    <button id="executeQueryBtn" class="btn btn-info btn-sm" style="display: none;"><span class="btn-text">Executar</span><i class="fas fa-play"></i><div class="spinner"></div></button>
+                </div>
+                <textarea id="sparqlQueryOutput" class="form-control output">A consulta SPARQL aparecerá aqui...</textarea>
             </div>
             <div class="card">
                 <h3 class="card-title">Resultado</h3>
@@ -117,13 +76,13 @@
             </div>
         </div>
     </main>
-    <footer>
-        <p>© 2025 Natural2SPARQL - Consultas SPARQL em Linguagem Natural.</p>
-    </footer>
+    
+    <footer><p>© 2025 Natural2SPARQL - Consultas SPARQL em Linguagem Natural.</p></footer>
+
     <script>
-        // ... (código JavaScript sem alterações) ...
         document.addEventListener('DOMContentLoaded', function() {
             const generateBtn = document.getElementById('generateBtn');
+            const executeQueryBtn = document.getElementById('executeQueryBtn');
             const clearBtn = document.getElementById('clearBtn');
             const downloadQueryBtn = document.getElementById('downloadQueryBtn');
             const downloadResultBtn = document.getElementById('downloadResultBtn');
@@ -131,67 +90,89 @@
             const sparqlEndpointInput = document.getElementById('sparqlEndpointInput');
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
             const resultOutput = document.getElementById('resultOutput');
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const btnText = document.getElementById('btn-text');
+
             generateBtn.addEventListener('click', handleQueryGeneration);
+            executeQueryBtn.addEventListener('click', handleQueryExecution);
             clearBtn.addEventListener('click', clearAllFields);
             downloadQueryBtn.addEventListener('click', () => downloadText('consulta.txt', sparqlQueryOutput.value));
             downloadResultBtn.addEventListener('click', () => downloadText('resultado.txt', resultOutput.value));
+
             function clearAllFields() {
                 userQuestionInput.value = '';
                 sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
                 resultOutput.value = 'O resultado aparece aqui...';
+                executeQueryBtn.style.display = 'none';
             }
+
             async function handleQueryGeneration() {
                 const question = userQuestionInput.value.trim();
-                const endpoint = sparqlEndpointInput.value.trim();
-                if (!question) {
-                    alert("Por favor, digite uma pergunta.");
-                    return;
-                }
-                toggleLoading(true);
+                if (!question) { alert("Por favor, digite uma pergunta."); return; }
+                
+                toggleLoading(generateBtn, true);
+                executeQueryBtn.style.display = 'none';
+                resultOutput.value = 'O resultado aparece aqui...';
                 resultOutput.style.color = '#495057';
+
                 try {
                     const response = await fetch('/process', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            question: question, 
-                            endpoint: endpoint 
-                        })
+                        body: JSON.stringify({ question: question })
                     });
                     const data = await response.json();
-                    if (!response.ok || data.error) {
-                        const errorMessage = data.error || data.result || `Erro do servidor (${response.status})`;
-                        throw new Error(errorMessage);
-                    }
-                    sparqlQueryOutput.value = data.sparql_query || "Nenhuma consulta SPARQL foi gerada.";
+                    if (!response.ok || data.error) { throw new Error(data.error || `Erro do servidor (${response.status})`); }
+                    
+                    sparqlQueryOutput.value = data.sparql_query || "Não foi possível gerar a consulta.";
+                    executeQueryBtn.style.display = 'inline-flex';
+                
+                } catch (error) {
+                    sparqlQueryOutput.value = `Falha ao gerar consulta: ${error.message}`;
+                } finally {
+                    toggleLoading(generateBtn, false);
+                }
+            }
+
+            async function handleQueryExecution() {
+                const sparqlQuery = sparqlQueryOutput.value.trim();
+                const endpoint = sparqlEndpointInput.value.trim();
+                if (!sparqlQuery || sparqlQuery.startsWith('A consulta')) { alert("Não há consulta para executar."); return; }
+
+                toggleLoading(executeQueryBtn, true);
+                resultOutput.style.color = '#495057';
+
+                try {
+                    const response = await fetch('/execute_query', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sparql_query: sparqlQuery, endpoint: endpoint })
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.error) { throw new Error(data.error || `Erro do servidor (${response.status})`); }
+                    
                     let resultText = data.result || "Nenhum resultado foi retornado.";
                     try {
-                         const parsedResult = JSON.parse(resultText);
-                         resultOutput.value = JSON.stringify(parsedResult, null, 2);
+                         resultOutput.value = JSON.stringify(JSON.parse(resultText), null, 2);
                     } catch (e) {
                          resultOutput.value = resultText;
                     }
                 } catch (error) {
-                    console.error("Erro na requisição:", error);
                     resultOutput.style.color = '#dc3545';
-                    sparqlQueryOutput.value = "Falha na geração da consulta.";
-                    resultOutput.value = `Ocorreu um erro:\n${error.message}`;
+                    resultOutput.value = `Erro na execução: ${error.message}`;
                 } finally {
-                    toggleLoading(false);
+                    toggleLoading(executeQueryBtn, false);
                 }
             }
-            function toggleLoading(isLoading) {
-                generateBtn.disabled = isLoading;
-                btnText.style.display = isLoading ? 'none' : 'inline-block';
-                loadingSpinner.style.display = isLoading ? 'inline-block' : 'none';
+            
+            function toggleLoading(button, isLoading) {
+                const textSpan = button.querySelector('.btn-text');
+                const spinner = button.querySelector('.spinner');
+                button.disabled = isLoading;
+                if (textSpan) textSpan.style.display = isLoading ? 'none' : 'inline-block';
+                if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
             }
+            
             function downloadText(filename, text) {
-                if (!text || text.startsWith('A consulta SPARQL') || text.startsWith('O resultado aparece')) {
-                    alert('Não há conteúdo para baixar.');
-                    return;
-                }
+                if (!text || text.startsWith('A consulta') || text.startsWith('O resultado')) { alert('Não há conteúdo para baixar.'); return; }
                 const element = document.createElement('a');
                 element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
                 element.setAttribute('download', filename);
