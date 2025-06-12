@@ -7,129 +7,132 @@ import json
 import os
 import logging
 import re
-from difflib import get_close_matches
 from datetime import datetime
 
-# --- Configuração ---
+# --- 1. CONFIGURAÇÃO ---
+# Log para stderr para que os logs do servidor web (Gunicorn) possam capturá-los
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - PLN - %(levelname)s - %(message)s', stream=sys.stderr)
 logger = logging.getLogger("PLN_Processor")
 
+# Função para sair com um erro formatado em JSON, que pode ser lido pelo processo pai
 def exit_with_error(message):
-    logger.error(message)
-    print(json.dumps({"erro": message}))
+    error_response = json.dumps({"erro": message})
+    logger.error(f"Encerrando PLN com erro: {message}")
+    print(error_response)
     sys.exit(1)
 
-# --- Carregamento de Recursos ---
+# --- 2. CARREGAMENTO DE RECURSOS (Executado apenas uma vez na inicialização do script) ---
 try:
-    # Constrói caminhos a partir do local do próprio script
+    logger.info("Iniciando carregamento de recursos do PLN...")
+    # Constrói os caminhos a partir do local do próprio script para robustez
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    logger.info(f"Diretório do script PLN detectado: {SCRIPT_DIR}")
-    
     MAPA_EMPRESAS_PATH = os.path.join(SCRIPT_DIR, "empresa_nome_map.json")
-    PERGUNTAS_PATH = os.path.join(SCRIPT_DIR, "perguntas_de_interesse.txt")
     
-    # Carregamento do modelo spaCy
+    # Carregamento do modelo de linguagem do spaCy
     nlp = spacy.load("pt_core_news_sm")
     
-    # Carregamento dos mapas e listas
+    # Carregamento do mapa que associa nomes comuns de empresas a seus nomes formais
     with open(MAPA_EMPRESAS_PATH, 'r', encoding='utf-8') as f:
         EMPRESA_MAP = json.load(f)
     
-    PERGUNTAS_DE_INTERESSE = []
-    with open(PERGUNTAS_PATH, 'r', encoding='utf-8') as f:
-        for line in f:
-            if line.strip() and not line.startswith('#'):
-                parts = line.strip().split(';', 1)
-                if len(parts) == 2:
-                    PERGUNTAS_DE_INTERESSE.append({"id": parts[0].strip(), "text": parts[1].strip()})
-    
     logger.info("Recursos do PLN carregados com sucesso.")
-except FileNotFoundError as e:
-    exit_with_error(f"Arquivo de recurso não encontrado: {e}. Verifique o caminho.")
 except Exception as e:
-    exit_with_error(f"Falha na inicialização do PLN: {e}")
+    exit_with_error(f"Falha crítica na inicialização do PLN. Verifique os caminhos e arquivos. Erro: {e}")
 
-# --- Funções de Processamento ---
-def normalizar_texto(texto):
-    if not texto: return ""
-    texto = texto.lower()
-    texto = re.sub(r'[áàâãä]', 'a', texto); texto = re.sub(r'[éèêë]', 'e', texto)
-    texto = re.sub(r'[íìîï]', 'i', texto); texto = re.sub(r'[óòôõö]', 'o', texto)
-    texto = re.sub(r'[úùûü]', 'u', texto); texto = re.sub(r'ç', 'c', texto)
-    texto = re.sub(r'[^a-z0-9\s]', '', texto)
-    return ' '.join(texto.split())
-
-def selecionar_template(pergunta_usuario):
-    pergunta_norm = normalizar_texto(pergunta_usuario)
-    textos_perguntas = [normalizar_texto(p['text']) for p in PERGUNTAS_DE_INTERESSE]
-    matches = get_close_matches(pergunta_norm, textos_perguntas, n=1, cutoff=0.6)
-    if matches:
-        for p in PERGUNTAS_DE_INTERESSE:
-            if normalizar_texto(p['text']) == matches[0]:
-                return p['id'].replace(" ", "_")
-    return None
+# --- 3. FUNÇÕES DE PROCESSAMENTO ---
 
 def extrair_entidades(doc):
+    """Extrai todas as entidades e intenções relevantes de um texto processado pelo spaCy."""
     mapeamentos = {}
-    
-    # Data
+    texto_lower = doc.text.lower()
+
+    # Extração de Data
     match_data = re.search(r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})', doc.text)
     if match_data:
         try:
             data_str = match_data.group(1).replace('-', '/')
-            dt_obj = datetime.strptime(data_str, '%d/%m/%Y') if len(data_str.split('/')[-1]) == 4 else datetime.strptime(data_str, '%d/%m/%y')
+            dt_format = '%d/%m/%Y' if len(data_str.split('/')[-1]) == 4 else '%d/%m/%y'
+            dt_obj = datetime.strptime(data_str, dt_format)
             mapeamentos["#DATA#"] = dt_obj.strftime('%Y-%m-%d')
-        except ValueError: pass
+        except ValueError:
+            logger.warning(f"Formato de data inválido encontrado e ignorado: {match_data.group(1)}")
 
-    # Empresa/Ticker
+    # Extração de Empresa / Ticker (para o placeholder #ENTIDADE_NOME#)
     nome_empresa_encontrado = None
-    # 1. Tenta com NER
-    for ent in doc.ents:
-        if ent.label_ == 'ORG' and ent.text.upper() in EMPRESA_MAP:
-            nome_empresa_encontrado = EMPRESA_MAP[ent.text.upper()]
-            break
-    # 2. Se não, tenta por keyword
-    if not nome_empresa_encontrado:
+    # Prioridade 1: Ticker explícito (ex: PETR4, VALE3)
+    match_ticker = re.search(r'\b([A-Z]{4}\d{1,2})\b', doc.text.upper())
+    if match_ticker:
+        # Mapeia o ticker para o nome completo, se disponível, senão usa o próprio ticker
+        ticker = match_ticker.group(1)
+        nome_empresa_encontrado = EMPRESA_MAP.get(ticker, ticker)
+    else:
+        # Prioridade 2: Nome da empresa presente no mapa
         for nome_mapa, nome_ontologia in EMPRESA_MAP.items():
-            if nome_mapa.lower() in doc.text.lower():
+            if nome_mapa.lower() in texto_lower:
                 nome_empresa_encontrado = nome_ontologia
                 break
-    # 3. Se ainda não, procura por padrão de ticker
-    if not nome_empresa_encontrado:
-        match_ticker = re.search(r'\b([A-Z]{4}\d{1,2})\b', doc.text.upper())
-        if match_ticker: nome_empresa_encontrado = match_ticker.group(1)
-    
     if nome_empresa_encontrado:
         mapeamentos["#ENTIDADE_NOME#"] = nome_empresa_encontrado
 
-    # Tipo de Preço
-    texto_norm = normalizar_texto(doc.text)
-    if 'fechamento' in texto_norm: mapeamentos["#VALOR_DESEJADO#"] = 'b3:precoFechamento'
-    elif 'abertura' in texto_norm: mapeamentos["#VALOR_DESEJADO#"] = 'b3:precoAbertura'
-    elif 'maximo' in texto_norm or 'maxima' in texto_norm: mapeamentos["#VALOR_DESEJADO#"] = 'b3:precoMaximo'
-    elif 'minimo' in texto_norm or 'minima' in texto_norm: mapeamentos["#VALOR_DESEJADO#"] = 'b3:precoMinimo'
+    # Extração do Valor Desejado (para o placeholder #VALOR_DESEJADO#)
+    # Note que retornamos APENAS o nome da propriedade, pois o prefixo "b3:" já está no template.
+    if 'fechamento' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoFechamento'
+    elif 'abertura' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoAbertura'
+    elif 'máximo' in texto_lower or 'maximo' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoMaximo'
+    elif 'mínimo' in texto_lower or 'minimo' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoMinimo'
 
-    # Setor
-    if 'setor' in texto_norm:
-        match_setor = re.search(r'setor\s+(?:de\s+|do\s+|da\s+)?([\w\s]+)', texto_norm)
+    # Extração de Intenção para desambiguação de templates
+    if 'código de negociação' in texto_lower or 'codigo da acao' in texto_lower:
+        mapeamentos["#INTENCAO#"] = "buscar_codigo"
+
+    if 'setor' in texto_lower:
+        mapeamentos["#INTENCAO#"] = "listar_por_setor"
+        match_setor = re.search(r'setor\s+(?:de\s+|do\s+|da\s+)?([\w\s]+)', texto_lower)
         if match_setor:
-            mapeamentos["#SETOR#"] = match_setor.group(1).strip().title()
-
+            setor_bruto = match_setor.group(1).strip()
+            mapeamentos["#SETOR#"] = setor_bruto.title()
+            
     return mapeamentos
 
+def selecionar_template_por_regras(mapeamentos):
+    """Seleciona o template com base nas entidades encontradas, usando regras lógicas."""
+    entidades = set(mapeamentos.keys())
+    
+    # Regra para templates de consulta de preço (ex: Template_1A, Template_1B)
+    if {"#ENTIDADE_NOME#", "#DATA#", "#VALOR_DESEJADO#"} <= entidades:
+        return "Template_1A"
+
+    # Regra para template de busca de código (ex: Template_2A)
+    if {"#ENTIDADE_NOME#", "#INTENCAO#"} <= entidades and mapeamentos["#INTENCAO#"] == "buscar_codigo":
+        return "Template_2A"
+
+    # Regra para template de listagem por setor (ex: Template_3A)
+    if {"#SETOR#", "#INTENCAO#"} <= entidades and mapeamentos["#INTENCAO#"] == "listar_por_setor":
+        return "Template_3A"
+
+    return None
+
 def main(pergunta_usuario):
+    """Função principal que orquestra o processo de PLN."""
+    logger.info(f"Processando pergunta: '{pergunta_usuario}'")
     doc = nlp(pergunta_usuario)
-    template_id = selecionar_template(pergunta_usuario)
-    if not template_id: exit_with_error("Não foi possível entender a intenção da pergunta.")
     
     mapeamentos = extrair_entidades(doc)
-    if not mapeamentos: exit_with_error("Não foi possível extrair informações da pergunta.")
+    if not mapeamentos:
+        exit_with_error("Não foi possível extrair nenhuma informação útil da pergunta.")
+    
+    template_nome = selecionar_template_por_regras(mapeamentos)
+    if not template_nome:
+        exit_with_error("A combinação de informações extraídas não corresponde a nenhuma ação conhecida.")
 
-    resposta = {"template_nome": template_id, "mapeamentos": mapeamentos}
+    resposta = {"template_nome": template_nome, "mapeamentos": mapeamentos}
     print(json.dumps(resposta, ensure_ascii=False))
-    logger.info("Processamento PLN concluído.")
+    logger.info("Processamento PLN concluído com sucesso.")
 
-# --- Ponto de Entrada ---
+# --- 4. PONTO DE ENTRADA DO SCRIPT ---
 if __name__ == "__main__":
-    if len(sys.argv) < 2: exit_with_error("Nenhuma pergunta fornecida.")
-    main(" ".join(sys.argv[1:]))
+    if len(sys.argv) < 2:
+        exit_with_error("Nenhuma pergunta fornecida como argumento de linha de comando.")
+    
+    pergunta_completa = " ".join(sys.argv[1:])
+    main(pergunta_completa)
