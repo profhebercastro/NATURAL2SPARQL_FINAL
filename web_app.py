@@ -13,12 +13,20 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s -
 
 APP_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCES_DIR = os.path.join(APP_BASE_DIR, 'src', 'main', 'resources')
+
+# ===== A CORREÇÃO PRINCIPAL ESTÁ AQUI =====
+# Define explicitamente onde estão as pastas 'static' e 'templates'
 STATIC_FOLDER = os.path.join(RESOURCES_DIR, 'static')
+TEMPLATE_FOLDER = os.path.join(RESOURCES_DIR, 'static') # Sua pasta 'static' contém o index.html
+
 PLN_SCRIPT_PATH = os.path.join(RESOURCES_DIR, 'pln_processor.py')
 TEMPLATES_DIR = os.path.join(RESOURCES_DIR, 'Templates')
 ONTOLOGY_PATH = os.path.join(APP_BASE_DIR, 'ontologiaB3_com_inferencia.ttl')
 
-app = Flask(__name__, static_url_path='', static_folder=STATIC_FOLDER)
+# Inicializa o Flask informando os caminhos corretos
+app = Flask(__name__, 
+            static_folder=STATIC_FOLDER,
+            template_folder=TEMPLATE_FOLDER) # Informa ao Flask para procurar templates aqui
 
 # --- 2. CARREGAMENTO DA ONTOLOGIA (UMA VEZ NA INICIALIZAÇÃO) ---
 graph = Graph()
@@ -32,7 +40,8 @@ except Exception as e:
 # --- 3. ROTAS DA API ---
 @app.route('/')
 def index():
-    """Serve a página HTML principal."""
+    """Serve a página HTML principal (index.html)."""
+    # Agora o Flask sabe onde encontrar 'index.html'
     return render_template('index.html')
 
 @app.route('/query', methods=['POST'])
@@ -98,19 +107,13 @@ def build_sparql_query(template_name: str, entities: dict) -> dict:
 
         for placeholder, value in entities.items():
             if placeholder in ["#ENTIDADE_NOME#", "#SETOR#"]:
-                # ===== A CORREÇÃO ESTÁ AQUI =====
-                # 1. Primeiro, escape as aspas que possam existir no valor
                 escaped_value = str(value).replace('"', '\\"')
-                # 2. Depois, construa a string final com aspas em volta
                 formatted_value = f'"{escaped_value}"'
                 final_query = final_query.replace(placeholder, formatted_value)
-
             elif placeholder == "#DATA#":
                 formatted_value = f'"{value}"^^xsd:date'
                 final_query = final_query.replace(placeholder, formatted_value)
-                
             elif placeholder == "#VALOR_DESEJADO#":
-                # Substitui diretamente (ex: 'precoFechamento')
                 final_query = final_query.replace(placeholder, str(value))
 
         return {"sparql_query": final_query}
@@ -125,7 +128,6 @@ def execute_local_sparql(query_string: str) -> dict:
         return {"error": "A ontologia local não está carregada. Verifique os logs de inicialização."}
     try:
         results = graph.query(query_string)
-        # Converte o resultado para uma lista de dicionários, que é facilmente serializável para JSON
         results_list = [row.asdict() for row in results]
         return {"data": results_list}
     except Exception as e:
