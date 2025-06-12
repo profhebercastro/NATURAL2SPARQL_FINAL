@@ -7,12 +7,10 @@ import subprocess
 import logging
 from flask import Flask, request, jsonify, render_template
 from rdflib import Graph
-from rdflib.plugins.sparql.results.jsonresults import JSONResultSerializer
 
 # --- 1. CONFIGURAÇÃO ---
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - WEB - %(levelname)s - %(message)s')
 
-# Caminhos são definidos de forma robusta para funcionar dentro do contêiner Docker
 APP_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCES_DIR = os.path.join(APP_BASE_DIR, 'src', 'main', 'resources')
 STATIC_FOLDER = os.path.join(RESOURCES_DIR, 'static')
@@ -34,7 +32,7 @@ except Exception as e:
 # --- 3. ROTAS DA API ---
 @app.route('/')
 def index():
-    """Serve a página HTML principal (ex: index.html) da pasta static."""
+    """Serve a página HTML principal."""
     return render_template('index.html')
 
 @app.route('/query', methods=['POST'])
@@ -48,13 +46,11 @@ def handle_query():
 
         logging.info(f"Iniciando processamento para a pergunta: '{question}'")
 
-        # Passo 1: Chamar o script PLN para análise
         pln_output = run_pln_processor(question)
         if "erro" in pln_output:
             logging.error(f"Erro retornado pelo PLN: {pln_output['erro']}")
             return jsonify({"error": f"Não foi possível interpretar a pergunta: {pln_output['erro']}", "sparql_query": ""}), 400
 
-        # Passo 2: Construir a consulta SPARQL com base na saída do PLN
         template_name = pln_output.get("template_nome")
         entities = pln_output.get("mapeamentos", {})
         query_build_result = build_sparql_query(template_name, entities)
@@ -65,13 +61,11 @@ def handle_query():
         sparql_query = query_build_result["sparql_query"]
         logging.info(f"Consulta SPARQL gerada:\n---\n{sparql_query}\n---")
 
-        # Passo 3: Executar a consulta na ontologia local
         execution_result = execute_local_sparql(sparql_query)
         if "error" in execution_result:
             logging.error(f"Erro ao executar a query: {execution_result['error']}")
             return jsonify(execution_result), 500
 
-        # Passo 4: Retornar a resposta final formatada
         return jsonify({"answer": execution_result["data"], "sparql_query": sparql_query})
 
     except Exception as e:
@@ -80,7 +74,7 @@ def handle_query():
 
 # --- 4. FUNÇÕES AUXILIARES ---
 def run_pln_processor(question: str) -> dict:
-    """Executa o script pln_processor.py em um subprocesso e retorna sua saída JSON."""
+    """Executa o script pln_processor.py e retorna sua saída JSON."""
     try:
         process = subprocess.run(
             ['python3', PLN_SCRIPT_PATH, question], 
@@ -88,8 +82,6 @@ def run_pln_processor(question: str) -> dict:
         )
         return json.loads(process.stdout)
     except subprocess.CalledProcessError as e:
-        # Captura o erro quando o script PLN retorna um status de erro (ex: exit(1))
-        # O script foi programado para imprimir um JSON de erro no stdout nesses casos
         try:
             return json.loads(e.stdout)
         except json.JSONDecodeError:
@@ -105,21 +97,21 @@ def build_sparql_query(template_name: str, entities: dict) -> dict:
             final_query = f.read()
 
         for placeholder, value in entities.items():
-            # Substitui os placeholders um a um, com formatação específica para cada tipo
-            if placeholder == "#ENTIDADE_NOME#":
-                # Formata como um literal SPARQL (string entre aspas)
-                formatted_value = f'"{str(value).replace("\"", "\\\"")}"'
+            if placeholder in ["#ENTIDADE_NOME#", "#SETOR#"]:
+                # ===== A CORREÇÃO ESTÁ AQUI =====
+                # 1. Primeiro, escape as aspas que possam existir no valor
+                escaped_value = str(value).replace('"', '\\"')
+                # 2. Depois, construa a string final com aspas em volta
+                formatted_value = f'"{escaped_value}"'
                 final_query = final_query.replace(placeholder, formatted_value)
+
             elif placeholder == "#DATA#":
-                # Formata como um literal de data SPARQL
                 formatted_value = f'"{value}"^^xsd:date'
                 final_query = final_query.replace(placeholder, formatted_value)
+                
             elif placeholder == "#VALOR_DESEJADO#":
-                # Substitui diretamente, pois o valor é parte de um predicado (ex: precoFechamento)
+                # Substitui diretamente (ex: 'precoFechamento')
                 final_query = final_query.replace(placeholder, str(value))
-            elif placeholder == "#SETOR#":
-                formatted_value = f'"{str(value).replace("\"", "\\\"")}"'
-                final_query = final_query.replace(placeholder, formatted_value)
 
         return {"sparql_query": final_query}
     except FileNotFoundError:
@@ -128,26 +120,19 @@ def build_sparql_query(template_name: str, entities: dict) -> dict:
         return {"error": f"Erro inesperado ao construir a query: {e}"}
 
 def execute_local_sparql(query_string: str) -> dict:
-    """Executa uma consulta SPARQL no grafo rdflib carregado em memória."""
+    """Executa uma consulta SPARQL no grafo rdflib em memória."""
     if len(graph) == 0:
-        return {"error": "A ontologia local não está carregada. Verifique os logs de inicialização do servidor."}
+        return {"error": "A ontologia local não está carregada. Verifique os logs de inicialização."}
     try:
         results = graph.query(query_string)
-        # Serializa o resultado para o formato JSON padrão do SPARQL
-        serializer = JSONResultSerializer(results)
-        output_stream = sys.stdout.buffer # Usa um buffer em memória para evitar escrita em arquivo
-        # O serializer espera um stream binário, então codificamos para utf-8
-        with os.fdopen(os.dup(output_stream.fileno()), 'wb') as f:
-             serializer.serialize(f)
-        # Como o método acima é complexo para capturar, vamos usar a conversão manual que é mais simples
+        # Converte o resultado para uma lista de dicionários, que é facilmente serializável para JSON
         results_list = [row.asdict() for row in results]
         return {"data": results_list}
     except Exception as e:
         logging.error(f"Erro durante a execução da query SPARQL: {e}", exc_info=True)
-        return {"error": f"A consulta SPARQL gerada é inválida. Detalhes: {e}"}
+        return {"error": f"A consulta SPARQL gerada parece ser inválida. Detalhes: {e}"}
 
 # --- 5. PONTO DE ENTRADA DA APLICAÇÃO ---
 if __name__ == '__main__':
-    # Esta seção é para execução local (python web_app.py). O Gunicorn/Render usará o objeto 'app'.
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port, debug=True)
