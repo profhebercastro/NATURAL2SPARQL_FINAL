@@ -1,5 +1,5 @@
 # Arquivo: pln_processor.py
-# Versão simplificada e corrigida, baseada no seu script original
+# Versão final com mapeamento de setor robusto
 
 import spacy
 import sys
@@ -33,6 +33,20 @@ try:
                 parts = line.strip().split(';', 1)
                 if len(parts) == 2:
                     PERGUNTAS_INTERESSE.append({"id": parts[0].strip(), "text": parts[1].strip()})
+    
+    # Mapeamento crucial de palavras-chave para nomes de setor da ontologia
+    SETOR_MAP = {
+        "eletrico": "Setor Elétrico",
+        "elétrico": "Setor Elétrico",
+        "financeiro": "Setor Financeiro",
+        "industrial": "Setor Industrial",
+        "consumo": "Setor de Consumo",
+        "saúde": "Setor de Saúde",
+        "saude": "Setor de Saúde",
+        "tecnologia": "Setor de Tecnologia",
+        "utilidade publica": "Setor de Utilidade Pública"
+        # Adicione outros mapeamentos conforme necessário
+    }
 
 except Exception as e:
     exit_with_error(f"Erro crítico ao carregar recursos do PLN: {e}")
@@ -40,7 +54,6 @@ except Exception as e:
 # --- 3. FUNÇÕES DE PROCESSAMENTO ---
 
 def selecionar_template(pergunta_usuario):
-    """Usa get_close_matches para encontrar o template mais similar."""
     pergunta_norm = pergunta_usuario.lower()
     textos_perguntas = [p['text'].lower() for p in PERGUNTAS_INTERESSE]
     matches = get_close_matches(pergunta_norm, textos_perguntas, n=1, cutoff=0.6)
@@ -52,7 +65,6 @@ def selecionar_template(pergunta_usuario):
     return None
 
 def extrair_entidades(doc):
-    """Extrai as entidades da pergunta de forma mais direta."""
     mapeamentos = {}
     texto_lower = doc.text.lower()
 
@@ -65,7 +77,7 @@ def extrair_entidades(doc):
             mapeamentos["#DATA#"] = dt_obj.strftime('%Y-%m-%d')
         except ValueError: pass
 
-    # Empresa (Prioriza ticker, depois busca por nome)
+    # Empresa
     nome_empresa = None
     match_ticker = re.search(r'\b([A-Z]{4}\d{1,2})\b', doc.text.upper())
     if match_ticker:
@@ -78,32 +90,32 @@ def extrair_entidades(doc):
     if nome_empresa:
         mapeamentos["#ENTIDADE_NOME#"] = nome_empresa
 
-    # Tipo de Preço (Valor Desejado)
+    # Tipo de Preço
     if 'fechamento' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoFechamento'
     elif 'abertura' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoAbertura'
-    elif 'máximo' in texto_lower or 'maximo' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoMaximo'
-    elif 'mínimo' in texto_lower or 'minimo' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoMinimo'
-
-    # Setor
+    
+    # Extração e Mapeamento de Setor
     if 'setor' in texto_lower:
-        match_setor = re.search(r'setor\s+(?:de\s+|do\s+|da\s+)?([\w\s]+)', texto_lower)
-        if match_setor:
-            mapeamentos["#SETOR#"] = match_setor.group(1).strip().title()
+        for keyword, nome_setor_ontologia in SETOR_MAP.items():
+            if keyword in texto_lower:
+                mapeamentos["#SETOR#"] = nome_setor_ontologia
+                logger.info(f"Setor encontrado e mapeado: '{keyword}' -> '{nome_setor_ontologia}'")
+                break # Pega o primeiro que encontrar
 
     return mapeamentos
 
 def main(pergunta_usuario):
-    """Orquestra o processo de PLN."""
     template_nome = selecionar_template(pergunta_usuario)
     if not template_nome:
         exit_with_error("Não foi possível entender a intenção da pergunta.")
     
     doc = nlp(pergunta_usuario)
     mapeamentos = extrair_entidades(doc)
-    if not mapeamentos:
-        exit_with_error("Não foi possível extrair informações suficientes da pergunta.")
-
-    # A saída é um JSON que o web_app.py pode ler
+    
+    # Validação: se o template é 3A, o #SETOR# precisa ter sido encontrado
+    if template_nome == "Template_3A" and "#SETOR#" not in mapeamentos:
+        exit_with_error("A pergunta parece ser sobre um setor, mas não consegui identificar qual.")
+    
     print(json.dumps({"template_nome": template_nome, "mapeamentos": mapeamentos}, ensure_ascii=False))
 
 # --- PONTO DE ENTRADA ---
