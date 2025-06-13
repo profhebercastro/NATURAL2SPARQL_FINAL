@@ -3,8 +3,19 @@ PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker
 WHERE {
-  ?empresa stock:atuaEm #SETOR_URI# .
-  ?empresa stock:temValorMobiliarioNegociado ?acao .
-  ?acao stock:temCodigoNegociacao ?ticker .
+  # Passo 1: Encontrar a entidade da empresa que atua no setor especificado.
+  # O PLN irá substituir #SETOR_URI# por 'stock:Setor_energia_eletrica'.
+  ?empresaEntidade stock:atuaEm #SETOR_URI# .
+  
+  # Passo 2: Da entidade da empresa, navegar para a entidade do valor mobiliário (ação).
+  ?empresaEntidade stock:temValorMobiliarioNegociado ?acao .
+  
+  # Passo 3: Da ação, navegar para a entidade do código de negociação.
+  # Este é o passo que estava faltando e foi revelado pelo seu exemplo.
+  ?acao stock:representadoPor ?codigoEntidade .
+  
+  # Passo 4: Finalmente, da entidade do código, obter o valor literal do ticker.
+  # A propriedade correta é 'ticker', não 'temCodigoNegociacao'.
+  ?codigoEntidade stock:ticker ?ticker .
 }
 ORDER BY ?ticker
