@@ -58,7 +58,6 @@
                 <input type="text" id="userQuestion" class="form-control" placeholder="Entre com sua pergunta aqui">
             </div>
             <div class="button-group">
-                <!-- ✅ ESTRUTURA DO BOTÃO SIMPLIFICADA -->
                 <button id="generateBtn" class="btn btn-success">
                     <span class="btn-text">GERAR CONSULTA</span>
                     <i class="fas fa-arrow-right"></i>
@@ -75,7 +74,6 @@
             <div class="card">
                 <div class="card-title-container">
                     <h3 class="card-title">Consulta SPARQL</h3>
-                    <!-- ✅ ESTRUTURA DO BOTÃO SIMPLIFICADA E ESCONDIDO POR PADRÃO -->
                     <button id="executeQueryBtn" class="btn btn-info btn-sm" style="display: none;">
                         <span class="btn-text">Executar</span>
                         <i class="fas fa-play"></i>
@@ -93,6 +91,7 @@
     
     <footer><p>© 2025 Natural2SPARQL - Consultas SPARQL em Linguagem Natural.</p></footer>
 
+    <!-- ===== SEÇÃO DE SCRIPT CORRIGIDA ===== -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Seleciona todos os elementos
@@ -107,11 +106,19 @@
             const resultOutput = document.getElementById('resultOutput');
 
             // Adiciona eventos de clique
-            generateBtn.addEventListener('click', handleQueryGeneration);
-            executeQueryBtn.addEventListener('click', handleQueryExecution);
+            // Corrigido para chamar as funções unificadas
+            generateBtn.addEventListener('click', handleProcessRequest);
             clearBtn.addEventListener('click', clearAllFields);
             downloadQueryBtn.addEventListener('click', () => downloadText('consulta.txt', sparqlQueryOutput.value));
             downloadResultBtn.addEventListener('click', () => downloadText('resultado.txt', resultOutput.value));
+
+            // Permite submeter a pergunta com a tecla "Enter"
+            userQuestionInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Impede o comportamento padrão do Enter em formulários
+                    handleProcessRequest();
+                }
+            });
 
             function clearAllFields() {
                 userQuestionInput.value = '';
@@ -120,18 +127,23 @@
                 executeQueryBtn.style.display = 'none'; // Esconde o botão ao limpar
             }
 
-            // ✅ FUNÇÃO DE GERAÇÃO CORRIGIDA
-            async function handleQueryGeneration() {
-                const question = userQuestionInput.value.trim();
-                if (!question) { alert("Por favor, digite uma pergunta."); return; }
-                
+            // Função unificada para gerar e executar a query
+            async function handleProcessRequest() {
+                const question = userQuestion-input.value.trim();
+                if (!question) {
+                    alert("Por favor, digite uma pergunta.");
+                    return;
+                }
+
+                // Inicia o estado de carregamento
                 toggleLoading(generateBtn, true);
-                executeQueryBtn.style.display = 'none';
-                resultOutput.value = 'O resultado aparece aqui...';
+                sparqlQueryOutput.value = 'Gerando consulta...';
+                resultOutput.value = 'Aguardando execução...';
                 resultOutput.style.color = '#495057';
 
                 try {
-                    const response = await fetch('/process', {
+                    // O endpoint /query agora faz tudo de uma vez
+                    const response = await fetch('/query', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ question: question })
@@ -142,59 +154,36 @@
                         throw new Error(data.error || `Erro do servidor (${response.status})`);
                     }
                     
+                    // Mostra a consulta gerada
                     sparqlQueryOutput.value = data.sparql_query || "Não foi possível gerar a consulta.";
-                    // A linha mais importante: mostra o botão se a consulta foi gerada
-                    if (data.sparql_query) {
-                        executeQueryBtn.style.display = 'inline-flex';
+
+                    // ===== A CORREÇÃO ESTÁ AQUI =====
+                    // Formata a resposta do backend
+                    const answerData = data.answer;
+                    if (Array.isArray(answerData) && answerData.length > 0) {
+                        // Extrai o valor de cada objeto no array
+                        const formattedValues = answerData.map(item => {
+                            // Pega o primeiro (e único) valor de cada objeto, não importa a chave
+                            return Object.values(item)[0]; 
+                        });
+                        // Junta os valores com quebra de linha
+                        resultOutput.value = formattedValues.join('\n');
+                    } else if (answerData && typeof answerData === 'object' && Object.keys(answerData).length > 0) {
+                        // Se for um único objeto de resultado
+                        resultOutput.value = Object.values(answerData)[0];
+                    } else {
+                        resultOutput.value = "Nenhum resultado encontrado.";
                     }
-                
+
                 } catch (error) {
-                    sparqlQueryOutput.value = `Falha ao gerar consulta: ${error.message}`;
-                    resultOutput.value = ''; // Limpa o resultado em caso de erro na geração
+                    resultOutput.style.color = '#dc3545';
+                    sparqlQueryOutput.value = data.sparql_query || 'Falha ao gerar consulta.';
+                    resultOutput.value = `Erro: ${error.message}`;
                 } finally {
                     toggleLoading(generateBtn, false);
                 }
             }
 
-            // ✅ FUNÇÃO DE EXECUÇÃO CORRIGIDA
-            async function handleQueryExecution() {
-                const sparqlQuery = sparqlQueryOutput.value.trim();
-                const endpoint = sparqlEndpointInput.value.trim();
-                if (!sparqlQuery || sparqlQuery.startsWith('A consulta')) { alert("Não há consulta para executar."); return; }
-
-                toggleLoading(executeQueryBtn, true);
-                resultOutput.style.color = '#495057';
-
-                try {
-                    const response = await fetch('/execute_query', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sparql_query: sparqlQuery, endpoint: endpoint })
-                    });
-                    const data = await response.json();
-
-                    if (!response.ok || data.error) {
-                        throw new Error(data.error || `Erro do servidor (${response.status})`);
-                    }
-                    
-                    let resultText = data.result || "Nenhum resultado foi retornado.";
-                    try {
-                         // Tenta formatar o JSON para melhor visualização
-                         const parsedResult = JSON.parse(resultText);
-                         resultOutput.value = JSON.stringify(parsedResult, null, 2);
-                    } catch (e) {
-                         // Se não for JSON, apenas exibe o texto
-                         resultOutput.value = resultText;
-                    }
-                } catch (error) {
-                    resultOutput.style.color = '#dc3545';
-                    resultOutput.value = `Erro na execução: ${error.message}`;
-                } finally {
-                    toggleLoading(executeQueryBtn, false);
-                }
-            }
-            
-            // ✅ FUNÇÃO DE LOADING ROBUSTA
             function toggleLoading(button, isLoading) {
                 const textSpan = button.querySelector('.btn-text');
                 const spinner = button.querySelector('.spinner');
