@@ -1,12 +1,12 @@
 # Arquivo: web_app.py
-# Versão corrigida para funcionar com index2.html
+# Versão corrigida para a dinâmica de dois botões (Gerar -> Executar)
 
 import os
 import sys
 import json
 import subprocess
 import logging
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template
 from rdflib import Graph
 
 # --- 1. CONFIGURAÇÃO ---
@@ -15,15 +15,16 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s -
 APP_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCES_DIR = os.path.join(APP_BASE_DIR, 'src', 'main', 'resources')
 
-# Define explicitamente onde estão as pastas 'static' (que contém o index2.html)
 STATIC_FOLDER = os.path.join(RESOURCES_DIR, 'static')
+TEMPLATE_FOLDER = STATIC_FOLDER
 
 PLN_SCRIPT_PATH = os.path.join(RESOURCES_DIR, 'pln_processor.py')
 TEMPLATES_DIR = os.path.join(RESOURCES_DIR, 'Templates')
 ONTOLOGY_PATH = os.path.join(APP_BASE_DIR, 'ontologiaB3_com_inferencia.ttl')
 
-# Inicializa o Flask
-app = Flask(__name__, static_folder=STATIC_FOLDER)
+app = Flask(__name__, 
+            static_folder=STATIC_FOLDER,
+            template_folder=TEMPLATE_FOLDER)
 
 # --- 2. CARREGAMENTO DA ONTOLOGIA ---
 graph = Graph()
@@ -34,17 +35,15 @@ try:
 except Exception as e:
     logging.error(f"FALHA CRÍTICA AO CARREGAR ONTOLOGIA: {e}", exc_info=True)
 
-# --- 3. ROTAS DA API ---
+# --- 3. ROTAS DA API (SEPARADAS) ---
 @app.route('/')
 def index():
-    """Serve a página principal da interface."""
-    return send_from_directory(app.static_folder, 'index2.html')
+    """Serve a página principal (index2.html)."""
+    return render_template('index2.html')
 
 @app.route('/process', methods=['POST'])
 def process_question_route():
-    """
-    Etapa 1: Recebe a pergunta e retorna APENAS a consulta SPARQL gerada.
-    """
+    """Etapa 1: Recebe a pergunta e retorna APENAS a consulta SPARQL gerada."""
     try:
         data = request.get_json()
         question = data.get('question', '').strip()
@@ -64,6 +63,7 @@ def process_question_route():
         if "error" in query_build_result:
             return jsonify(query_build_result), 500
         
+        # Retorna apenas a query gerada, como o frontend espera
         return jsonify(query_build_result)
 
     except Exception as e:
@@ -72,31 +72,21 @@ def process_question_route():
 
 @app.route('/execute_query', methods=['POST'])
 def execute_query_route():
-    """
-    Etapa 2: Recebe uma consulta SPARQL pronta e a executa.
-    """
+    """Etapa 2: Recebe uma consulta SPARQL pronta e a executa."""
     try:
         data = request.get_json()
         sparql_query = data.get('sparql_query', '').strip()
-        endpoint = data.get('endpoint', '').strip() # Endpoint remoto opcional
-
         if not sparql_query:
             return jsonify({"error": "Nenhuma consulta SPARQL fornecida."}), 400
 
-        logging.info(f"Executando consulta (Endpoint: {endpoint or 'Local'})")
+        logging.info("Executando consulta na ontologia local.")
         
-        # Por simplicidade, este exemplo foca na execução local.
-        # A lógica para endpoint remoto (requests) pode ser adicionada aqui se necessário.
-        if endpoint:
-             return jsonify({"error": "Execução em endpoint remoto ainda não implementada."}), 501
-
         execution_result = execute_local_sparql(sparql_query)
         if "error" in execution_result:
             return jsonify({"result": execution_result["error"]}), 500
         
-        # O seu JS espera que o 'result' seja uma string, então formatamos o JSON
-        formatted_result = json.dumps(execution_result["data"], indent=2, ensure_ascii=False)
-        return jsonify({"result": formatted_result})
+        # O frontend espera o campo 'result' contendo os dados
+        return jsonify({"result": execution_result["data"]})
 
     except Exception as e:
         logging.error(f"Erro inesperado em /execute_query: {e}", exc_info=True)
@@ -104,23 +94,23 @@ def execute_query_route():
 
 # --- 4. FUNÇÕES AUXILIARES ---
 def run_pln_processor(question: str) -> dict:
-    # (Exatamente como nas versões anteriores)
     try:
         process = subprocess.run(
             ['python3', PLN_SCRIPT_PATH, question], 
-            capture_output=True, text=True, check=True, encoding='utf-8'
+            capture_output=True, text=True, check=True, encoding='utf-8', timeout=20
         )
         return json.loads(process.stdout)
+    except subprocess.TimeoutExpired:
+        return {"erro": "O processamento da linguagem demorou demais (timeout)."}
     except subprocess.CalledProcessError as e:
         try:
             return json.loads(e.stdout)
         except json.JSONDecodeError:
-            return {"erro": f"O script PLN falhou. Stderr: {e.stderr}"}
+            return {"erro": f"O script PLN falhou com saída não-JSON. Stderr: {e.stderr}"}
     except Exception as e:
         return {"erro": f"Falha ao executar o processo PLN: {e}"}
 
 def build_sparql_query(template_name: str, entities: dict) -> dict:
-    # (Exatamente como nas versões anteriores)
     template_path = os.path.join(TEMPLATES_DIR, f"{template_name}.txt")
     try:
         with open(template_path, 'r', encoding='utf-8') as f:
@@ -140,11 +130,8 @@ def build_sparql_query(template_name: str, entities: dict) -> dict:
         return {"sparql_query": final_query}
     except FileNotFoundError:
         return {"error": f"Template '{template_path}' não encontrado."}
-    except Exception as e:
-        return {"error": f"Erro ao construir a query: {e}"}
 
 def execute_local_sparql(query_string: str) -> dict:
-    # (Exatamente como nas versões anteriores)
     if len(graph) == 0:
         return {"error": "A ontologia local não está carregada."}
     try:
