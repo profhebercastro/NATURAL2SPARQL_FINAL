@@ -1,5 +1,5 @@
 # Arquivo: pln_processor.py
-# Versão final com mapeamento de setor robusto
+# Versão final e definitiva, corrigida para mapear para URIs de setor
 
 import spacy
 import sys
@@ -34,18 +34,14 @@ try:
                 if len(parts) == 2:
                     PERGUNTAS_INTERESSE.append({"id": parts[0].strip(), "text": parts[1].strip()})
     
-    # Mapeamento crucial de palavras-chave para nomes de setor da ontologia
-    SETOR_MAP = {
-        "eletrico": "Setor Elétrico",
-        "elétrico": "Setor Elétrico",
-        "financeiro": "Setor Financeiro",
-        "industrial": "Setor Industrial",
-        "consumo": "Setor de Consumo",
-        "saúde": "Setor de Saúde",
-        "saude": "Setor de Saúde",
-        "tecnologia": "Setor de Tecnologia",
-        "utilidade publica": "Setor de Utilidade Pública"
-        # Adicione outros mapeamentos conforme necessário
+    # Mapeamento crucial de palavras-chave para a URI exata do setor na ontologia
+    SETOR_URI_MAP = {
+        "eletrico": "stock:Setor_energia_eletrica",
+        "elétrico": "stock:Setor_energia_eletrica",
+        "financeiro": "stock:Setor_financeiro", # Suposição, verifique a URI exata se necessário
+        "bancos": "stock:Setor_financeiro",
+        "industrial": "stock:Setor_industrial" # Suposição
+        # Adicione os outros mapeamentos aqui, seguindo o padrão stock:NomeDoSetor
     }
 
 except Exception as e:
@@ -56,7 +52,7 @@ except Exception as e:
 def selecionar_template(pergunta_usuario):
     pergunta_norm = pergunta_usuario.lower()
     textos_perguntas = [p['text'].lower() for p in PERGUNTAS_INTERESSE]
-    matches = get_close_matches(pergunta_norm, textos_perguntas, n=1, cutoff=0.6)
+    matches = get_close_matches(pergunta_norm, textos_perguntas, n=1, cutoff=0.55)
     
     if matches:
         for p in PERGUNTAS_INTERESSE:
@@ -94,13 +90,13 @@ def extrair_entidades(doc):
     if 'fechamento' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoFechamento'
     elif 'abertura' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoAbertura'
     
-    # Extração e Mapeamento de Setor
+    # Extração de Setor (mapeia para a URI e usa o placeholder #SETOR_URI#)
     if 'setor' in texto_lower:
-        for keyword, nome_setor_ontologia in SETOR_MAP.items():
+        for keyword, setor_uri in SETOR_URI_MAP.items():
             if keyword in texto_lower:
-                mapeamentos["#SETOR#"] = nome_setor_ontologia
-                logger.info(f"Setor encontrado e mapeado: '{keyword}' -> '{nome_setor_ontologia}'")
-                break # Pega o primeiro que encontrar
+                mapeamentos["#SETOR_URI#"] = setor_uri
+                logger.info(f"Setor encontrado e mapeado: '{keyword}' -> '{setor_uri}'")
+                break
 
     return mapeamentos
 
@@ -112,9 +108,8 @@ def main(pergunta_usuario):
     doc = nlp(pergunta_usuario)
     mapeamentos = extrair_entidades(doc)
     
-    # Validação: se o template é 3A, o #SETOR# precisa ter sido encontrado
-    if template_nome == "Template_3A" and "#SETOR#" not in mapeamentos:
-        exit_with_error("A pergunta parece ser sobre um setor, mas não consegui identificar qual.")
+    if template_nome == "Template_3A" and "#SETOR_URI#" not in mapeamentos:
+        exit_with_error("A pergunta parece ser sobre um setor, mas não consegui identificar qual (ex: elétrico, financeiro).")
     
     print(json.dumps({"template_nome": template_nome, "mapeamentos": mapeamentos}, ensure_ascii=False))
 

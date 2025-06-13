@@ -1,5 +1,5 @@
 # Arquivo: web_app.py
-# Versão corrigida para a dinâmica de dois botões (Gerar -> Executar)
+# Versão final e corrigida para a dinâmica de dois botões e o novo #SETOR_URI#
 
 import os
 import sys
@@ -38,58 +38,44 @@ except Exception as e:
 # --- 3. ROTAS DA API (SEPARADAS) ---
 @app.route('/')
 def index():
-    """Serve a página principal (index2.html)."""
     return render_template('index2.html')
 
 @app.route('/process', methods=['POST'])
 def process_question_route():
-    """Etapa 1: Recebe a pergunta e retorna APENAS a consulta SPARQL gerada."""
     try:
         data = request.get_json()
         question = data.get('question', '').strip()
-        if not question:
-            return jsonify({"error": "A pergunta não pode estar vazia."}), 400
+        if not question: return jsonify({"error": "A pergunta não pode estar vazia."}), 400
 
         logging.info(f"Gerando consulta para: '{question}'")
         
         pln_output = run_pln_processor(question)
-        if "erro" in pln_output:
-            return jsonify({"error": pln_output["erro"], "sparql_query": ""}), 400
+        if "erro" in pln_output: return jsonify({"error": pln_output["erro"], "sparql_query": ""}), 400
 
         template_name = pln_output.get("template_nome")
         entities = pln_output.get("mapeamentos", {})
         
         query_build_result = build_sparql_query(template_name, entities)
-        if "error" in query_build_result:
-            return jsonify(query_build_result), 500
+        if "error" in query_build_result: return jsonify(query_build_result), 500
         
-        # Retorna apenas a query gerada, como o frontend espera
         return jsonify(query_build_result)
-
     except Exception as e:
-        logging.error(f"Erro inesperado em /process: {e}", exc_info=True)
         return jsonify({"error": "Erro interno ao gerar a consulta.", "sparql_query": ""}), 500
 
 @app.route('/execute_query', methods=['POST'])
 def execute_query_route():
-    """Etapa 2: Recebe uma consulta SPARQL pronta e a executa."""
     try:
         data = request.get_json()
         sparql_query = data.get('sparql_query', '').strip()
-        if not sparql_query:
-            return jsonify({"error": "Nenhuma consulta SPARQL fornecida."}), 400
+        if not sparql_query: return jsonify({"error": "Nenhuma consulta SPARQL fornecida."}), 400
 
         logging.info("Executando consulta na ontologia local.")
         
         execution_result = execute_local_sparql(sparql_query)
-        if "error" in execution_result:
-            return jsonify({"result": execution_result["error"]}), 500
+        if "error" in execution_result: return jsonify({"result": execution_result["error"]}), 500
         
-        # O frontend espera o campo 'result' contendo os dados
         return jsonify({"result": execution_result["data"]})
-
     except Exception as e:
-        logging.error(f"Erro inesperado em /execute_query: {e}", exc_info=True)
         return jsonify({"error": f"Erro interno ao executar a consulta: {e}"}), 500
 
 # --- 4. FUNÇÕES AUXILIARES ---
@@ -101,12 +87,12 @@ def run_pln_processor(question: str) -> dict:
         )
         return json.loads(process.stdout)
     except subprocess.TimeoutExpired:
-        return {"erro": "O processamento da linguagem demorou demais (timeout)."}
+        return {"erro": "O processamento da linguagem demorou demais."}
     except subprocess.CalledProcessError as e:
         try:
             return json.loads(e.stdout)
         except json.JSONDecodeError:
-            return {"erro": f"O script PLN falhou com saída não-JSON. Stderr: {e.stderr}"}
+            return {"erro": f"O script PLN falhou. Stderr: {e.stderr}"}
     except Exception as e:
         return {"erro": f"Falha ao executar o processo PLN: {e}"}
 
@@ -118,13 +104,19 @@ def build_sparql_query(template_name: str, entities: dict) -> dict:
 
         for placeholder, value in entities.items():
             if placeholder in ["#ENTIDADE_NOME#", "#SETOR#"]:
+                # Para valores que são strings literais
                 escaped_value = str(value).replace('"', '\\"')
                 formatted_value = f'"{escaped_value}"'
                 final_query = final_query.replace(placeholder, formatted_value)
+            
             elif placeholder == "#DATA#":
+                # Para datas
                 formatted_value = f'"{value}"^^xsd:date'
                 final_query = final_query.replace(placeholder, formatted_value)
-            elif placeholder == "#VALOR_DESEJADO#":
+            
+            elif placeholder in ["#VALOR_DESEJADO#", "#SETOR_URI#"]:
+                # Para valores que são parte da sintaxe (predicados ou URIs)
+                # Substitui diretamente, SEM ASPAS.
                 final_query = final_query.replace(placeholder, str(value))
         
         return {"sparql_query": final_query}
