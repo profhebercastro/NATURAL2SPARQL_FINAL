@@ -2,7 +2,7 @@ Template_1A;Qual foi o preço de fechamento da ação da CSN em 08/05/2023?
 Template_1B;Qual foi o preço de abertura da CBAV3 em 08/05/2023?
 Template_2A;Qual o código de negociação da ação da Gerdau?
 Template_3A;Quais são as ações do setor <setor>?
-Template_4A;Qual foi o volume negociado nas ações do setor bancário em 05/05/2023?
+Template_4A;Qual foi o volume negociado das ações do setor <SETOR> em <DATA>?
 Template_4B;Qual foi a quantidade de ações do Itau negociadas no pregão de 05/05/2023?
 
 Template_5B;Qual foi o preço mínima da ação preferencial do Itau em 05/05/2023?

@@ -1,7 +1,6 @@
-# Formato: sinonimo_em_minusculas;valor_na_ontologia_ou_placeholder
-# SALVAR COMO UTF-8 (SEM BOM)
+# Mapeamento para o placeholder #VALOR_DESEJADO# (propriedades de cotação)
 
-# --- Mapeamento para #VALOR_DESEJADO# -> #PREDICADO_VALOR# ---
+# Preço de Fechamento
 preco de fechamento;precoFechamento
 ultimo negocio;precoFechamento
 fechamento;precoFechamento
@@ -9,56 +8,52 @@ preco final;precoFechamento
 ultimo preco;precoFechamento
 cotação;precoFechamento
 cotacao;precoFechamento
-preço;precoFechamento
+# "preco" e "valor" são muito genéricos e podem ser problemáticos se usados como chave primária.
+# Deixe-os como último recurso ou remova-os se causarem mais problemas do que soluções.
+# Se mantiver, garanta que termos mais específicos sejam checados primeiro no PLN.
 preco;precoFechamento
 valor;precoFechamento
 
-preco de abertura;precoAbertura
-abertura;precoAbertura
-
-preco medio;precoMedio
-medio;precoMedio
-media de preco;precoMedio
-
-preco maximo;precoMaximo
-maxima;precoMaximo
-maior preco;precoMaximo
-valor maximo;precoMaximo
-
+# Preço Mínimo
 preco minimo;precoMinimo
 minima;precoMinimo
 menor preco;precoMinimo
 valor minimo;precoMinimo
 
-volume total negociado;volumeNegociacao
-volume negociado;volumeNegociacao
-volume;volumeNegociacao
-volume financeiro;volumeNegociacao
-volume total;volumeNegociacao
+# Preço Máximo
+preco maximo;precoMaximo
+maxima;precoMaximo
+maior preco;precoMaximo
+valor maximo;precoMaximo
 
+# Preço de Abertura
+preco de abertura;precoAbertura
+abertura;precoAbertura
+
+# Preço Médio
+preco medio;precoMedio
+medio;precoMedio
+media de preco;precoMedio
+
+# Total de Negócios (Quantidade de Ações Negociadas)
+total negocios;totalNegocios
+quantidade de acoes;totalNegocios
+quantidade negociada;totalNegocios
 numero de negocios;totalNegocios
-total de negocios;totalNegocios
-quantidade de negocios;totalNegocios
 negocios realizados;totalNegocios
 
-# --- Mapeamento para Código/Ticker ---
-codigo de negociacao;codigo
-codigo;codigo
-ticker;codigo
-simbolo;codigo
-negociação;codigo
+# Volume Financeiro Negociado
+volume financeiro;volumeNegociacao
+volume negociado;volumeNegociacao
+volume de acoes (financeiro);volumeNegociacao 
+volume total;volumeNegociacao
+volume;volumeNegociacao # Genérico, usar com cautela
 
-# --- Mapeamento para Setores (Exemplos - Adapte à sua ontologia) ---
-financeiro;Financeiro_Intermediarios_Financeiros_Bancos.
-bancos;Financeiro_Intermediarios_Financeiros_Bancos.
-seguradoras;Previdencia_e_Seguros
-servicos financeiros;Servicos_Financeiros_Diversos
-energia;Utilidade_Publica_Energia_Eletrica.
-energia eletrica;Utilidade_Publica_Energia_Eletrica.
-petroleo;Petroleo._Gas_e_Biocombustveis_Exploracao_Refino_e_Distribuicao.
-gas;Petroleo._Gas_e_Biocombustveis_Exploracao_Refino_e_Distribuicao.
-materiais basicos;Materiais_Basicos
-mineracao;Materiais_Basicos_Mineracao_Minerais_Metalicos.
-siderurgia;Materiais_Basicos_Siderurgia_e_Metalurgia_Siderurgia._
-quimicos;Materiais_Basicos_Quimico
-papel e celulose;Materiais_Basicos_Madeira_e_Papel
+# --- Mapeamento para intenção de buscar Código/Ticker (para Template_2A) ---
+# O valor aqui ('type_codigo') é um identificador interno para o PLN, não uma propriedade da ontologia.
+codigo de negociacao;type_codigo
+codigo da acao;type_codigo
+qual o codigo;type_codigo
+ticker da acao;type_codigo
+ticker;type_codigo
+simbolo da acao;type_codigo0

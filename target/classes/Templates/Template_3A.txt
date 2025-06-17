@@ -1,32 +1,21 @@
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#> 
+PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
-SELECT DISTINCT ?valor ?empresaLabel 
+SELECT DISTINCT ?ticker
 WHERE {
+  # Passo 1: Encontrar a entidade da empresa que atua no setor especificado.
+  # O PLN irá substituir #SETOR_URI# por 'stock:Setor_energia_eletrica'.
+  ?empresaEntidade stock:atuaEm #SETOR_URI# .
   
-  ?empresa stock:atuaEm ?setorUri .
-  ?setorUri rdfs:label ?setorLabel .
-
-  FILTER(STR(?setorLabel) = #SETOR#) 
- 
-  ?empresa rdfs:label ?empresaLabel .
+  # Passo 2: Da entidade da empresa, navegar para a entidade do valor mobiliário (ação).
+  ?empresaEntidade stock:temValorMobiliarioNegociado ?acao .
   
-  OPTIONAL { 
-    ?empresa stock:temValorMobiliarioNegociado ?vmOpt .
-    ?vmOpt stock:representadoPor ?codOpt .
-    ?codOpt stock:ticker ?tickerViaVm .
-  }
-  OPTIONAL {
-    ?empresa stock:representadoPor ?codDirOpt . 
-    ?codDirOpt stock:ticker ?tickerViaDireto .
-  }
-    
-  BIND(COALESCE(?tickerViaVm, ?tickerViaDireto) AS ?tickerBruto)
-  FILTER(BOUND(?tickerBruto)) 
-
-  FILTER REGEX(STR(?tickerBruto), "^[A-Z]{4}[0-9]{1,2}$", "i") 
-  BIND(?tickerBruto AS ?valor) 
+  # Passo 3: Da ação, navegar para a entidade do código de negociação.
+  # Este é o passo que estava faltando e foi revelado pelo seu exemplo.
+  ?acao stock:representadoPor ?codigoEntidade .
+  
+  # Passo 4: Finalmente, da entidade do código, obter o valor literal do ticker.
+  # A propriedade correta é 'ticker', não 'temCodigoNegociacao'.
+  ?codigoEntidade stock:ticker ?ticker .
 }
-ORDER BY ?empresaLabel ?valor
-LIMIT 100 
+ORDER BY ?ticker

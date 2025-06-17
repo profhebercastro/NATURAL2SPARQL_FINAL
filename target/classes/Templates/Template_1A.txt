@@ -1,19 +1,15 @@
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  ?valor_mobiliario b3:representadoPor ?codigo .
-  ?codigo b3:ticker #ENTIDADE_NOME# . 
-
-  ?valor_mobiliario b3:negociado ?negociadoInst . 
+  ?empresaPrincipal rdfs:label #ENTIDADE_NOME#@pt .
+  ?empresaPrincipal b3:temValorMobiliarioNegociado ?entidadeEmpresaVM .
+  ?entidadeEmpresaVM b3:temValorMobiliarioNegociado ?vmNegociado .
+  ?vmNegociado b3:negociado ?negociadoInst . 
   ?negociadoInst b3:negociadoDurante ?pregao .
-
-  
-  ?negociadoInst #VALOR_DESEJADO# ?valor .
-
-  ?pregao b3:ocorreEmData #DATA# . 
-}
+  ?pregao b3:ocorreEmData #DATA# .          
+  ?negociadoInst b3:#VALOR_DESEJADO# ?valor . 
+} 
 LIMIT 10

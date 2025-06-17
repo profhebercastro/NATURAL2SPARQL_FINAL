@@ -1,0 +1,24 @@
+# Template_4A: Busca o volume negociado por ação para um setor e data específicos.
+
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX stock: <http://www.semanticweb.org/heber/ontologies/2024/3/stock_market#>
+
+SELECT ?codigo ?volume
+WHERE {
+  # Encontra o setor pelo nome
+  ?setor a stock:Setor ;
+         stock:temNome "<SETOR>" .
+
+  # Encontra todas as empresas pertencentes a esse setor
+  ?empresa stock:pertenceAoSetor ?setor .
+
+  # Encontra todas as ações dessas empresas
+  ?acao stock:pertenceAEmpresa ?empresa ;
+        stock:temCodigoNegociacao ?codigo .
+
+  # Encontra o pregão para cada ação na data especificada
+  ?pregao stock:ehPregaoDe ?acao ;
+          stock:emData "<DATA>" ;
+          stock:volumeNegociacao ?volume .
+}
+ORDER BY ?codigo
