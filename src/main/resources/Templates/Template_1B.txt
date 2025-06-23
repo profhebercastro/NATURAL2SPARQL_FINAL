@@ -1,13 +1,22 @@
+# Template 1B: Busca um valor (ex: preço) para um TICKER em uma DATA
+# Caminho corrigido: Ticker -> VM -> Negociação
+
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
+  # Encontra a instância do código pelo ticker
   ?codigoInstancia b3:ticker #ENTIDADE_NOME# .
+  
+  # Encontra o valor mobiliário que é representado por esse código
   ?valor_mobiliario b3:representadoPor ?codigoInstancia .
+  
+  # A partir do valor mobiliário, encontra sua negociação
   ?valor_mobiliario b3:negociado ?negociadoInst . 
-  ?negociadoInst b3:negociadoDurante ?pregao .
-  ?pregao b3:ocorreEmData #DATA# .
+  
+  # Filtra a negociação pela data e pega o valor desejado
+  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
 }
 LIMIT 10

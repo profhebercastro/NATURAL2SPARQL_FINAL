@@ -17,12 +17,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,15 +38,10 @@ public class QuestionProcessor {
     public void initialize() {
         logger.info("Iniciando QuestionProcessor (@PostConstruct)...");
         try {
-            Resource resource = new ClassPathResource("scripts/" + PYTHON_SCRIPT_NAME);
+            Resource resource = new ClassPathResource(PYTHON_SCRIPT_NAME);
             if (!resource.exists()) {
-                logger.warn("Script Python '{}' não encontrado em 'resources/scripts/'. Tentando na raiz de 'resources'.", PYTHON_SCRIPT_NAME);
-                resource = new ClassPathResource(PYTHON_SCRIPT_NAME);
-            }
-
-            if (!resource.exists()) {
-                logger.error("CRÍTICO: Script Python '{}' não encontrado no classpath. Processamento falhará.", PYTHON_SCRIPT_NAME);
-                throw new FileNotFoundException("Script Python essencial não encontrado: " + PYTHON_SCRIPT_NAME);
+                logger.warn("Script Python '{}' não encontrado na raiz de 'resources/'. Verifique o caminho.", PYTHON_SCRIPT_NAME);
+                 throw new FileNotFoundException("Script Python essencial não encontrado: " + PYTHON_SCRIPT_NAME);
             }
 
             if (resource.getURI().toString().startsWith("jar:")) {
@@ -74,35 +66,34 @@ public class QuestionProcessor {
         logger.info("Serviço QuestionProcessor: Iniciando processamento da pergunta: '{}'", question);
         ProcessamentoDetalhadoResposta respostaDetalhada = new ProcessamentoDetalhadoResposta();
         String sparqlQueryGerada = "N/A - Query não gerada.";
+        respostaDetalhada.setSparqlQuery(sparqlQueryGerada);
 
         if (this.pythonScriptPath == null || !Files.exists(this.pythonScriptPath)) {
             respostaDetalhada.setErro("Erro crítico interno: Componente de PLN não está disponível.");
-            respostaDetalhada.setSparqlQuery(sparqlQueryGerada);
             return respostaDetalhada;
         }
 
         try {
             Map<String, Object> resultadoPython = executePythonScript(question);
-            ObjectMapper objectMapper = new ObjectMapper();
-
-            String templateId = (String) resultadoPython.get("template_nome");
-            @SuppressWarnings("unchecked")
-            Map<String, String> placeholders = (Map<String, String>) resultadoPython.get("mapeamentos");
-
+            
             if (resultadoPython.containsKey("erro")) {
                 respostaDetalhada.setErro("Falha no PLN: " + resultadoPython.get("erro"));
                 return respostaDetalhada;
             }
+
+            String templateId = (String) resultadoPython.get("template_nome");
+            @SuppressWarnings("unchecked")
+            Map<String, String> placeholders = (Map<String, String>) resultadoPython.get("mapeamentos");
 
             if (templateId == null || placeholders == null) {
                 respostaDetalhada.setErro("Não foi possível determinar o tipo da pergunta ou extrair detalhes.");
                 return respostaDetalhada;
             }
 
-            logger.info("Python: Template='{}', Placeholders={}", templateId, placeholders);
+            logger.info("Python retornou: Template ID='{}', Placeholders={}", templateId, placeholders);
 
             String conteudoTemplate = readTemplateContent(templateId);
-            sparqlQueryGerada = buildSparqlQuery(conteudoTemplate, placeholders, templateId);
+            sparqlQueryGerada = buildSparqlQuery(conteudoTemplate, placeholders);
             respostaDetalhada.setSparqlQuery(sparqlQueryGerada);
             logger.info("SPARQL Gerada:\n---\n{}\n---", sparqlQueryGerada);
 
@@ -111,7 +102,7 @@ public class QuestionProcessor {
             if (resultados == null) {
                 respostaDetalhada.setErro("Erro ao executar a consulta na base de conhecimento.");
             } else if (resultados.isEmpty()) {
-                respostaDetalhada.setResposta("Não foram encontrados resultados.");
+                respostaDetalhada.setResposta("Não foram encontrados resultados para sua pergunta.");
             } else {
                 String respostaFormatada = formatarResultados(resultados, templateId);
                 respostaDetalhada.setResposta(respostaFormatada);
@@ -119,59 +110,106 @@ public class QuestionProcessor {
             }
         } catch (Exception e) {
             logger.error("Erro GENÉRICO ao processar '{}': {}", question, e.getMessage(), e);
-            respostaDetalhada.setErro("Erro inesperado no servidor.");
+            respostaDetalhada.setErro("Erro inesperado no servidor: " + e.getMessage());
         }
-
+        
         return respostaDetalhada;
     }
 
     private String formatarResultados(List<Map<String, String>> resultados, String templateId) {
-        if (resultados == null || resultados.isEmpty()) return "";
-
-        switch (templateId) {
-            case "Template_4A":
-                StringJoiner joinerMultiLinha = new StringJoiner("\n");
-                for (Map<String, String> row : resultados) {
-                    joinerMultiLinha.add(row.getOrDefault("codigo", "N/A") + " - " + row.getOrDefault("volume", "N/A"));
-                }
-                return joinerMultiLinha.toString();
-
-            case "Template_2A":
-                StringJoiner joinerVirgula2A = new StringJoiner(", ");
-                for (Map<String, String> row : resultados) {
-                    String ticker = row.getOrDefault("individualTicker", "");
-                    if (!ticker.isEmpty()) joinerVirgula2A.add(limparValor(ticker));
-                }
-                return joinerVirgula2A.toString();
-
-            default:
-                StringJoiner joinerVirgulaDefault = new StringJoiner(", ");
-                for (Map<String, String> row : resultados) {
-                    String valor = row.getOrDefault("valor", "");
-                    if (!valor.isEmpty()) joinerVirgulaDefault.add(limparValor(valor));
-                }
-                return joinerVirgulaDefault.toString();
+        if (resultados == null || resultados.isEmpty()) {
+            return "Nenhum resultado encontrado.";
         }
+        
+        StringJoiner joiner;
+        
+        // Formato para múltiplas colunas (Template_4A)
+        if ("Template_4A".equals(templateId)) {
+            joiner = new StringJoiner("\n"); // Resposta em múltiplas linhas
+            for (Map<String, String> row : resultados) {
+                String ticker = row.getOrDefault("ticker", "?");
+                String volume = row.getOrDefault("volume", "?");
+                joiner.add(ticker + " - " + volume);
+            }
+            return joiner.toString();
+        }
+
+        // Para todos os outros, a resposta é uma lista de valores separados por vírgula
+        joiner = new StringJoiner(", ");
+        if (!resultados.isEmpty()) {
+            // Pega o nome da primeira variável de resultado para ser genérico
+            String varName = resultados.get(0).keySet().stream().findFirst().orElse("valor");
+            
+            for (Map<String, String> row : resultados) {
+                String valor = row.getOrDefault(varName, "");
+                if (!valor.isEmpty()) {
+                    joiner.add(limparValor(valor));
+                }
+            }
+        }
+        return joiner.toString();
     }
 
     private String limparValor(String item) {
         if (item == null) return "";
+        // Remove os sufixos de tipo de dado do XML Schema e o prefixo da ontologia
         String limpo = item.replaceAll("\\^\\^<http://www.w3.org/2001/XMLSchema#.*?>", "");
-        if (limpo.startsWith(BASE_ONTOLOGY_URI)) limpo = limpo.substring(BASE_ONTOLOGY_URI.length());
+        if (limpo.startsWith(BASE_ONTOLOGY_URI)) {
+            limpo = limpo.substring(BASE_ONTOLOGY_URI.length());
+        }
         return limpo.trim();
+    }
+
+    private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
+        String queryAtual = templateContent;
+        if (placeholders == null) return queryAtual;
+
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            String phKey = entry.getKey();
+            String phValue = entry.getValue();
+
+            if (phValue != null && queryAtual.contains(phKey)) {
+                String valorSubstituicao;
+                
+                switch (phKey) {
+                    case "#DATA#":
+                        valorSubstituicao = "\"" + phValue + "\"^^xsd:date";
+                        break;
+                    case "#VALOR_DESEJADO#":
+                        valorSubstituicao = "b3:" + phValue;
+                        break;
+                    default: // Trata #ENTIDADE_NOME# e #SETOR# como literais string
+                        // Lida com o caso especial de tag de idioma
+                        if (templateContent.contains(phKey + "@pt")) {
+                             queryAtual = queryAtual.replace(phKey + "@pt", "\"" + phValue.replace("\"", "\\\"") + "\"@pt");
+                             continue; // Pula a substituição padrão abaixo para evitar duplicidade
+                        }
+                        valorSubstituicao = "\"" + phValue.replace("\"", "\\\"") + "\"";
+                        break;
+                }
+                queryAtual = queryAtual.replace(phKey, valorSubstituicao);
+            }
+        }
+        return queryAtual;
     }
 
     private Map<String, Object> executePythonScript(String question) throws IOException, InterruptedException {
         String pythonExec = System.getProperty("python.executable", "python3");
+        Path pythonExecPath = Paths.get(pythonExec);
+        if (!Files.exists(pythonExecPath)) {
+            pythonExec = "python"; // Fallback para 'python' se 'python3' não for encontrado
+        }
+
         ProcessBuilder pb = new ProcessBuilder(pythonExec, this.pythonScriptPath.toString(), question);
         pb.environment().put("PYTHONIOENCODING", "UTF-8");
+        logger.info("Executando comando Python: {}", pb.command());
         Process process = pb.start();
 
         String stdoutResult;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
             stdoutResult = reader.lines().collect(Collectors.joining(System.lineSeparator()));
         }
-
+        
         int exitCode = process.waitFor();
         if (exitCode != 0) {
             String stderrResult;
@@ -180,24 +218,22 @@ public class QuestionProcessor {
             }
             throw new RuntimeException("Script Python falhou com código " + exitCode + ". Erro: " + stderrResult);
         }
+        if (stdoutResult.isEmpty()) {
+            throw new RuntimeException("Script Python não retornou nenhuma saída.");
+        }
+        
         return new ObjectMapper().readValue(stdoutResult, new TypeReference<>() {});
     }
 
     public String readTemplateContent(String templateId) throws IOException {
-        String templateFileName = templateId.trim().replace(" ", "_") + ".txt";
+        String templateFileName = templateId.replace(" ", "_") + ".txt";
         String templateResourcePath = "templates/" + templateFileName;
         Resource resource = new ClassPathResource(templateResourcePath);
-        if (!resource.exists()) throw new FileNotFoundException("Template não encontrado: " + templateResourcePath);
-        return new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-    }
-
-    private String buildSparqlQuery(String templateContent, Map<String, String> placeholders, String templateId) {
-        String queryAtual = templateContent;
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            String phKey = entry.getKey();
-            String phValue = entry.getValue() != null ? entry.getValue() : "";
-            queryAtual = queryAtual.replace(phKey, phValue.replace("\"", "\\\""));
+        if (!resource.exists()) {
+            throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
         }
-        return queryAtual;
+        try (InputStream inputStream = resource.getInputStream()) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 }

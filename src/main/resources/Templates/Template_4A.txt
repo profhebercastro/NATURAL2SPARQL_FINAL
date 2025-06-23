@@ -1,15 +1,23 @@
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX stock: <http://www.semanticweb.org/heber/ontologies/2024/3/stock_market#>
+# Template 4A: Busca o volume negociado por ação para um setor e data específicos.
 
-SELECT ?codigo ?volume
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+
+SELECT DISTINCT ?ticker ?volume
 WHERE {
-  ?setor a stock:Setor ;
-         stock:temNome "<SETOR>" .
-  ?empresa stock:pertenceAoSetor ?setor .
-  ?acao stock:pertenceAEmpresa ?empresa ;
-        stock:temCodigoNegociacao ?codigo .
-  ?pregao stock:ehPregaoDe ?acao ;
-          stock:emData "<DATA>" ;
-          stock:volumeNegociacao ?volume .
-}
-ORDER BY ?codigo
+    # PARTE 1: Encontrar todos os tickers do setor
+    ?setorUri rdfs:label #SETOR# .
+    ?empresa b3:atuaEm ?setorUri .
+    ?empresa b3:temValorMobiliarioNegociado/b3:representadoPor [ b3:ticker ?ticker ] .
+    FILTER REGEX(STR(?ticker), "^[A-Z]{4}[0-9]{1,2}$", "i")
+
+    # PARTE 2: Encontrar o volume para cada ticker
+    ?codigoInstancia b3:ticker ?ticker .
+    ?valor_mobiliario b3:representadoPor ?codigoInstancia .
+    ?valor_mobiliario b3:negociado ?negociadoInst .
+    
+    ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] ;
+                   b3:volumeNegociacao ?volume .
+} 
+ORDER BY ?ticker

@@ -1,21 +1,20 @@
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+# Template 3A: Busca todos os tickers de um SETOR
 
-SELECT DISTINCT ?ticker
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+
+SELECT DISTINCT ?ticker 
 WHERE {
-  # Passo 1: Encontrar a entidade da empresa que atua no setor especificado.
-  # O PLN irá substituir #SETOR_URI# por 'stock:Setor_energia_eletrica'.
-  ?empresaEntidade stock:atuaEm #SETOR_URI# .
+  # Encontra a instância do setor pelo seu label
+  ?setorUri rdfs:label #SETOR# . 
   
-  # Passo 2: Da entidade da empresa, navegar para a entidade do valor mobiliário (ação).
-  ?empresaEntidade stock:temValorMobiliarioNegociado ?acao .
+  # Encontra a empresa que atua nesse setor
+  ?empresa b3:atuaEm ?setorUri .
   
-  # Passo 3: Da ação, navegar para a entidade do código de negociação.
-  # Este é o passo que estava faltando e foi revelado pelo seu exemplo.
-  ?acao stock:representadoPor ?codigoEntidade .
+  # A partir da empresa, segue o caminho para o ticker
+  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  ?valorMobiliario b3:representadoPor [ b3:ticker ?ticker ] .
   
-  # Passo 4: Finalmente, da entidade do código, obter o valor literal do ticker.
-  # A propriedade correta é 'ticker', não 'temCodigoNegociacao'.
-  ?codigoEntidade stock:ticker ?ticker .
+  FILTER REGEX(STR(?ticker), "^[A-Z]{4}[0-9]{1,2}$", "i")
 }
 ORDER BY ?ticker

@@ -1,15 +1,24 @@
+# Template 1A: Busca um valor (ex: preço) para uma EMPRESA em uma DATA
+# Caminho corrigido: Empresa -> VM -> Negociação
+
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  ?empresaPrincipal rdfs:label #ENTIDADE_NOME#@pt .
-  ?empresaPrincipal b3:temValorMobiliarioNegociado ?entidadeEmpresaVM .
-  ?entidadeEmpresaVM b3:temValorMobiliarioNegociado ?vmNegociado .
-  ?vmNegociado b3:negociado ?negociadoInst . 
-  ?negociadoInst b3:negociadoDurante ?pregao .
-  ?pregao b3:ocorreEmData #DATA# .          
-  ?negociadoInst b3:#VALOR_DESEJADO# ?valor . 
+  # Encontra a entidade da empresa pelo seu label em português
+  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
+  
+  # A partir da empresa, encontra o valor mobiliário associado
+  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  
+  # A partir do valor mobiliário, encontra sua negociação
+  # Esta é a ligação que estava faltando nas consultas anteriores
+  ?valorMobiliario b3:negociado ?negociadoInst .
+  
+  # Filtra a negociação pela data e pega o valor desejado
+  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
+  ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
 } 
 LIMIT 10
