@@ -1,34 +1,35 @@
-# Mapeamento de sinônimos para propriedades de cotação na ontologia
-# Formato: termo_sinonimo_normalizado;nome_da_propriedade_na_ontologia
-
-# Preço de Fechamento
-preco de fechamento;precoFechamento
-fechamento;precoFechamento
-ultimo preco;precoFechamento
-cotacao;precoFechamento
-preco;precoFechamento
-
-# Preço de Abertura
-preco de abertura;precoAbertura
-abertura;precoAbertura
-
-# Preço Mínimo
-preco minimo;precoMinimo
-minima;precoMinimo
-
-# Preço Máximo
-preco maximo;precoMaximo
-maxima;precoMaximo
-
-# Preço Médio
-preco medio;precoMedio
-media;precoMedio
-
-# Volume Financeiro
-volume negociado;volumeNegociacao
-volume;volumeNegociacao
-
-# Total de Negócios (Quantidade)
-total negocios;totalNegocios
-quantidade negociada;totalNegocios
-numero de negocios;totalNegocios
+{
+  "eletrico": "Elétrico",
+  "eletrica": "Elétrico",
+  "energia eletrica": "Elétrico",
+  "energia": "Elétrico",
+  "bancario": "Bancário",
+  "bancos": "Bancário",
+  "banco": "Bancário",
+  "financeiro": "Financeiro",
+  "siderurgia": "Siderurgia e Metalurgia",
+  "siderurgico": "Siderurgia e Metalurgia",
+  "metalurgia": "Siderurgia e Metalurgia",
+  "petroleo": "Petróleo, Gás e Biocombustíveis",
+  "petroleo e gas": "Petróleo, Gás e Biocombustíveis",
+  "petróleo": "Petróleo, Gás e Biocombustíveis",
+  "varejo": "Varejo",
+  "consumo": "Consumo Cíclico",
+  "saude": "Saúde",
+  "saúde": "Saúde",
+  "educacao": "Educação",
+  "educação": "Educação",
+  "agronegocio": "Agronegócio",
+  "agro": "Agronegócio",
+  "tecnologia": "Tecnologia",
+  "ti": "Tecnologia",
+  "mineracao": "Mineração",
+  "mineração": "Mineração",
+  "transporte": "Transporte e Logística",
+  "logistica": "Transporte e Logística",
+  "construcao": "Construção Civil",
+  "construção civil": "Construção Civil",
+  "saneamento": "Saneamento",
+  "telecomunicacoes": "Telecomunicações",
+  "telecomunicações": "Telecomunicações"
+}

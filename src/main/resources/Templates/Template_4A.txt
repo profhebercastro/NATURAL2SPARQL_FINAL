@@ -1,23 +1,25 @@
-# Template 4A: Busca o volume negociado por ação para um setor e data específicos.
+# Template_4A: Busca o volume negociado por ação para um SETOR e DATA específicos.
+# Ex: "Qual foi o volume das ações do setor bancário em 05/05/2023?"
 
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker ?volume
 WHERE {
-    # PARTE 1: Encontrar todos os tickers do setor
+    # PARTE 1: Encontrar todas as empresas do setor desejado.
     ?setorUri rdfs:label #SETOR# .
     ?empresa b3:atuaEm ?setorUri .
-    ?empresa b3:temValorMobiliarioNegociado/b3:representadoPor [ b3:ticker ?ticker ] .
-    FILTER REGEX(STR(?ticker), "^[A-Z]{4}[0-9]{1,2}$", "i")
-
-    # PARTE 2: Encontrar o volume para cada ticker
-    ?codigoInstancia b3:ticker ?ticker .
-    ?valor_mobiliario b3:representadoPor ?codigoInstancia .
-    ?valor_mobiliario b3:negociado ?negociadoInst .
     
-    ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] ;
-                   b3:volumeNegociacao ?volume .
+    # PARTE 2: Para cada empresa, encontrar seu valor mobiliário e a instância de negociação.
+    ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+    ?valorMobiliario b3:negociado ?negociadoInst .
+    
+    # PARTE 3: Pegar o ticker associado a esse valor mobiliário.
+    ?valorMobiliario b3:representadoPor/b3:ticker ?ticker .
+
+    # PARTE 4: Filtrar a negociação pela DATA e obter o volume.
+    ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
+    ?negociadoInst b3:volumeNegociacao ?volume .
 } 
 ORDER BY ?ticker

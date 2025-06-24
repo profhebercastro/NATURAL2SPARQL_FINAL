@@ -1,9 +1,9 @@
-# Arquivo de Perguntas-Modelo para Classificação de Intenção
-# Usar exemplos completos melhora a acurácia do get_close_matches.
-# Formato: ID_do_Template;Exemplo_de_Pergunta_Completa
+# Arquivo: perguntas_de_interesse.txt
+# Formato: Pergunta_Modelo_Completa;Nome_Do_Template
+# Este arquivo é a base para o classificador de intenção no script Python.
 
-Template_1A;Qual foi o preço de fechamento da ação da CSN em 08/05/2023?
-Template_1B;Qual foi o preço de abertura da CBAV3 em 08/05/2023?
-Template_2A;Qual o código de negociação da ação da Gerdau?
-Template_3A;Quais são as ações do setor eletrico?
-Template_4A;Qual foi o volume negociado das ações do setor bancario em 05/05/2023?
+Qual foi o preço de fechamento da ação da CSN em 08/05/2023?;Template_1A
+Qual foi o preço de abertura da CBAV3 em 08/05/2023?;Template_1B
+Qual o código de negociação da ação da Gerdau?;Template_2A
+Quais são as ações do setor eletrico?;Template_3A
+Qual foi o volume negociado das ações do setor bancario em 05/05/2023?;Template_4A

@@ -1,39 +1,41 @@
-# Começamos com uma imagem base do Python
-FROM python:3.9-slim
+# Arquivo: Dockerfile (VERSÃO CORRIGIDA E SIMPLIFICADA)
 
-# Define o diretório de trabalho principal
-WORKDIR /app
+# Estágio 1: Build com Maven
+# Usa uma imagem oficial do Maven com JDK 17 para compilar o projeto Java.
+FROM maven:3.9.6-eclipse-temurin-17-focal AS build
 
-# --- 1. INSTALAÇÃO DE DEPENDÊNCIAS DO SISTEMA ---
-# Primeiro, atualizamos os pacotes e instalamos TUDO que precisamos:
-# - openjdk-17-jre: Para rodar o JAR Java.
-# - maven: Para compilar o projeto Java.
-# - build-essential: Para instalar 'gcc' e outras ferramentas de compilação para o Python.
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        openjdk-17-jre-headless \
-        maven \
-        build-essential \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
 
-# --- 2. INSTALAÇÃO DE DEPENDÊNCIAS PYTHON ---
-# Com as ferramentas de build já instaladas, esta etapa agora funcionará.
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-RUN python -m spacy download pt_core_news_sm
-
-# --- 3. BUILD DO PROJETO JAVA ---
-# Copia todo o código-fonte para o diretório de trabalho
+# Copia todo o código-fonte
+# A cópia em múltiplos passos para cache é boa, mas para garantir que tudo funcione,
+# vamos copiar tudo de uma vez.
 COPY . .
-# Executa o Maven para compilar o Java e criar o JAR
+
+# Comando crucial: Instala as dependências Python e o modelo de linguagem
+# ANTES de compilar o Java, para que os scripts estejam disponíveis para serem empacotados.
+RUN apt-get update && apt-get install -y python3 python3-pip && \
+    pip3 install spacy==3.7.2 && \
+    python3 -m spacy download pt_core_news_sm
+
+# Compila o projeto Java, empacotando tudo (incluindo os scripts Python) no JAR.
 RUN mvn clean package -DskipTests
 
-# --- 4. CONFIGURAÇÃO FINAL E EXECUÇÃO ---
-# Expõe a porta que o Gunicorn/Flask usará
-EXPOSE 10000
+# Estágio 2: Execução
+# Usa uma imagem mínima com apenas o Java 17 JRE e Python para rodar a aplicação
+FROM openjdk:17-jre-slim
 
-# Comando final para iniciar a aplicação.
-# O Gunicorn (servidor Python) será o processo principal.
-# Ele irá, por sua vez, chamar o serviço Java que foi compilado na etapa anterior.
-# Nota: Esta CMD assume que o web_app.py chama o Main.java como um processo separado.
-CMD ["gunicorn", "--bind", "0.0.0.0:10000", "--workers", "3", "--timeout", "120", "web_app:app"]
+# Instala o Python 3, que é necessário para o QuestionProcessor chamar o script de PLN.
+RUN apt-get update && apt-get install -y python3 && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copia o JAR do estágio de build para o estágio de execução
+COPY --from=build /build/target/*.jar app.jar
+
+# Expõe a porta que o Spring Boot usa por padrão (8080)
+EXPOSE 8080
+
+# Comando para rodar a aplicação Spring Boot.
+# O Render definirá a variável de ambiente $PORT.
+# Passamos essa variável para o Spring Boot para que ele escute na porta correta.
+CMD ["java", "-Dserver.port=${PORT}", "-jar", "app.jar"]

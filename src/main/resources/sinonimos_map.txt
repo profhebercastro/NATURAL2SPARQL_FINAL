@@ -1,0 +1,50 @@
+# Arquivo: sinonimos_map.txt
+# Formato: termo_em_linguagem_natural;nome_da_propriedade_na_ontologia
+# Este arquivo mapeia como um usuário pode pedir um dado para o nome técnico da propriedade
+# que será usada no placeholder #VALOR_DESEJADO# da consulta SPARQL.
+
+# --- Preço de Fechamento ---
+preco de fechamento;precoFechamento
+fechamento;precoFechamento
+ultimo negocio;precoFechamento
+ultimo preco;precoFechamento
+cotacao;precoFechamento
+cotação;precoFechamento
+preco final;precoFechamento
+# Termos genéricos devem vir por último na lista de prioridade de extração
+preco;precoFechamento
+valor;precoFechamento
+
+# --- Preço de Abertura ---
+preco de abertura;precoAbertura
+abertura;precoAbertura
+preco inicial;precoAbertura
+
+# --- Preço Mínimo ---
+preco minimo;precoMinimo
+mínima;precoMinimo
+minima;precoMinimo
+menor preco;precoMinimo
+menor valor;precoMinimo
+
+# --- Preço Máximo ---
+preco maximo;precoMaximo
+máxima;precoMaximo
+maxima;precoMaximo
+maior preco;precoMaximo
+maior valor;precoMaximo
+
+# --- Volume Financeiro Negociado ---
+volume negociado;volumeNegociacao
+volume financeiro;volumeNegociacao
+volume total;volumeNegociacao
+volume;volumeNegociacao
+
+# --- Total de Negócios (Quantidade de transações) ---
+# Nota: Esta propriedade não parece ser usada nos seus templates atuais,
+# mas é bom tê-la mapeada para futuras expansões.
+total de negocios;totalNegocios
+total negocios;totalNegocios
+quantidade de negocios;totalNegocios
+numero de negocios;totalNegocios
+negocios realizados;totalNegocios

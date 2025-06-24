@@ -1,20 +1,21 @@
-# Template 2A: Busca o(s) ticker(s) de uma EMPRESA
+# Template_2A: Busca o(s) ticker(s) de uma EMPRESA.
+# Ex: "Qual o código de negociação da Gerdau?"
 
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker
 WHERE {
-  # Encontra a entidade da empresa pelo seu label em português
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
+  # 1. Encontra a entidade da empresa pelo seu nome (label em português).
+  ?empresa rdfs:label #ENTIDADE_NOME# .
   
-  # A partir da empresa, encontra o valor mobiliário associado
+  # 2. Navega da empresa para o Valor Mobiliário associado.
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
   
-  # A partir do valor mobiliário, encontra a entidade do código
+  # 3. Do Valor Mobiliário, encontra a instância do Código de Negociação.
   ?valorMobiliario b3:representadoPor ?codigoInst .
   
-  # Desta entidade, pega o valor literal do ticker
+  # 4. Desta instância de código, pega o valor literal do ticker.
   ?codigoInst b3:ticker ?ticker .
 }
 ORDER BY ?ticker

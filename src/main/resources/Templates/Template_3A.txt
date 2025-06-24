@@ -1,20 +1,19 @@
-# Template 3A: Busca todos os tickers de um SETOR
+# Template_3A: Busca todos os tickers de um SETOR específico.
+# Ex: "Quais são as ações do setor bancário?"
 
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker 
 WHERE {
-  # Encontra a instância do setor pelo seu label
+  # 1. Encontra a instância do setor pelo seu nome (label).
   ?setorUri rdfs:label #SETOR# . 
   
-  # Encontra a empresa que atua nesse setor
+  # 2. Encontra todas as empresas que atuam nesse setor.
   ?empresa b3:atuaEm ?setorUri .
   
-  # A partir da empresa, segue o caminho para o ticker
-  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-  ?valorMobiliario b3:representadoPor [ b3:ticker ?ticker ] .
-  
-  FILTER REGEX(STR(?ticker), "^[A-Z]{4}[0-9]{1,2}$", "i")
+  # 3. Para cada empresa, segue o caminho até o seu ticker.
+  # (Empresa -> Valor Mobiliário -> Código de Negociação -> ticker)
+  ?empresa b3:temValorMobiliarioNegociado/b3:representadoPor/b3:ticker ?ticker .
 }
 ORDER BY ?ticker

@@ -1,5 +1,6 @@
 package com.example.Programa_heber;
 
+// 1. ADICIONAR O IMPORT PARA A NOVA CLASSE
 import com.example.Programa_heber.model.PerguntaRequest;
 import com.example.Programa_heber.model.ProcessamentoDetalhadoResposta;
 import com.example.Programa_heber.service.QuestionProcessor;
@@ -8,14 +9,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration; // <-- IMPORT NECESSÁRIO
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map; // Import para o novo método
-
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class}) // <-- CORREÇÃO PRINCIPAL
+/**
+ * Ponto de entrada principal da aplicação Natural2SPARQL.
+ * Esta classe inicia o servidor web Spring Boot e expõe os endpoints da API.
+ */
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class}) // Essencial para evitar a configuração de um banco de dados SQL.
 @RestController
 public class Main {
 
@@ -23,57 +28,60 @@ public class Main {
 
     private final QuestionProcessor questionProcessor;
 
-    // Injeção de dependência pelo construtor (ótima prática!)
+    /**
+     * Construtor para injeção de dependência.
+     * O Spring injetará uma instância do serviço QuestionProcessor.
+     * @param questionProcessor O serviço responsável por processar as perguntas.
+     */
     @Autowired
     public Main(QuestionProcessor questionProcessor) {
         this.questionProcessor = questionProcessor;
-        logger.info("Main Controller inicializado com QuestionProcessor.");
+        logger.info("Controlador principal (Main) inicializado e injetado com QuestionProcessor.");
     }
 
+    /**
+     * Método main padrão que inicia a aplicação Spring Boot.
+     */
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
-        logger.info("Aplicação Natural2SPARQL iniciada com sucesso.");
+        logger.info(">>> Aplicação Natural2SPARQL iniciada com sucesso. <<<");
     }
 
-    /*
-     * A rota para a página inicial (/) foi removida.
-     * O Spring Boot serve automaticamente qualquer arquivo `index.html` ou `index2.html`
-     * que esteja na pasta `src/main/resources/static/`.
-     * Isso simplifica o código e evita a lógica manual de leitura de arquivo.
+    /**
+     * Endpoint da API para processar uma pergunta em linguagem natural.
+     * Espera uma requisição POST com um corpo JSON contendo uma chave "pergunta".
+     * Exemplo de corpo da requisição: { "pergunta": "Qual o preço da PETR4?" }
+     *
+     * @param request O corpo da requisição JSON deserializado para um objeto PerguntaRequest.
+     * @return Um ResponseEntity contendo o objeto ProcessamentoDetalhadoResposta com os resultados.
      */
-
-    // Endpoint para receber a pergunta. Usa um Map genérico para mais flexibilidade.
     @PostMapping("/processar_pergunta")
-    public ResponseEntity<ProcessamentoDetalhadoResposta> processarPergunta(@RequestBody Map<String, String> payload) {
-        String question = payload.get("pergunta"); // A chave deve ser "pergunta"
+    // 2. ALTERAR A ASSINATURA DO MÉTODO DE Map PARA PerguntaRequest
+    public ResponseEntity<ProcessamentoDetalhadoResposta> processarPergunta(@RequestBody PerguntaRequest request) {
+        
+        // 3. OBTER A PERGUNTA DO OBJETO DTO EM VEZ DO MAP
+        String question = request.getPergunta();
 
+        // A lógica de validação permanece a mesma e é crucial.
         if (question == null || question.trim().isEmpty()) {
-            logger.warn("Requisição POST recebida sem a chave 'pergunta' ou com valor vazio.");
+            logger.warn("Requisição recebida em /processar_pergunta com corpo inválido ou pergunta vazia.");
             ProcessamentoDetalhadoResposta errorReply = new ProcessamentoDetalhadoResposta();
-            errorReply.setErro("Nenhuma pergunta fornecida no corpo da requisição.");
+            errorReply.setErro("A chave 'pergunta' não pode ser nula ou vazia no corpo da requisição.");
             return ResponseEntity.badRequest().body(errorReply);
         }
 
-        if (questionProcessor == null) {
-            logger.error("CRÍTICO: QuestionProcessor é nulo no momento da requisição!");
-            ProcessamentoDetalhadoResposta errorReply = new ProcessamentoDetalhadoResposta();
-            errorReply.setErro("Erro interno crítico: Serviço de processamento indisponível.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorReply);
-        }
-
-        logger.info("Processando pergunta: '{}'", question);
+        logger.info("Recebida requisição para processar a pergunta: '{}'", question);
         
+        // Delega o trabalho pesado para o serviço de processamento.
         ProcessamentoDetalhadoResposta respostaDetalhada = questionProcessor.processQuestion(question);
         
-        // Determina o status HTTP com base na presença de um erro
+        // Verifica se houve um erro durante o processamento para retornar o status HTTP apropriado.
         if (respostaDetalhada.getErro() != null) {
-            logger.error("Erro durante o processamento da pergunta: {}", respostaDetalhada.getErro());
-            // Retorna 500 para qualquer erro interno, simplificando a lógica.
-            // O frontend pode exibir a mensagem de erro específica.
+            logger.error("Erro retornado pelo serviço de processamento: {}", respostaDetalhada.getErro());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(respostaDetalhada);
         }
 
-        logger.info("Pergunta processada com sucesso.");
+        logger.info("Pergunta processada com sucesso. Retornando resposta para o cliente.");
         return ResponseEntity.ok(respostaDetalhada);
     }
 }
