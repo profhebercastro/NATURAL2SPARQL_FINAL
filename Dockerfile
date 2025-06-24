@@ -1,44 +1,46 @@
-# Usa uma imagem oficial do Python como base. É leve, mas precisa de ferramentas adicionais.
+# Estágio 1: Build do projeto Java usando Maven
+FROM maven:3.9-eclipse-temurin-17 AS builder
+
+# Define o diretório de trabalho para o build
+WORKDIR /build
+
+# Copia o pom.xml para aproveitar o cache de dependências do Docker
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copia todo o código fonte
+COPY src ./src
+
+# Compila o projeto e cria o JAR executável. -DskipTests acelera o build.
+# O JAR já conterá todos os resources (ontologias, datasets, etc.)
+RUN mvn clean install -DskipTests
+
+# Estágio 2: Criação da imagem final e leve para execução
 FROM python:3.9-slim
 
-# Define o diretório de trabalho dentro do contêiner
+# Define o diretório de trabalho final da aplicação
 WORKDIR /app
 
-# --- PASSO CRÍTICO DE CORREÇÃO ---
-# Instala o 'build-essential' que contém o compilador 'gcc' e outras ferramentas
-# necessárias para compilar pacotes Python que têm código em C/C++.
+# Instala o OpenJDK 17, necessário para rodar o JAR
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential && \
+    apt-get install -y --no-install-recommends openjdk-17-jre-headless && \
     rm -rf /var/lib/apt/lists/*
 
-# Agora, com as ferramentas instaladas, podemos copiar e instalar os requisitos.
+# Copia os arquivos de requisitos do Python e instala as dependências
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN python -m spacy download pt_core_news_sm
 
-# --- Cópia dos arquivos da sua aplicação ---
-# Copia os arquivos que estão na raiz do seu projeto para a raiz do /app
+# Copia o JAR compilado do estágio de build para a imagem final
+COPY --from=builder /build/target/*.jar app.jar
+
+# Copia o web_app.py para a raiz do app
 COPY web_app.py .
-COPY ontologiaB3_com_inferencia.ttl .
-COPY pom.xml .
 
-# Copia a pasta de código fonte e recursos Java/Python
-# Isso irá criar a estrutura /app/src/main/resources/
-COPY src ./src
-
-# --- Build do Projeto Java ---
-# Instala o Maven
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends maven && \
-    rm -rf /var/lib/apt/lists/*
-
-# Executa o build do Maven dentro do contêiner para criar o JAR
-RUN mvn clean install -DskipTests
-
-# Expõe a porta que o Gunicorn vai usar
+# Expõe a porta que o Gunicorn/Flask vai usar
 EXPOSE 10000
 
-# Comando final para iniciar a aplicação
-# O JAR estará em /app/target/Programa_heber-0.0.1-SNAPSHOT.jar (ajuste se o nome for diferente)
-# O & executa o JAR em background, e o Gunicorn fica em primeiro plano.
-CMD java -jar target/Programa_heber-0.0.1-SNAPSHOT.jar & gunicorn --bind 0.0.0.0:$PORT --workers 2 web_app:app
+# Comando final para iniciar AMBAS as aplicações
+# 1. Inicia a aplicação Java (Spring Boot) em background (&)
+# 2. Inicia o Gunicorn (que serve o web_app.py) em primeiro plano
+CMD java -jar app.jar & gunicorn --bind 0.0.0.0:$PORT --workers 2 web_app:app
