@@ -7,207 +7,256 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
+        /* --- Estilos Gerais --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #e9ecef; display: flex; flex-direction: column; min-height: 100vh; }
-        header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-        .logo-svg { height: 32px; width: auto; }
-        .header-actions { display: flex; align-items: center; gap: 15px; }
-        .header-actions .icon-btn { background: none; border: 1px solid rgba(255,255,255,0.5); color: white; border-radius: 5px; padding: 5px 8px; cursor: pointer; font-size: 1rem; }
-        .endpoint-group { display: flex; align-items: center; gap: 8px; }
-        .endpoint-group .icon-link { font-size: 1.1rem; color: rgba(255,255,255,0.8); }
-        #sparqlEndpointInput { width: 250px; background-color: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 6px 10px; }
-        main.container { width: 100%; max-width: 960px; margin: 40px auto; padding: 0 20px; flex-grow: 1; }
-        .card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; position: relative; }
-        .card-title-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .card-title { font-size: 1.25rem; font-weight: 500; margin: 0; }
-        .form-control { width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ced4da; border-radius: 4px; background-color: #f8f9fa; }
-        .form-control:focus { outline: none; border-color: #80bdff; box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25); }
-        .button-group { display: flex; gap: 10px; }
-        .btn { padding: 10px 15px; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-sm { padding: 8px 12px; font-size: 0.9rem; }
-        .btn-success { background-color: #198754; color: white; }
-        .btn-danger { background-color: #dc3545; color: white; }
-        .btn-info { background-color: #0dcaf0; color: white; }
-        .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        textarea.output { height: 200px; resize: vertical; background-color: #f8f9fa; color: #495057; }
-        footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; }
-        .spinner { display: none; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main.container {
+            width: 100%;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 15px;
+            flex-grow: 1;
+        }
+
+        /* --- Cabeçalho --- */
+        header {
+            background-color: #1d4ed8;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo img { height: 35px; width: auto; filter: brightness(0) invert(1); }
+
+        /* --- Cartão Principal --- */
+        .card {
+            background-color: white;
+            border: 1px solid #dddfe2;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        /* --- Formulário de Entrada --- */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #1d4ed8;
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.2);
+        }
+        .btn {
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        .btn-primary { background-color: #1d4ed8; color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: #1e40af; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .btn:disabled { background-color: #adb5bd; cursor: not-allowed; }
+
+        /* --- Área de Resultados --- */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        @media (min-width: 768px) {
+            .results-grid { grid-template-columns: 1fr 1fr; }
+        }
+        textarea.output {
+            width: 100%;
+            height: 250px;
+            resize: vertical;
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+        }
+        .error-text { color: #dc3545 !important; font-weight: bold; }
+
+        /* --- Spinner de Carregamento --- */
+        .spinner {
+            display: none;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="logo">
-            <img src="https://cygri.github.io/rdf-logos/svg/sparql.svg" alt="SPARQL Logo" class="logo-svg">
+            <img src="https://cygri.github.io/rdf-logos/svg/sparql.svg" alt="SPARQL Logo">
             <span>Natural2SPARQL</span>
-        </div>
-        <div class="header-actions">
-            <div class="endpoint-group">
-                <i class="fa-solid fa-link icon-link"></i>
-                <input type="text" id="sparqlEndpointInput" placeholder="Endpoint remoto (opcional)">
-            </div>
-            <button id="downloadQueryBtn" class="icon-btn" title="Baixar Consulta SPARQL"><i class="fa-solid fa-cloud-arrow-down"></i></button>
-            <button id="downloadResultBtn" class="icon-btn" title="Baixar Resultado"><i class="fa-solid fa-download"></i></button>
         </div>
     </header>
 
     <main class="container">
+        <!-- Cartão de Entrada da Pergunta -->
         <div class="card">
-            <div style="margin-bottom: 1rem;">
-                <label for="userQuestion" class="card-title">Digite sua pergunta</label>
-                <input type="text" id="userQuestion" class="form-control" placeholder="Entre com sua pergunta aqui">
-            </div>
-            <div class="button-group">
-                <button id="generateBtn" class="btn btn-success">
-                    <span class="btn-text">GERAR CONSULTA</span>
-                    <i class="fas fa-arrow-right"></i>
+            <h2 class="card-title">Faça uma pergunta sobre o mercado de ações</h2>
+            <div class="input-group">
+                <input type="text" id="userQuestionInput" class="form-control" placeholder="Ex: Qual o preço de fechamento da PETR4 em 10/05/2023?">
+                <button id="sendQuestionBtn" class="btn btn-primary">
+                    <span class="btn-text">Enviar</span>
+                    <i class="fas fa-paper-plane"></i>
                     <div class="spinner"></div>
                 </button>
-                <button id="clearBtn" class="btn btn-danger">
+                <button id="clearBtn" class="btn btn-secondary">
                     <i class="fas fa-sync-alt"></i>
-                    <span>LIMPAR</span>
                 </button>
             </div>
         </div>
 
+        <!-- Cartões de Resultado -->
         <div class="results-grid">
             <div class="card">
-                <div class="card-title-container">
-                    <h3 class="card-title">Consulta SPARQL</h3>
-                    <button id="executeQueryBtn" class="btn btn-info btn-sm" style="display: none;">
-                        <span class="btn-text">Executar</span>
-                        <i class="fas fa-play"></i>
-                        <div class="spinner"></div>
-                    </button>
-                </div>
-                <textarea id="sparqlQueryOutput" class="form-control output">A consulta SPARQL aparecerá aqui...</textarea>
+                <h3 class="card-title">Consulta SPARQL Gerada</h3>
+                <textarea id="sparqlQueryOutput" class="output" readonly>A consulta SPARQL gerada pelo sistema aparecerá aqui...</textarea>
             </div>
             <div class="card">
-                <h3 class="card-title">Resultado</h3>
-                <textarea id="resultOutput" class="form-control output" readonly>O resultado aparece aqui...</textarea>
+                <h3 class="card-title">Resposta Final</h3>
+                <textarea id="resultOutput" class="output" readonly>A resposta para a sua pergunta aparecerá aqui...</textarea>
             </div>
         </div>
     </main>
     
-    <footer><p>© 2025 Natural2SPARQL - Consultas SPARQL em Linguagem Natural.</p></footer>
+    <footer><p>© 2025 - Projeto de Consulta em Linguagem Natural</p></footer>
 
-    <!-- ===== SEÇÃO DE SCRIPT CORRIGIDA E COMPLETA ===== -->
+    <!-- ===== SEÇÃO DE SCRIPT TOTALMENTE CORRIGIDA E ALINHADA ===== -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const generateBtn = document.getElementById('generateBtn');
-            const executeQueryBtn = document.getElementById('executeQueryBtn');
+            const sendBtn = document.getElementById('sendQuestionBtn');
             const clearBtn = document.getElementById('clearBtn');
-            const downloadQueryBtn = document.getElementById('downloadQueryBtn');
-            const downloadResultBtn = document.getElementById('downloadResultBtn');
-            const userQuestionInput = document.getElementById('userQuestion');
-            const sparqlEndpointInput = document.getElementById('sparqlEndpointInput');
-            const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
+            const questionInput = document.getElementById('userQuestionInput');
+            const sparqlOutput = document.getElementById('sparqlQueryOutput');
             const resultOutput = document.getElementById('resultOutput');
 
-            generateBtn.addEventListener('click', handleQueryGeneration);
-            executeQueryBtn.addEventListener('click', handleQueryExecution);
+            sendBtn.addEventListener('click', handleQuestionSubmit);
             clearBtn.addEventListener('click', clearAllFields);
-            downloadQueryBtn.addEventListener('click', () => downloadText('consulta.txt', sparqlQueryOutput.value));
-            downloadResultBtn.addEventListener('click', () => downloadText('resultado.txt', resultOutput.value));
             
-            userQuestionInput.addEventListener('keypress', function(event) {
+            questionInput.addEventListener('keypress', function(event) {
                 if (event.key === 'Enter') {
                     event.preventDefault();
-                    handleQueryGeneration();
+                    handleQuestionSubmit();
                 }
             });
 
             function clearAllFields() {
-                userQuestionInput.value = '';
-                sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
-                resultOutput.value = 'O resultado aparece aqui...';
-                executeQueryBtn.style.display = 'none';
-                resultOutput.style.color = '#495057';
+                questionInput.value = '';
+                sparqlOutput.value = 'A consulta SPARQL gerada pelo sistema aparecerá aqui...';
+                resultOutput.value = 'A resposta para a sua pergunta aparecerá aqui...';
+                resultOutput.classList.remove('error-text');
             }
 
-            async function handleQueryGeneration() {
-                // CORREÇÃO DO ERRO DE DIGITAÇÃO: userQuestionInput
-                const question = userQuestionInput.value.trim();
-                if (!question) { alert("Por favor, digite uma pergunta."); return; }
-                
-                toggleLoading(generateBtn, true);
-                executeQueryBtn.style.display = 'none';
-                resultOutput.value = 'Aguardando execução...';
-                resultOutput.style.color = '#495057';
-
-                try {
-                    const response = await fetch('/process', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ question: question })
-                    });
-                    const data = await response.json();
-
-                    if (!response.ok || data.error) {
-                        throw new Error(data.error || `Erro do servidor (${response.status})`);
-                    }
-                    
-                    sparqlQueryOutput.value = data.sparql_query || "Não foi possível gerar a consulta.";
-                    
-                    if (data.sparql_query) {
-                        executeQueryBtn.style.display = 'inline-flex';
-                    }
-                
-                } catch (error) {
-                    sparqlQueryOutput.value = `Falha ao gerar consulta: ${error.message}`;
-                } finally {
-                    toggleLoading(generateBtn, false);
+            async function handleQuestionSubmit() {
+                const question = questionInput.value.trim();
+                if (!question) {
+                    alert("Por favor, digite uma pergunta antes de enviar.");
+                    return;
                 }
-            }
-
-            async function handleQueryExecution() {
-                const sparqlQuery = sparqlQueryOutput.value.trim();
-                const endpoint = sparqlEndpointInput.value.trim();
-                if (!sparqlQuery || sparqlQuery.startsWith('A consulta')) { alert("Não há consulta para executar."); return; }
-
-                toggleLoading(executeQueryBtn, true);
-                resultOutput.style.color = '#495057';
+                
+                toggleLoading(true);
+                sparqlOutput.value = 'Processando a pergunta e gerando a consulta...';
+                resultOutput.value = 'Aguardando a execução e o resultado...';
+                resultOutput.classList.remove('error-text');
 
                 try {
-                    const response = await fetch('/execute_query', {
+                    // AQUI ESTÁ A CHAMADA CORRETA, ALINHADA COM O BACKEND
+                    const response = await fetch('/processar_pergunta', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sparql_query: sparqlQuery, endpoint: endpoint })
+                        body: JSON.stringify({ pergunta: question })
                     });
-                    const data = await response.json();
-
-                    if (!response.ok || data.error) {
-                        throw new Error(data.error || `Erro do servidor (${response.status})`);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        const errorMessage = errorData.erro || `O servidor respondeu com um erro (${response.status} ${response.statusText})`;
+                        throw new Error(errorMessage);
                     }
                     
-                    // LÓGICA DE FORMATAÇÃO DO RESULTADO
-                    const resultData = data.result;
-                    if (Array.isArray(resultData) && resultData.length > 0) {
-                        const formattedValues = resultData.map(item => Object.values(item)[0]);
-                        resultOutput.value = formattedValues.join('\n');
-                    } else if (resultData && typeof resultData === 'object' && Object.keys(resultData).length > 0) {
-                        resultOutput.value = Object.values(resultData)[0];
-                    } else if (typeof resultData === 'string') {
-                        resultOutput.value = resultData;
-                    } else {
-                        resultOutput.value = "Nenhum resultado encontrado.";
-                    }
+                    const data = await response.json();
 
+                    if (data.erro) {
+                        throw new Error(data.erro);
+                    }
+                    
+                    sparqlOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
+                    resultOutput.value = data.resposta || "Nenhum resultado encontrado para a consulta.";
+                
                 } catch (error) {
-                    resultOutput.style.color = '#dc3545';
-                    resultOutput.value = `Erro na execução: ${error.message}`;
+                    sparqlOutput.value = 'Falha ao processar a requisição.';
+                    resultOutput.value = `Erro: ${error.message}`;
+                    resultOutput.classList.add('error-text');
                 } finally {
-                    toggleLoading(executeQueryBtn, false);
+                    toggleLoading(false);
                 }
             }
             
-            function toggleLoading(button, isLoading) {
-                const textSpan = button.querySelector('.btn-text');
-                const spinner = button.querySelector('.spinner');
-                const icon = button.querySelector('i');
-
-                button.disabled = isLoading;
+            function toggleLoading(isLoading) {
+                const textSpan = sendBtn.querySelector('.btn-text');
+                const spinner = sendBtn.querySelector('.spinner');
+                const icon = sendBtn.querySelector('i');
+                sendBtn.disabled = isLoading;
                 if (isLoading) {
                     if (textSpan) textSpan.style.display = 'none';
                     if (icon) icon.style.display = 'none';
@@ -217,17 +266,6 @@
                     if (icon) icon.style.display = 'inline-block';
                     if (spinner) spinner.style.display = 'none';
                 }
-            }
-            
-            function downloadText(filename, text) {
-                if (!text || text.startsWith('A consulta') || text.startsWith('O resultado')) { alert('Não há conteúdo para baixar.'); return; }
-                const element = document.createElement('a');
-                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-                element.setAttribute('download', filename);
-                element.style.display = 'none';
-                document.body.appendChild(element);
-                element.click();
-                document.body.removeChild(element);
             }
         });
     </script>

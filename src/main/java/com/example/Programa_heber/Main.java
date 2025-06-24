@@ -1,6 +1,5 @@
 package com.example.Programa_heber;
 
-// 1. ADICIONAR O IMPORT PARA A NOVA CLASSE
 import com.example.Programa_heber.model.PerguntaRequest;
 import com.example.Programa_heber.model.ProcessamentoDetalhadoResposta;
 import com.example.Programa_heber.service.QuestionProcessor;
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Ponto de entrada principal da aplicação Natural2SPARQL.
  * Esta classe inicia o servidor web Spring Boot e expõe os endpoints da API.
  */
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class}) // Essencial para evitar a configuração de um banco de dados SQL.
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @RestController
 public class Main {
 
@@ -55,14 +54,12 @@ public class Main {
      * @param request O corpo da requisição JSON deserializado para um objeto PerguntaRequest.
      * @return Um ResponseEntity contendo o objeto ProcessamentoDetalhadoResposta com os resultados.
      */
-    @PostMapping("/processar_pergunta")
-    // 2. ALTERAR A ASSINATURA DO MÉTODO DE Map PARA PerguntaRequest
+    @PostMapping("/processar_pergunta") // <-- ESTE É O CAMINHO QUE A API ESCUTA
     public ResponseEntity<ProcessamentoDetalhadoResposta> processarPergunta(@RequestBody PerguntaRequest request) {
         
-        // 3. OBTER A PERGUNTA DO OBJETO DTO EM VEZ DO MAP
         String question = request.getPergunta();
 
-        // A lógica de validação permanece a mesma e é crucial.
+        // Validação da entrada
         if (question == null || question.trim().isEmpty()) {
             logger.warn("Requisição recebida em /processar_pergunta com corpo inválido ou pergunta vazia.");
             ProcessamentoDetalhadoResposta errorReply = new ProcessamentoDetalhadoResposta();
@@ -72,10 +69,10 @@ public class Main {
 
         logger.info("Recebida requisição para processar a pergunta: '{}'", question);
         
-        // Delega o trabalho pesado para o serviço de processamento.
+        // Delega o trabalho pesado para o serviço de processamento
         ProcessamentoDetalhadoResposta respostaDetalhada = questionProcessor.processQuestion(question);
         
-        // Verifica se houve um erro durante o processamento para retornar o status HTTP apropriado.
+        // Verifica se houve um erro durante o processamento para retornar o status HTTP apropriado
         if (respostaDetalhada.getErro() != null) {
             logger.error("Erro retornado pelo serviço de processamento: {}", respostaDetalhada.getErro());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(respostaDetalhada);
