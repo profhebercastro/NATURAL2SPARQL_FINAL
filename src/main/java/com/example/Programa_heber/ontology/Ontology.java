@@ -8,6 +8,16 @@ import org.apache.jena.reasoner.ReasonerRegistry;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
+
+/************************************************************/
+/* --- AQUI ESTÁ A CORREÇÃO ---                             */
+/* Adicionando os imports que estavam faltando para os      */
+/* vocabulários padrão do Jena.                             */
+/************************************************************/
+import org.apache.jena.vocabulary.OWL;
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.RDFS;
+
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
@@ -259,16 +269,6 @@ public class Ontology {
     private Resource createResource(Model model, String uri) { return model.createResource(uri); }
     private Property createProperty(Model model, String localName) { return model.createProperty(ONT_PREFIX + localName); }
     private void addStatement(Model model, Resource s, Property p, RDFNode o) { if (s != null && p != null && o != null) model.add(s, p, o); }
-    
-    /**************************************************************************/
-    /* --- AQUI ESTÁ A CORREÇÃO ---                                           */
-    /**************************************************************************/
-    private void addNumericProperty(Model model, Resource s, Property p, double value) {
-        if (!Double.isNaN(value)) {
-            // A chamada para addStatement PRECISA incluir o 'model' como o primeiro argumento
-            addStatement(model, s, p, model.createTypedLiteral(value));
-        }
-    }
-    
+    private void addNumericProperty(Model model, Resource s, Property p, double value) { if (!Double.isNaN(value)) addStatement(model, s, p, model.createTypedLiteral(value)); }
     private void validateBaseModelLoad(long size) { if (size < 100) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
 }
