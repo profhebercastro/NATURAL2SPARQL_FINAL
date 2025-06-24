@@ -1,7 +1,6 @@
 # Arquivo: pln_processor.py
-# Versão completa e funcional, integrando todas as correções.
+# Versão Final: Robusta, com carregamento dinâmico de recursos e saída JSON padronizada.
 
-import spacy
 import sys
 import json
 import os
@@ -10,157 +9,146 @@ import re
 from difflib import get_close_matches
 from datetime import datetime
 
-# --- 1. CONFIGURAÇÃO ---
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - PLN - %(levelname)s - %(message)s', stream=sys.stderr)
-logger = logging.getLogger("PLN_Processor")
+# --- 1. CONFIGURAÇÃO E FUNÇÕES AUXILIARES ---
+
+# Configura o logging para ir para o stderr, para que não polua a saída JSON (stdout).
+# O Java pode capturar isso para depuração.
+logging.basicConfig(level=logging.INFO, format='PLN_PY - %(levelname)s - %(message)s', stream=sys.stderr)
 
 def exit_with_error(message):
-    """Encerra o script e imprime um erro formatado em JSON."""
+    """Encerra o script e imprime um erro formatado em JSON para o stdout."""
+    # Imprime para stdout para que o Java sempre tenha uma resposta JSON para parsear.
     print(json.dumps({"erro": message}))
-    sys.exit(1)
+    # Sai com código 0, pois o erro é lógico, não do sistema.
+    sys.exit(0)
 
-# --- 2. CARREGAMENTO DE RECURSOS ---
+def carregar_recurso(caminho_arquivo, nome_recurso, tipo='json'):
+    """Função genérica para carregar arquivos de recurso de forma segura."""
+    try:
+        if not os.path.exists(caminho_arquivo):
+            # Erro fatal se um recurso essencial não for encontrado.
+            raise FileNotFoundError(f"Arquivo de recurso '{nome_recurso}' não encontrado em: {caminho_arquivo}")
+        
+        with open(caminho_arquivo, 'r', encoding='utf-8') as f:
+            if tipo == 'json':
+                # Garante que as chaves do JSON sejam minúsculas para correspondência insensível.
+                return {str(k).lower(): v for k, v in json.load(f).items()}
+            elif tipo == 'mapa_simples':
+                mapa = {}
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        parts = line.split(';', 1)
+                        if len(parts) == 2:
+                            # Chave minúscula para correspondência, valor preservado.
+                            mapa[parts[0].strip().lower()] = parts[1].strip()
+                return mapa
+    except Exception as e:
+        exit_with_error(f"Erro crítico ao carregar o recurso '{nome_recurso}': {str(e)}")
+
+
+# --- 2. CARREGAMENTO DE TODOS OS RECURSOS ---
+
 try:
-    # Caminhos baseados na localização do script, para robustez em contêineres
+    # O script espera que os arquivos de recurso estejam no mesmo diretório que ele.
+    # O Java garante que isso aconteça ao copiar tudo para um diretório temporário.
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     
-    # Carrega o modelo de linguagem
-    nlp = spacy.load("pt_core_news_sm")
+    PERGUNTAS_INTERESSE = carregar_recurso(os.path.join(SCRIPT_DIR, "perguntas_de_interesse.txt"), "Perguntas de Interesse", 'mapa_simples')
+    SINONIMOS_MAP = carregar_recurso(os.path.join(SCRIPT_DIR, "sinonimos_map.txt"), "Mapa de Sinônimos", 'mapa_simples')
+    EMPRESA_MAP = carregar_recurso(os.path.join(SCRIPT_DIR, "empresa_nome_map.json"), "Mapa de Empresas", 'json')
+    SETOR_MAP = carregar_recurso(os.path.join(SCRIPT_DIR, "setor_map.json"), "Mapa de Setores", 'json')
     
-    # Carrega o mapa de nomes de empresas
-    with open(os.path.join(SCRIPT_DIR, "empresa_nome_map.json"), 'r', encoding='utf-8') as f:
-        EMPRESA_MAP = json.load(f)
-    
-    # Carrega as perguntas de interesse para a seleção de templates
-    PERGUNTAS_INTERESSE = []
-    with open(os.path.join(SCRIPT_DIR, "perguntas_de_interesse.txt"), 'r', encoding='utf-8') as f:
-        for line in f:
-            if line.strip() and not line.startswith('#'):
-                parts = line.strip().split(';', 1)
-                if len(parts) == 2:
-                    PERGUNTAS_INTERESSE.append({"id": parts[0].strip(), "text": parts[1].strip()})
-    
-    # MAPEAMENTO INTERNO E CORRETO DE SETORES
-    # Este dicionário é a fonte da verdade para mapear keywords para URIs da ontologia.
-    # Ele substitui a necessidade do 'setor_map.json'.
-    SETOR_URI_MAP = {
-        "eletrico": "stock:Setor_energia_eletrica",
-        "elétrico": "stock:Setor_energia_eletrica",
-        "bancos": "stock:Setor_bancos",
-        "bancario": "stock:Setor_bancos",
-        "bancário": "stock:Setor_bancos",
-        "financeiro": "stock:Setor_financeiro",
-        "industrial": "stock:Setor_industrial"
-        # Adicione novos setores aqui conforme necessário.
-        # Ex: "saude": "stock:Setor_saude"
-    }
-    logger.info("Recursos do PLN carregados com sucesso.")
+    logging.info("Recursos de PLN carregados com sucesso.")
+except SystemExit:
+    # Propaga o erro fatal de carregamento, mas o exit_with_error já imprimiu o JSON.
+    sys.exit(1)
 
-except FileNotFoundError as e:
-    exit_with_error(f"Arquivo de recurso não encontrado: {e}. Verifique se todos os JSON e TXT estão presentes.")
-except Exception as e:
-    exit_with_error(f"Erro crítico ao carregar recursos do PLN: {e}")
-
-# --- 3. FUNÇÕES DE PROCESSAMENTO ---
+# --- 3. LÓGICA PRINCIPAL DE PROCESSAMENTO ---
 
 def selecionar_template(pergunta_usuario):
-    """Usa similaridade de string para encontrar o template mais provável."""
-    pergunta_norm = pergunta_usuario.lower()
-    textos_perguntas = [p['text'].lower() for p in PERGUNTAS_INTERESSE]
-    matches = get_close_matches(pergunta_norm, textos_perguntas, n=1, cutoff=0.55) # Um cutoff razoável
+    """Encontra o template mais provável usando a similaridade de string com perguntas modelo."""
+    textos_perguntas_modelo = list(PERGUNTAS_INTERESSE.keys())
+    # O cutoff=0.6 é um bom ponto de partida, pode ser ajustado se necessário.
+    matches = get_close_matches(pergunta_usuario.lower(), textos_perguntas_modelo, n=1, cutoff=0.5)
     
     if matches:
-        # Encontra o ID do template correspondente ao melhor match
-        for p in PERGUNTAS_INTERESSE:
-            if p['text'].lower() == matches[0]:
-                logger.info(f"Pergunta similar encontrada: '{matches[0]}'. Selecionando template ID: '{p['id']}'")
-                return p['id'].replace(" ", "_") # Converte "Template 3A" para "Template_3A"
-    
-    logger.warning(f"Nenhum template similar encontrado para a pergunta: '{pergunta_usuario}'")
+        # O valor no mapa de perguntas é o ID do template.
+        return PERGUNTAS_INTERESSE.get(matches[0])
     return None
 
-def extrair_entidades(doc):
-    """Extrai todas as entidades relevantes (data, empresa, setor, etc.) da pergunta."""
+def extrair_placeholders(pergunta_usuario):
+    """Extrai todas as entidades da pergunta e as mapeia para os placeholders do Java."""
     mapeamentos = {}
-    texto_lower = doc.text.lower()
+    texto_lower = pergunta_usuario.lower()
 
-    # Extração de Data
-    match_data = re.search(r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})', doc.text)
+    # 1. Extrai Data e formata para o padrão YYYY-MM-DD, que o SPARQL espera.
+    match_data = re.search(r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})', texto_lower)
     if match_data:
         try:
             data_str = match_data.group(1).replace('-', '/')
             dt_format = '%d/%m/%Y' if len(data_str.split('/')[-1]) == 4 else '%d/%m/%y'
-            dt_obj = datetime.strptime(data_str, dt_format)
-            mapeamentos["#DATA#"] = dt_obj.strftime('%Y-%m-%d')
+            mapeamentos["#DATA#"] = datetime.strptime(data_str, dt_format).strftime('%Y-%m-%d')
         except ValueError:
-            logger.warning(f"Formato de data encontrado, mas não foi possível parsear: {match_data.group(1)}")
+            logging.warning(f"Data encontrada ('{match_data.group(1)}') mas não pôde ser parseada. Ignorando.")
 
-    # Extração de Empresa/Ticker
-    nome_empresa = None
-    # Prioridade 1: Ticker explícito (ex: PETR4)
-    match_ticker = re.search(r'\b([A-Z]{4}\d{1,2})\b', doc.text.upper())
-    if match_ticker:
-        nome_empresa = match_ticker.group(1)
-    else:
-        # Prioridade 2: Nome da empresa por keyword do mapa
-        # Ordena por comprimento para encontrar "banco do brasil" antes de "brasil"
-        for nome_mapa in sorted(EMPRESA_MAP.keys(), key=len, reverse=True):
-            if nome_mapa.lower() in texto_lower:
-                nome_empresa = EMPRESA_MAP[nome_mapa]
-                logger.info(f"Empresa encontrada por keyword: '{nome_mapa}' -> '{nome_empresa}'")
-                break
-    if nome_empresa:
-        mapeamentos["#ENTIDADE_NOME#"] = nome_empresa
+    # 2. Extrai Entidade (Empresa/Ticker)
+    # Itera pelas chaves do mapa da mais longa para a mais curta para evitar matches parciais.
+    for chave, valor_final in sorted(EMPRESA_MAP.items(), key=lambda item: len(item[0]), reverse=True):
+        if chave.lower() in texto_lower:
+            mapeamentos["#ENTIDADE_NOME#"] = valor_final
+            break # Pega a primeira (e mais longa) correspondência.
 
-    # Extração de Tipo de Preço (para #VALOR_DESEJADO#)
-    if 'fechamento' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoFechamento'
-    elif 'abertura' in texto_lower: mapeamentos["#VALOR_DESEJADO#"] = 'precoAbertura'
-    
-    # Extração de Setor (usando o mapa de URIs interno)
-    if 'setor' in texto_lower:
-        for keyword, setor_uri in SETOR_URI_MAP.items():
-            if keyword in texto_lower:
-                mapeamentos["#SETOR_URI#"] = setor_uri
-                logger.info(f"Setor encontrado e mapeado: '{keyword}' -> '{setor_uri}'")
-                break # Usa o primeiro que encontrar
-
+    # 3. Extrai Setor
+    for chave, valor_final in sorted(SETOR_MAP.items(), key=lambda item: len(item[0]), reverse=True):
+         if chave.lower() in texto_lower:
+            mapeamentos["#SETOR#"] = valor_final
+            break
+            
+    # 4. Extrai Valor Desejado (a propriedade da ontologia, ex: precoFechamento)
+    for chave, valor_final in sorted(SINONIMOS_MAP.items(), key=lambda item: len(item[0]), reverse=True):
+        if chave.lower() in texto_lower:
+            mapeamentos["#VALOR_DESEJADO#"] = valor_final
+            break
+            
     return mapeamentos
 
 def main(pergunta_usuario):
-    """Função principal que orquestra todo o processo de PLN."""
-    logger.info(f"Processando pergunta: '{pergunta_usuario}'")
+    """Função principal que orquestra o processamento."""
+    logging.info(f"Processando a pergunta: '{pergunta_usuario}'")
     
-    # 1. Seleciona o template mais provável
-    template_nome = selecionar_template(pergunta_usuario)
-    if not template_nome:
-        exit_with_error("Não foi possível entender a intenção da pergunta (nenhum template similar encontrado).")
+    template_id = selecionar_template(pergunta_usuario)
+    if not template_id:
+        exit_with_error("Não foi possível entender a intenção da sua pergunta. Tente reformulá-la.")
+
+    logging.info(f"Template selecionado: {template_id}")
+
+    placeholders = extrair_placeholders(pergunta_usuario)
+    logging.info(f"Placeholders extraídos: {placeholders}")
     
-    # 2. Processa o texto com spaCy para extração de entidades
-    doc = nlp(pergunta_usuario)
-    
-    # 3. Extrai as entidades e as mapeia para os placeholders
-    mapeamentos = extrair_entidades(doc)
-    
-    # 4. Validação final
-    if template_nome == "Template_3A" and "#SETOR_URI#" not in mapeamentos:
-        exit_with_error("A pergunta parece ser sobre um setor, mas não consegui identificar um setor válido (ex: elétrico, bancos).")
-    if not mapeamentos:
-        exit_with_error("Não foi possível extrair nenhuma informação (empresa, data, setor, etc.) da pergunta.")
-    
-    # 5. Prepara a resposta JSON para o web_app.py
-    resposta_final = {
-        "template_nome": template_nome, 
-        "mapeamentos": mapeamentos
+    # Validação Mínima:
+    # Se o template não for o de listar setores (3A), ele provavelmente precisa de uma empresa/ticker.
+    if template_id not in ["Template_3A"] and not placeholders.get("#ENTIDADE_NOME#"):
+         exit_with_error("Não foi possível identificar a empresa ou o ticker na sua pergunta.")
+
+    # Se o template precisa de uma data (1A, 1B, 4A) e não foi encontrada.
+    if template_id in ["Template_1A", "Template_1B", "Template_4A"] and not placeholders.get("#DATA#"):
+        exit_with_error("Não foi possível identificar a data na sua pergunta. Por favor, use o formato DD/MM/AAAA.")
+
+    # Monta a resposta final em JSON
+    resposta = {
+        "template_nome": template_id,
+        "mapeamentos": placeholders
     }
     
-    print(json.dumps(resposta_final, ensure_ascii=False))
-    logger.info(f"Processamento PLN concluído. Template: {template_nome}, Mapeamentos: {mapeamentos}")
+    # Imprime o resultado final para stdout, que será capturado pelo Java.
+    print(json.dumps(resposta, ensure_ascii=False))
+    logging.info(f"Processamento PLN concluído. Enviando para o Java: {resposta}")
 
 # --- PONTO DE ENTRADA DO SCRIPT ---
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        exit_with_error("Nenhuma pergunta fornecida como argumento.")
-    
-    # Junta todos os argumentos para formar a pergunta completa
-    pergunta_completa = " ".join(sys.argv[1:])
-    main(pergunta_completa)
+    if len(sys.argv) > 1:
+        # Junta todos os argumentos para formar a pergunta completa, caso ela contenha espaços.
+        main(" ".join(sys.argv[1:]))
+    else:
+        exit_with_error("Nenhuma pergunta foi fornecida ao script Python.")

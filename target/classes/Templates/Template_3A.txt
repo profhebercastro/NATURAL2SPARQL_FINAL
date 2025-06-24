@@ -1,21 +1,19 @@
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX stock: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+# Template_3A: Busca todos os tickers de um SETOR específico.
+# Ex: "Quais são as ações do setor bancário?"
 
-SELECT DISTINCT ?ticker
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+
+SELECT DISTINCT ?ticker 
 WHERE {
-  # Passo 1: Encontrar a entidade da empresa que atua no setor especificado.
-  # O PLN irá substituir #SETOR_URI# por 'stock:Setor_energia_eletrica'.
-  ?empresaEntidade stock:atuaEm #SETOR_URI# .
+  # 1. Encontra a instância do setor pelo seu nome (label).
+  ?setorUri rdfs:label #SETOR# . 
   
-  # Passo 2: Da entidade da empresa, navegar para a entidade do valor mobiliário (ação).
-  ?empresaEntidade stock:temValorMobiliarioNegociado ?acao .
+  # 2. Encontra todas as empresas que atuam nesse setor.
+  ?empresa b3:atuaEm ?setorUri .
   
-  # Passo 3: Da ação, navegar para a entidade do código de negociação.
-  # Este é o passo que estava faltando e foi revelado pelo seu exemplo.
-  ?acao stock:representadoPor ?codigoEntidade .
-  
-  # Passo 4: Finalmente, da entidade do código, obter o valor literal do ticker.
-  # A propriedade correta é 'ticker', não 'temCodigoNegociacao'.
-  ?codigoEntidade stock:ticker ?ticker .
+  # 3. Para cada empresa, segue o caminho até o seu ticker.
+  # (Empresa -> Valor Mobiliário -> Código de Negociação -> ticker)
+  ?empresa b3:temValorMobiliarioNegociado/b3:representadoPor/b3:ticker ?ticker .
 }
 ORDER BY ?ticker

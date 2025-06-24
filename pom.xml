@@ -25,22 +25,19 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Starters -->
+        <!-- Spring Boot Starter para criar aplicações web. ESSENCIAL. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+
+        <!-- =================================================================== -->
+        <!-- DEPENDÊNCIAS DE BANCO DE DADOS REMOVIDAS -->
+        <!-- A dependência 'spring-boot-starter-data-jpa' e 'h2database' foram  -->
+        <!-- removidas pois o projeto usa Jena, não um banco de dados SQL.     -->
+        <!-- =================================================================== -->
         
-        <!-- Apache Jena -->
+        <!-- Apache Jena: Biblioteca principal para manipulação da ontologia. ESSENCIAL. -->
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>apache-jena-libs</artifactId>
@@ -48,14 +45,14 @@
             <type>pom</type>
         </dependency>
 
-        <!-- Apache POI -->
+        <!-- Apache POI: Biblioteca para ler arquivos Excel (.xlsx). ESSENCIAL. -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
         </dependency>
 
-        <!-- Spring Boot Test (Boa prática) -->
+        <!-- Spring Boot Test: Para testes unitários e de integração. Boa prática. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

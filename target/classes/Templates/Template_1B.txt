@@ -1,13 +1,24 @@
+# Template_1B: Busca um valor de cotação para um TICKER em uma DATA.
+# Ex: "Qual o volume da PETR4 em 10/05/2023?"
+
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
+  # 1. Encontra a instância do código de negociação pelo seu ticker literal.
   ?codigoInstancia b3:ticker #ENTIDADE_NOME# .
-  ?valor_mobiliario b3:representadoPor ?codigoInstancia .
-  ?valor_mobiliario b3:negociado ?negociadoInst . 
-  ?negociadoInst b3:negociadoDurante ?pregao .
-  ?pregao b3:ocorreEmData #DATA# .
+  
+  # 2. Encontra o Valor Mobiliário que é representado por esse código.
+  ?valorMobiliario b3:representadoPor ?codigoInstancia .
+  
+  # 3. Encontra a instância de negociação para aquele Valor Mobiliário.
+  ?valorMobiliario b3:negociado ?negociadoInst . 
+  
+  # 4. Filtra a negociação pela DATA específica.
+  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
+  
+  # 5. Seleciona o VALOR DESEJADO (ex: precoFechamento) dessa negociação.
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
 }
 LIMIT 10
