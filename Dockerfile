@@ -1,47 +1,39 @@
 # Estágio 1: Build do projeto Java usando Maven
-# Usamos uma imagem que já tem Maven e Java 17, otimizada para builds
+# Usa uma imagem oficial que já contém Maven e Java 17
 FROM maven:3.9-eclipse-temurin-17 AS builder
-
 WORKDIR /build
-
-# Copia o pom.xml e baixa as dependências para aproveitar o cache
 COPY pom.xml .
 RUN mvn dependency:go-offline
-
-# Copia todo o código fonte
 COPY src ./src
-
-# Compila o projeto e cria o JAR executável, pulando os testes para acelerar
+# Compila o projeto e cria um JAR executável. A flag -DskipTests acelera o build.
 RUN mvn clean install -DskipTests
 
-
-# Estágio 2: Criação da Imagem Final para Execução
-# Começamos com uma imagem Python leve
+# Estágio 2: Criação da Imagem Final de Produção
+# Começamos com uma imagem Python leve para manter o tamanho final menor
 FROM python:3.9-slim
-
 WORKDIR /app
 
-# --- CORREÇÃO PRINCIPAL AQUI ---
-# Instala o OpenJDK 17 (JRE é suficiente para rodar) E as ferramentas de build (gcc)
+# Instala o JRE (Java Runtime Environment), que é menor que o JDK e suficiente para rodar o JAR
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        openjdk-17-jre-headless \
-        build-essential \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends openjdk-17-jre-headless && \
+    rm -rf /var/lib/apt/lists/*
 
-# Agora, com o gcc instalado, podemos instalar as dependências Python
+# Instala as dependências Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+# O download do spacy pode ser feito aqui ou movido para um script de inicialização se for muito grande
 RUN python -m spacy download pt_core_news_sm
 
-# Copia os artefatos necessários da aplicação
+# Copia o JAR compilado do estágio de build para a imagem final
 COPY --from=builder /build/target/*.jar app.jar
+
+# Copia o web_app.py para a raiz do app
 COPY web_app.py .
 
-# Expõe a porta que a aplicação vai usar
+# Expõe a porta que o Gunicorn/Flask vai usar para o tráfego externo
 EXPOSE 10000
 
-# Comando final para iniciar ambas as aplicações
-# O JAR do Spring Boot será executado em background
-# O Gunicorn servirá a aplicação Flask em primeiro plano
-CMD java -jar app.jar & gunicorn --bind 0.0.0.0:$PORT --workers 2 web_app:app
+# Comando de inicialização
+# 1. Inicia a aplicação Java (Spring Boot) em background. O Spring Boot usará a porta 8080 por padrão.
+# 2. Inicia o Gunicorn para servir a aplicação Flask, que será o ponto de entrada principal.
+CMD java -jar app.jar & gunicorn --bind 0.0.0.0:$PORT --workers 3 --timeout 120 web_app:app
