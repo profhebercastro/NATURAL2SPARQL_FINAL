@@ -1,8 +1,9 @@
 # Arquivo de Perguntas-Modelo para Classificação de Intenção
-# ID do Template ; Pergunta-Modelo Genérica
+# Usar exemplos completos melhora a acurácia do get_close_matches.
+# Formato: ID_do_Template;Exemplo_de_Pergunta_Completa
 
-Template_1A;qual o valor da empresa em data
-Template_1B;qual o valor do ticker em data
-Template_2A;qual o codigo de negociacao da empresa
-Template_3A;quais as acoes do setor setor
-Template_4A;qual o volume negociado do setor setor em data
+Template_1A;Qual foi o preço de fechamento da ação da CSN em 08/05/2023?
+Template_1B;Qual foi o preço de abertura da CBAV3 em 08/05/2023?
+Template_2A;Qual o código de negociação da ação da Gerdau?
+Template_3A;Quais são as ações do setor eletrico?
+Template_4A;Qual foi o volume negociado das ações do setor bancario em 05/05/2023?

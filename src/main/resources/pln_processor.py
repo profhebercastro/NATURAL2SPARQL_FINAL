@@ -1,3 +1,6 @@
+# Arquivo: pln_processor.py
+# Versão Final: Carrega todos os recursos dinamicamente e produz um JSON padronizado.
+
 import sys
 import json
 import os
@@ -10,16 +13,20 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO, format='PLN_PY - %(levelname)s - %(message)s', stream=sys.stderr)
 
 def exit_with_error(message):
+    """Encerra o script e imprime um erro formatado em JSON para o stdout."""
+    # Imprime para stdout para que o Java sempre tenha uma resposta JSON para parsear.
     print(json.dumps({"erro": message}))
+    # Sai com código 0, pois o erro é lógico (não do sistema), para não poluir logs do Gunicorn.
     sys.exit(0)
 
 def carregar_recurso(caminho_arquivo, nome_recurso, tipo='json'):
+    """Função genérica para carregar arquivos de recurso de forma segura."""
     try:
         if not os.path.exists(caminho_arquivo):
             raise FileNotFoundError(f"Arquivo '{nome_recurso}' não encontrado em: {caminho_arquivo}")
         with open(caminho_arquivo, 'r', encoding='utf-8') as f:
             if tipo == 'json':
-                return json.load(f)
+                return {k.lower(): v for k, v in json.load(f).items()} # Garante chaves minúsculas
             elif tipo == 'mapa_simples':
                 mapa = {}
                 for line in f:
@@ -33,6 +40,7 @@ def carregar_recurso(caminho_arquivo, nome_recurso, tipo='json'):
 
 # --- 2. CARREGAMENTO DE TODOS OS RECURSOS ---
 try:
+    # O script espera que os arquivos de recurso estejam no mesmo diretório que ele.
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     PERGUNTAS_INTERESSE = carregar_recurso(os.path.join(SCRIPT_DIR, "perguntas_de_interesse.txt"), "Perguntas de Interesse", 'mapa_simples')
     SINONIMOS_MAP = carregar_recurso(os.path.join(SCRIPT_DIR, "resultado_similaridade.txt"), "Sinônimos", 'mapa_simples')
@@ -40,24 +48,22 @@ try:
     SETOR_MAP = carregar_recurso(os.path.join(SCRIPT_DIR, "setor_map.json"), "Mapa de Setores", 'json')
     logging.info("Recursos carregados com sucesso.")
 except SystemExit:
-    sys.exit(1)
+    sys.exit(1) # Propaga o erro fatal de carregamento
 
 # --- 3. LÓGICA PRINCIPAL DE PROCESSAMENTO ---
 
 def selecionar_template(pergunta_usuario):
-    textos_perguntas_modelo = [p.lower().replace('<valor>', 'valor').replace('<empresa>', 'empresa').replace('<ticker>', 'ticker').replace('<data>', 'data').replace('<setor>', 'setor') for p in PERGUNTAS_INTERESSE.keys()]
+    """Encontra o template mais provável usando a similaridade de string com exemplos completos."""
+    textos_perguntas_modelo = list(PERGUNTAS_INTERESSE.keys())
     matches = get_close_matches(pergunta_usuario.lower(), textos_perguntas_modelo, n=1, cutoff=0.6)
-    if matches:
-        for original, template_id in PERGUNTAS_INTERESSE.items():
-            if original.lower().replace('<valor>', 'valor').replace('<empresa>', 'empresa').replace('<ticker>', 'ticker').replace('<data>', 'data').replace('<setor>', 'setor') == matches[0]:
-                return template_id
-    return None
+    return PERGUNTAS_INTERESSE.get(matches[0]) if matches else None
 
 def extrair_placeholders(pergunta_usuario):
+    """Extrai todas as entidades da pergunta e as mapeia para os placeholders do Java."""
     mapeamentos = {}
     texto_lower = pergunta_usuario.lower()
 
-    # Data
+    # 1. Extrai Data e formata para o padrão YYYY-MM-DD
     match_data = re.search(r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})', texto_lower)
     if match_data:
         try:
@@ -67,19 +73,20 @@ def extrair_placeholders(pergunta_usuario):
         except ValueError:
             logging.warning(f"Data encontrada ('{match_data.group(1)}') mas não pode ser parseada.")
 
-    # Entidade (Empresa/Ticker)
+    # 2. Extrai Entidade (Empresa/Ticker) - a chave é a keyword, o valor é o que vai para o Java
+    # Itera pelas chaves do mapa da mais longa para a mais curta para evitar matches parciais (ex: "itau" vs "itau unibanco")
     for chave, valor in sorted(EMPRESA_MAP.items(), key=lambda item: len(item[0]), reverse=True):
         if chave.lower() in texto_lower:
             mapeamentos["#ENTIDADE_NOME#"] = valor
             break
 
-    # Setor
+    # 3. Extrai Setor
     for chave, valor in sorted(SETOR_MAP.items(), key=lambda item: len(item[0]), reverse=True):
          if chave.lower() in texto_lower:
             mapeamentos["#SETOR#"] = valor
             break
             
-    # Valor Desejado
+    # 4. Extrai Valor Desejado (propriedade da ontologia, ex: precoFechamento)
     for chave, valor in sorted(SINONIMOS_MAP.items(), key=lambda item: len(item[0]), reverse=True):
         if chave.lower() in texto_lower:
             mapeamentos["#VALOR_DESEJADO#"] = valor
@@ -88,15 +95,21 @@ def extrair_placeholders(pergunta_usuario):
     return mapeamentos
 
 def main(pergunta_usuario):
-    template_id = selecionar_template(pergunta_usuario)
-    if not template_id:
+    template_id_com_espaco = selecionar_template(pergunta_usuario)
+    if not template_id_com_espaco:
         exit_with_error("Não foi possível entender a intenção da sua pergunta.")
 
     placeholders = extrair_placeholders(pergunta_usuario)
     
-    resposta = {"template_nome": template_id, "mapeamentos": placeholders}
+    # Monta a resposta final em JSON
+    resposta = {
+        "template_nome": template_id_com_espaco.replace(" ", "_"), # Garante formato como Template_4A
+        "mapeamentos": placeholders
+    }
     print(json.dumps(resposta, ensure_ascii=False))
+    logging.info(f"Processamento PLN concluído. Enviando para o Java: {resposta}")
 
+# --- PONTO DE ENTRADA DO SCRIPT ---
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(" ".join(sys.argv[1:]))
