@@ -8,16 +8,9 @@ import org.apache.jena.reasoner.ReasonerRegistry;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
-
-/************************************************************/
-/* --- AQUI ESTÁ A CORREÇÃO ---                             */
-/* Adicionando os imports que estavam faltando para os      */
-/* vocabulários padrão do Jena.                             */
-/************************************************************/
 import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
-
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
@@ -35,7 +28,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Pattern;
 
 @Component
 public class Ontology {
@@ -49,7 +41,14 @@ public class Ontology {
     private static final String[] PREGAO_FILES = { "datasets/dados_novos_anterior.xlsx", "datasets/dados_novos_atual.xlsx" };
     private static final String SCHEMA_FILE = "stock_market.owl";
     private static final String BASE_DATA_FILE = "ontologiaB3.ttl";
-    private static final String INFO_EMPRESAS_FILE = "templates/Informacoes_Empresas.xlsx";
+    
+    /************************************************************/
+    /* --- AQUI ESTÁ A CORREÇÃO ---                             */
+    /* O nome da pasta no seu projeto é "Templates" com 'T'     */
+    /* maiúsculo. O caminho precisa ser exatamente igual.       */
+    /************************************************************/
+    private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx"; // <-- CORRIGIDO
+    
     private static final String INFERENCE_OUTPUT_FILENAME = "ontologiaB3_com_inferencia.ttl";
 
     @PostConstruct
@@ -154,6 +153,7 @@ public class Ontology {
     }
 
     private void loadInformacoesEmpresas(Model model, String resourcePath) throws IOException {
+        logger.info(">> Carregando Informações de Empresas de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream();
              Workbook workbook = new XSSFWorkbook(excelFile)) {
             Sheet sheet = workbook.getSheetAt(0);
