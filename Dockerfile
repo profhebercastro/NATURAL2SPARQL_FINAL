@@ -1,39 +1,39 @@
-# Estágio 1: Build do projeto Java usando Maven
-# Usa uma imagem oficial que já contém Maven e Java 17
-FROM maven:3.9-eclipse-temurin-17 AS builder
-WORKDIR /build
-COPY pom.xml .
-RUN mvn dependency:go-offline
-COPY src ./src
-# Compila o projeto e cria um JAR executável. A flag -DskipTests acelera o build.
-RUN mvn clean install -DskipTests
-
-# Estágio 2: Criação da Imagem Final de Produção
-# Começamos com uma imagem Python leve para manter o tamanho final menor
+# Começamos com uma imagem base do Python
 FROM python:3.9-slim
+
+# Define o diretório de trabalho principal
 WORKDIR /app
 
-# Instala o JRE (Java Runtime Environment), que é menor que o JDK e suficiente para rodar o JAR
+# --- 1. INSTALAÇÃO DE DEPENDÊNCIAS DO SISTEMA ---
+# Primeiro, atualizamos os pacotes e instalamos TUDO que precisamos:
+# - openjdk-17-jre: Para rodar o JAR Java.
+# - maven: Para compilar o projeto Java.
+# - build-essential: Para instalar 'gcc' e outras ferramentas de compilação para o Python.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends openjdk-17-jre-headless && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        openjdk-17-jre-headless \
+        maven \
+        build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instala as dependências Python
+# --- 2. INSTALAÇÃO DE DEPENDÊNCIAS PYTHON ---
+# Com as ferramentas de build já instaladas, esta etapa agora funcionará.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-# O download do spacy pode ser feito aqui ou movido para um script de inicialização se for muito grande
 RUN python -m spacy download pt_core_news_sm
 
-# Copia o JAR compilado do estágio de build para a imagem final
-COPY --from=builder /build/target/*.jar app.jar
+# --- 3. BUILD DO PROJETO JAVA ---
+# Copia todo o código-fonte para o diretório de trabalho
+COPY . .
+# Executa o Maven para compilar o Java e criar o JAR
+RUN mvn clean package -DskipTests
 
-# Copia o web_app.py para a raiz do app
-COPY web_app.py .
-
-# Expõe a porta que o Gunicorn/Flask vai usar para o tráfego externo
+# --- 4. CONFIGURAÇÃO FINAL E EXECUÇÃO ---
+# Expõe a porta que o Gunicorn/Flask usará
 EXPOSE 10000
 
-# Comando de inicialização
-# 1. Inicia a aplicação Java (Spring Boot) em background. O Spring Boot usará a porta 8080 por padrão.
-# 2. Inicia o Gunicorn para servir a aplicação Flask, que será o ponto de entrada principal.
-CMD java -jar app.jar & gunicorn --bind 0.0.0.0:$PORT --workers 3 --timeout 120 web_app:app
+# Comando final para iniciar a aplicação.
+# O Gunicorn (servidor Python) será o processo principal.
+# Ele irá, por sua vez, chamar o serviço Java que foi compilado na etapa anterior.
+# Nota: Esta CMD assume que o web_app.py chama o Main.java como um processo separado.
+CMD ["gunicorn", "--bind", "0.0.0.0:10000", "--workers", "3", "--timeout", "120", "web_app:app"]
