@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* Estilos do seu HTML original. Mantidos para replicar o layout da imagem. */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #e9ecef; display: flex; flex-direction: column; min-height: 100vh; }
         header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -43,7 +42,7 @@
 <body>
     <header>
         <div class="logo">
-            <img src="https://cygri.github.io/rdf-logos/svg/sparql.svg" alt="SPARQL Logo">
+            <img src="https://www.w3.org/RDF/icons/sparql" alt="SPARQL Logo" style="height: 32px; width: auto;">
             <span>Natural2SPARQL</span>
         </div>
         <div class="header-actions">
@@ -77,7 +76,6 @@
             <div class="card">
                 <div class="card-title-container">
                     <h3 class="card-title">Consulta SPARQL</h3>
-                    <!-- O botão executar é mantido por estética, mas desabilitado pois nosso backend já executa. -->
                     <button id="executeQueryBtn" class="btn btn-info btn-sm" style="display: none;" disabled>
                         <span>Executar</span>
                         <i class="fas fa-play"></i>
@@ -94,10 +92,8 @@
     
     <footer><p>© 2025 Natural2SPARQL - Consultas SPARQL em Linguagem Natural.</p></footer>
 
-    <!-- ===== SEÇÃO DE SCRIPT ADAPTADA PARA O NOVO LAYOUT E FLUXO ===== -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Seleção de todos os elementos da interface
             const generateBtn = document.getElementById('generateBtn');
             const clearBtn = document.getElementById('clearBtn');
             const userQuestionInput = document.getElementById('userQuestion');
@@ -107,7 +103,6 @@
             const downloadResultBtn = document.getElementById('downloadResultBtn');
             const executeQueryBtn = document.getElementById('executeQueryBtn');
 
-            // Adição de Eventos
             generateBtn.addEventListener('click', handleProcessRequest);
             clearBtn.addEventListener('click', clearAllFields);
             downloadQueryBtn.addEventListener('click', () => downloadText('consulta.txt', sparqlQueryOutput.value));
@@ -139,7 +134,6 @@
                 executeQueryBtn.style.display = 'none';
 
                 try {
-                    // O fluxo é único: chama o backend que faz tudo.
                     const response = await fetch('/processar_pergunta', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -155,12 +149,11 @@
 
                     if (data.erro) { throw new Error(data.erro); }
                     
-                    // Preenche ambos os campos com a resposta do backend
                     sparqlQueryOutput.value = data.sparqlQuery || "Consulta não gerada.";
                     resultOutput.value = data.resposta || "Nenhum resultado encontrado.";
 
-                    // Mostra o botão "Executar" apenas se uma query foi gerada, para manter o layout
-                    if (data.sparqlQuery) {
+                    // Lógica corrigida para exibir o botão
+                    if (data.sparqlQuery && !data.sparqlQuery.includes("não gerada")) {
                         executeQueryBtn.style.display = 'inline-flex';
                     }
                 
@@ -176,12 +169,20 @@
             function toggleLoading(button, isLoading) {
                 const textSpan = button.querySelector('.btn-text');
                 const spinner = button.querySelector('.spinner');
+                const icon = button.querySelector('i');
+
                 button.disabled = isLoading;
+
+                // Ajuste para lidar com a estrutura do botão de gerar consulta
+                const targetIcon = textSpan ? textSpan.nextElementSibling : button.querySelector('i');
+
                 if (isLoading) {
                     if (textSpan) textSpan.style.display = 'none';
+                    if (targetIcon) targetIcon.style.display = 'none';
                     spinner.style.display = 'inline-block';
                 } else {
                     if (textSpan) textSpan.style.display = 'inline';
+                    if (targetIcon) targetIcon.style.display = 'inline-block';
                     spinner.style.display = 'none';
                 }
             }
@@ -191,7 +192,7 @@
                     'consulta.txt': 'A consulta SPARQL aparecerá aqui...',
                     'resultado.txt': 'O resultado aparece aqui...'
                 };
-                if (!text || text === initialText[filename]) {
+                if (!text || text === initialText[filename] || text.includes('Processando...')) {
                     alert('Não há conteúdo para baixar.');
                     return;
                 }

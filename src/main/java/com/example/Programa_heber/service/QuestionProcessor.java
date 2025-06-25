@@ -112,15 +112,20 @@ public class QuestionProcessor {
         String queryAtual = templateContent;
         if (placeholders == null) return queryAtual;
 
+        // Substitui cada placeholder de forma explícita e segura
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
-            String valor = placeholders.get("#ENTIDADE_NOME#");
-            queryAtual = queryAtual.replace("#ENTIDADE_NOME#@pt", "\"" + valor.replace("\"", "\\\"") + "\"@pt");
-            queryAtual = queryAtual.replace("#ENTIDADE_NOME#", "\"" + valor.replace("\"", "\\\"") + "\"");
+            String valor = placeholders.get("#ENTIDADE_NOME#").replace("\"", "\\\"");
+            // Para nomes de empresas, que precisam da tag de idioma
+            if (queryAtual.contains("#ENTIDADE_NOME#@pt")) {
+                queryAtual = queryAtual.replace("#ENTIDADE_NOME#@pt", "\"" + valor + "\"@pt");
+            } else { // Para tickers, que são literais simples
+                queryAtual = queryAtual.replace("#ENTIDADE_NOME#", "\"" + valor + "\"");
+            }
         }
         if (placeholders.containsKey("#SETOR#")) {
-            String valor = placeholders.get("#SETOR#");
-            queryAtual = queryAtual.replace("#SETOR#@pt", "\"" + valor.replace("\"", "\\\"") + "\"@pt");
-            queryAtual = queryAtual.replace("#SETOR#", "\"" + valor.replace("\"", "\\\"") + "\""); // Adicionado para consistência
+            String valor = placeholders.get("#SETOR#").replace("\"", "\\\"");
+            // Setores também usam a tag de idioma
+            queryAtual = queryAtual.replace("#SETOR#", "\"" + valor + "\"@pt");
         }
         if (placeholders.containsKey("#DATA#")) {
             String valor = placeholders.get("#DATA#");
@@ -128,6 +133,7 @@ public class QuestionProcessor {
         }
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             String valor = placeholders.get("#VALOR_DESEJADO#");
+            // Nomes de propriedade não devem ter aspas
             queryAtual = queryAtual.replace("#VALOR_DESEJADO#", valor);
         }
 
@@ -151,14 +157,10 @@ public class QuestionProcessor {
         logger.debug("Saída JSON bruta do Python: {}", stdoutResult);
         return objectMapper.readValue(stdoutResult, new TypeReference<>() {});
     }
-    
-    /************************************************************/
-    /* --- AQUI ESTÁ A CORREÇÃO FINAL ---                       */
-    /************************************************************/
+
     private String readTemplateContent(String templateId) throws IOException {
         String templateFileName = templateId + ".txt";
-        // O caminho da pasta deve ser "Templates" com 'T' maiúsculo
-        String templateResourcePath = "Templates/" + templateFileName; 
+        String templateResourcePath = "Templates/" + templateFileName; // Caminho com "T" maiúsculo
         Resource resource = new ClassPathResource(templateResourcePath);
         if (!resource.exists()) {
             throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
