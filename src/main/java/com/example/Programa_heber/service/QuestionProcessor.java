@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.regex.Pattern;
 
 @Service
 public class QuestionProcessor {
@@ -92,7 +91,7 @@ public class QuestionProcessor {
             logger.info("Análise PLN retornou: Template ID='{}', Placeholders={}", templateId, placeholders);
 
             String conteudoTemplate = readTemplateContent(templateId);
-            String sparqlQueryGerada = buildSparqlQuery(conteudoTemplate, placeholders); // A correção está aqui
+            String sparqlQueryGerada = buildSparqlQuery(conteudoTemplate, placeholders);
             respostaDetalhada.setSparqlQuery(sparqlQueryGerada);
             logger.info("SPARQL Gerada:\n---\n{}\n---", sparqlQueryGerada);
 
@@ -109,24 +108,19 @@ public class QuestionProcessor {
         return respostaDetalhada;
     }
 
-    /**************************************************************************/
-    /* --- AQUI ESTÁ A CORREÇÃO ---                                           */
-    /* Este método foi reescrito para ser mais robusto e explícito.           */
-    /**************************************************************************/
     private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
         String queryAtual = templateContent;
         if (placeholders == null) return queryAtual;
 
-        // Substitui cada placeholder de forma explícita
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
             String valor = placeholders.get("#ENTIDADE_NOME#");
-            // Substitui o placeholder puro (para tickers) e com tag de idioma (para nomes)
             queryAtual = queryAtual.replace("#ENTIDADE_NOME#@pt", "\"" + valor.replace("\"", "\\\"") + "\"@pt");
             queryAtual = queryAtual.replace("#ENTIDADE_NOME#", "\"" + valor.replace("\"", "\\\"") + "\"");
         }
         if (placeholders.containsKey("#SETOR#")) {
             String valor = placeholders.get("#SETOR#");
-            queryAtual = queryAtual.replace("#SETOR#", "\"" + valor.replace("\"", "\\\"") + "\"@pt");
+            queryAtual = queryAtual.replace("#SETOR#@pt", "\"" + valor.replace("\"", "\\\"") + "\"@pt");
+            queryAtual = queryAtual.replace("#SETOR#", "\"" + valor.replace("\"", "\\\"") + "\""); // Adicionado para consistência
         }
         if (placeholders.containsKey("#DATA#")) {
             String valor = placeholders.get("#DATA#");
@@ -134,7 +128,6 @@ public class QuestionProcessor {
         }
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             String valor = placeholders.get("#VALOR_DESEJADO#");
-            // Este é um nome de propriedade, não um literal, então não tem aspas
             queryAtual = queryAtual.replace("#VALOR_DESEJADO#", valor);
         }
 
@@ -158,12 +151,18 @@ public class QuestionProcessor {
         logger.debug("Saída JSON bruta do Python: {}", stdoutResult);
         return objectMapper.readValue(stdoutResult, new TypeReference<>() {});
     }
-
+    
+    /************************************************************/
+    /* --- AQUI ESTÁ A CORREÇÃO FINAL ---                       */
+    /************************************************************/
     private String readTemplateContent(String templateId) throws IOException {
         String templateFileName = templateId + ".txt";
-        String templateResourcePath = "templates/" + templateFileName;
+        // O caminho da pasta deve ser "Templates" com 'T' maiúsculo
+        String templateResourcePath = "Templates/" + templateFileName; 
         Resource resource = new ClassPathResource(templateResourcePath);
-        if (!resource.exists()) throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
+        if (!resource.exists()) {
+            throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
+        }
         try (InputStream inputStream = resource.getInputStream()) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
