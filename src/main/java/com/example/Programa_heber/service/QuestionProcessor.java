@@ -91,7 +91,7 @@ public class QuestionProcessor {
             logger.info("Análise PLN retornou: Template ID='{}', Placeholders={}", templateId, placeholders);
 
             String conteudoTemplate = readTemplateContent(templateId);
-            String sparqlQueryGerada = buildSparqlQuery(conteudoTemplate, placeholders);
+            String sparqlQueryGerada = buildSparqlQuery(templateId, conteudoTemplate, placeholders);
             respostaDetalhada.setSparqlQuery(sparqlQueryGerada);
             logger.info("SPARQL Gerada:\n---\n{}\n---", sparqlQueryGerada);
 
@@ -107,38 +107,45 @@ public class QuestionProcessor {
         
         return respostaDetalhada;
     }
-
-    private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
+    
+    /**************************************************************************/
+    /* --- CORREÇÃO FINAL E DEFINITIVA ---                                    */
+    /* Este método agora considera o template ID para decidir como formatar   */
+    /* o placeholder, garantindo que a tag de idioma seja usada corretamente. */
+    /**************************************************************************/
+    private String buildSparqlQuery(String templateId, String templateContent, Map<String, String> placeholders) {
         String queryAtual = templateContent;
         if (placeholders == null) return queryAtual;
 
-        // Substitui cada placeholder de forma explícita e segura
+        // Formatação do #ENTIDADE_NOME#
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
             String valor = placeholders.get("#ENTIDADE_NOME#").replace("\"", "\\\"");
-            // Para nomes de empresas, que precisam da tag de idioma
-            if (queryAtual.contains("#ENTIDADE_NOME#@pt")) {
+            // Templates que usam NOME da empresa precisam da tag de idioma
+            if (templateId.equals("Template_1A") || templateId.equals("Template_2A")) {
                 queryAtual = queryAtual.replace("#ENTIDADE_NOME#@pt", "\"" + valor + "\"@pt");
-            } else { // Para tickers, que são literais simples
+            } else { // Templates que usam TICKER são literais simples
                 queryAtual = queryAtual.replace("#ENTIDADE_NOME#", "\"" + valor + "\"");
             }
         }
+        // Formatação do #SETOR#
         if (placeholders.containsKey("#SETOR#")) {
             String valor = placeholders.get("#SETOR#").replace("\"", "\\\"");
-            // Setores também usam a tag de idioma
             queryAtual = queryAtual.replace("#SETOR#", "\"" + valor + "\"@pt");
         }
+        // Formatação da #DATA#
         if (placeholders.containsKey("#DATA#")) {
             String valor = placeholders.get("#DATA#");
             queryAtual = queryAtual.replace("#DATA#", "\"" + valor + "\"^^xsd:date");
         }
+        // Formatação do #VALOR_DESEJADO#
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             String valor = placeholders.get("#VALOR_DESEJADO#");
-            // Nomes de propriedade não devem ter aspas
             queryAtual = queryAtual.replace("#VALOR_DESEJADO#", valor);
         }
 
         return queryAtual;
     }
+
 
     private Map<String, Object> executePythonScript(String question) throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder("python3", this.pythonScriptPath.toString(), question);
@@ -160,7 +167,7 @@ public class QuestionProcessor {
 
     private String readTemplateContent(String templateId) throws IOException {
         String templateFileName = templateId + ".txt";
-        String templateResourcePath = "Templates/" + templateFileName; // Caminho com "T" maiúsculo
+        String templateResourcePath = "Templates/" + templateFileName;
         Resource resource = new ClassPathResource(templateResourcePath);
         if (!resource.exists()) {
             throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
