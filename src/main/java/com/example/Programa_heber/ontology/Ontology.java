@@ -41,14 +41,7 @@ public class Ontology {
     private static final String[] PREGAO_FILES = { "datasets/dados_novos_anterior.xlsx", "datasets/dados_novos_atual.xlsx" };
     private static final String SCHEMA_FILE = "stock_market.owl";
     private static final String BASE_DATA_FILE = "ontologiaB3.ttl";
-    
-    /************************************************************/
-    /* --- AQUI ESTÁ A CORREÇÃO ---                             */
-    /* O nome da pasta no seu projeto é "Templates" com 'T'     */
-    /* maiúsculo. O caminho precisa ser exatamente igual.       */
-    /************************************************************/
-    private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx"; // <-- CORRIGIDO
-    
+    private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx";
     private static final String INFERENCE_OUTPUT_FILENAME = "ontologiaB3_com_inferencia.ttl";
 
     @PostConstruct
@@ -101,6 +94,7 @@ public class Ontology {
         
         loadRdfData(model, SCHEMA_FILE, Lang.RDFXML, "Schema OWL");
         loadRdfData(model, BASE_DATA_FILE, Lang.TURTLE, "Dados base TTL");
+        
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
         
         for (String filePath : PREGAO_FILES) {
@@ -164,29 +158,28 @@ public class Ontology {
                 String setor = getStringCellValue(row.getCell(5));
                 if (nomeEmpresa == null || ticker == null || setor == null) continue;
 
+                // Encontra ou cria o Valor Mobiliário usando o TICKER como chave única.
+                Resource vmResource = findOrCreateValorMobiliario(model, ticker.trim());
+
+                // Cria a entidade da Empresa
                 Resource empresaResource = createResource(model, ONT_PREFIX + normalizarTexto(nomeEmpresa));
                 addStatement(model, empresaResource, RDF.type, createResource(model, ONT_PREFIX + "Empresa_Capital_Aberto"));
                 addStatement(model, empresaResource, RDFS.label, model.createLiteral(nomeEmpresa.trim(), "pt"));
                 
+                // LIGAÇÃO CRUCIAL: Liga a Empresa ao Valor Mobiliário.
+                addStatement(model, empresaResource, createProperty(model, "temValorMobiliarioNegociado"), vmResource);
+                
+                // Cria e liga o setor
                 Resource setorResource = createResource(model, ONT_PREFIX + "Setor_" + normalizarTexto(setor));
                 addStatement(model, setorResource, RDF.type, createResource(model, ONT_PREFIX + "Setor_Atuacao"));
                 addStatement(model, setorResource, RDFS.label, model.createLiteral(setor.trim(), "pt"));
                 addStatement(model, empresaResource, createProperty(model, "atuaEm"), setorResource);
-                
-                Resource vmResource = createResource(model, ONT_PREFIX + ticker.trim());
-                addStatement(model, vmResource, RDF.type, createResource(model, "Valor_Mobiliario"));
-                addStatement(model, vmResource, RDFS.label, model.createLiteral(ticker.trim()));
-                addStatement(model, empresaResource, createProperty(model, "temValorMobiliarioNegociado"), vmResource);
-                
-                Resource codigoResource = createResource(model, ONT_PREFIX + ticker.trim() + "_Codigo");
-                addStatement(model, codigoResource, RDF.type, createResource(model, "Codigo_Negociacao"));
-                addStatement(model, codigoResource, createProperty(model, "ticker"), model.createLiteral(ticker.trim()));
-                addStatement(model, vmResource, createProperty(model, "representadoPor"), codigoResource);
             }
         }
     }
 
     private void loadDadosPregaoExcel(Model model, String resourcePath) throws IOException {
+        logger.info(">> Carregando Dados de Pregão de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream();
              Workbook workbook = new XSSFWorkbook(excelFile)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -197,14 +190,18 @@ public class Ontology {
                 Date dataPregao = getDateCellValue(row.getCell(1));
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
 
+                // Encontra ou cria o Valor Mobiliário usando o TICKER.
+                Resource valorMobiliario = findOrCreateValorMobiliario(model, ticker.trim());
+
                 String dataFmt = rdfDateFormat.format(dataPregao);
-                Resource valorMobiliario = createResource(model, ONT_PREFIX + ticker.trim());
-                String negociadoUri = ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt;
+                String negociadoUri = ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt.replace("-", "");
                 Resource negociadoResource = createResource(model, negociadoUri);
                 addStatement(model, negociadoResource, RDF.type, createResource(model, "Negociado_Em_Pregao"));
+                
+                // LIGAÇÃO CRUCIAL: Liga o Valor Mobiliário a esta instância de negociação.
                 addStatement(model, valorMobiliario, createProperty(model, "negociado"), negociadoResource);
                 
-                Resource pregaoResource = createResource(model, ONT_PREFIX + "Pregao_" + dataFmt);
+                Resource pregaoResource = createResource(model, ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
                 addStatement(model, pregaoResource, RDF.type, createResource(model, "Pregao"));
                 addStatement(model, pregaoResource, createProperty(model, "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoResource, createProperty(model, "negociadoDurante"), pregaoResource);
@@ -216,6 +213,23 @@ public class Ontology {
                 addNumericProperty(model, negociadoResource, createProperty(model, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
             }
         }
+    }
+    
+    private Resource findOrCreateValorMobiliario(Model model, String ticker) {
+        String vmUri = ONT_PREFIX + ticker;
+        Resource vmResource = model.createResource(vmUri);
+
+        if (!model.contains(vmResource, RDF.type, createResource(model, "Valor_Mobiliario"))) {
+            addStatement(model, vmResource, RDF.type, createResource(model, "Valor_Mobiliario"));
+            addStatement(model, vmResource, RDFS.label, model.createLiteral(ticker));
+            
+            Resource codigoResource = createResource(model, ONT_PREFIX + ticker + "_Codigo");
+            addStatement(model, codigoResource, RDF.type, createResource(model, "Codigo_Negociacao"));
+            addStatement(model, codigoResource, createProperty(model, "ticker"), model.createLiteral(ticker));
+            
+            addStatement(model, vmResource, createProperty(model, "representadoPor"), codigoResource);
+        }
+        return vmResource;
     }
     
     // --- Funções Utilitárias ---
