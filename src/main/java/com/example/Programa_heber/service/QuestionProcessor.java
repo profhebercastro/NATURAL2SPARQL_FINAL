@@ -28,8 +28,8 @@ public class QuestionProcessor {
     private static final String PYTHON_SCRIPT_NAME = "pln_processor.py";
     private static final String BASE_ONTOLOGY_URI = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String[] PYTHON_RESOURCES = {
-            PYTHON_SCRIPT_NAME, "perguntas_de_interesse.txt", "sinonimos_map.txt",
-            "empresa_nome_map.json", "setor_map.json"
+        PYTHON_SCRIPT_NAME, "perguntas_de_interesse.txt", "sinonimos_map.txt",
+        "empresa_nome_map.json", "setor_map.json"
     };
 
     @Autowired
@@ -48,7 +48,7 @@ public class QuestionProcessor {
             for (String fileName : PYTHON_RESOURCES) {
                 Resource resource = new ClassPathResource(fileName);
                 if (!resource.exists()) throw new FileNotFoundException("Recurso Python essencial não encontrado: " + fileName);
-
+                
                 Path destination = tempDir.resolve(fileName);
                 try (InputStream inputStream = resource.getInputStream()) {
                     Files.copy(inputStream, destination);
@@ -64,19 +64,14 @@ public class QuestionProcessor {
             throw e;
         }
     }
-
-    /**
-     * ETAPA 1: Processa a pergunta e GERA a consulta SPARQL, sem executá-la.
-     * @param question A pergunta do usuário.
-     * @return Um objeto DTO contendo a query gerada e o ID do template.
-     */
+    
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String question) {
         logger.info("Serviço QuestionProcessor: Iniciando GERAÇÃO de query para: '{}'", question);
         ProcessamentoDetalhadoResposta respostaDetalhada = new ProcessamentoDetalhadoResposta();
-
+        
         try {
             Map<String, Object> resultadoPython = executePythonScript(question);
-
+            
             if (resultadoPython.containsKey("erro")) {
                 String erroPython = (String) resultadoPython.get("erro");
                 logger.error("Script Python retornou um erro de PLN: {}", erroPython);
@@ -96,10 +91,8 @@ public class QuestionProcessor {
             logger.info("Análise PLN (Geração): Template ID='{}', Placeholders={}", templateId, placeholders);
 
             String conteudoTemplate = readTemplateContent(templateId);
-            String sparqlQueryGerada = buildSparqlQuery(templateId, conteudoTemplate, placeholders);
+            String sparqlQueryGerada = buildSparqlQuery(conteudoTemplate, placeholders);
             respostaDetalhada.setSparqlQuery(sparqlQueryGerada);
-
-            // Armazena o templateId para uso posterior na etapa de execução
             respostaDetalhada.setTemplateId(templateId);
 
         } catch (Exception e) {
@@ -108,13 +101,7 @@ public class QuestionProcessor {
         }
         return respostaDetalhada;
     }
-
-    /**
-     * ETAPA 2: EXECUTA uma query SPARQL previamente gerada e formata o resultado.
-     * @param sparqlQuery A string da consulta SPARQL.
-     * @param templateId O ID do template usado, para guiar a formatação.
-     * @return Uma string com a resposta formatada.
-     */
+    
     public String executeAndFormat(String sparqlQuery, String templateId) {
         logger.info("Serviço QuestionProcessor: Iniciando EXECUÇÃO de query.");
         try {
@@ -126,16 +113,15 @@ public class QuestionProcessor {
         }
     }
 
-    private String buildSparqlQuery(String templateId, String templateContent, Map<String, String> placeholders) {
+    private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
         String queryAtual = templateContent;
         if (placeholders == null) return queryAtual;
 
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
             String valor = placeholders.get("#ENTIDADE_NOME#").replace("\"", "\\\"");
-            // Templates que buscam por NOME da empresa usam a tag de idioma
-            if (templateId.equals("Template_1A") || templateId.equals("Template_2A")) {
+            if (queryAtual.contains("#ENTIDADE_NOME#@pt")) {
                 queryAtual = queryAtual.replace("#ENTIDADE_NOME#@pt", "\"" + valor + "\"@pt");
-            } else { // Templates que buscam por TICKER são literais simples
+            } else {
                 queryAtual = queryAtual.replace("#ENTIDADE_NOME#", "\"" + valor + "\"");
             }
         }
@@ -158,17 +144,12 @@ public class QuestionProcessor {
         ProcessBuilder pb = new ProcessBuilder("python3", this.pythonScriptPath.toString(), question);
         logger.info("Executando comando Python: {}", String.join(" ", pb.command()));
         Process process = pb.start();
-
         String stdoutResult = StreamUtils.copyToString(process.getInputStream(), StandardCharsets.UTF_8);
         String stderrResult = StreamUtils.copyToString(process.getErrorStream(), StandardCharsets.UTF_8);
-
         int exitCode = process.waitFor();
-
         if (!stderrResult.isEmpty()) logger.warn("Script Python emitiu mensagens no stderr: {}", stderrResult);
         if (exitCode != 0) throw new RuntimeException("Script Python falhou. Erro: " + stderrResult);
         if (stdoutResult.isEmpty()) throw new RuntimeException("Script Python não retornou nenhuma saída.");
-
-        logger.debug("Saída JSON bruta do Python: {}", stdoutResult);
         return objectMapper.readValue(stdoutResult, new TypeReference<>() {});
     }
 
@@ -176,19 +157,14 @@ public class QuestionProcessor {
         String templateFileName = templateId + ".txt";
         String templateResourcePath = "Templates/" + templateFileName;
         Resource resource = new ClassPathResource(templateResourcePath);
-        if (!resource.exists()) {
-            throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
-        }
+        if (!resource.exists()) throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
         try (InputStream inputStream = resource.getInputStream()) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 
     private String formatarResultados(List<Map<String, String>> resultados, String templateId) {
-        if (resultados == null || resultados.isEmpty()) {
-            return "Não foram encontrados resultados para a sua pergunta.";
-        }
-
+        if (resultados == null || resultados.isEmpty()) return "Não foram encontrados resultados para a sua pergunta.";
         StringJoiner joiner;
         if ("Template_4A".equals(templateId)) {
             joiner = new StringJoiner("\n");
@@ -201,7 +177,6 @@ public class QuestionProcessor {
             }
             return joiner.toString();
         }
-
         joiner = new StringJoiner(", ");
         if (!resultados.get(0).isEmpty()) {
             String varName = resultados.get(0).keySet().stream().findFirst().orElse("valor");
@@ -210,7 +185,6 @@ public class QuestionProcessor {
                 if (!valor.isEmpty()) joiner.add(limparValor(valor));
             }
         }
-
         String resultadoFinal = joiner.toString();
         return resultadoFinal.isEmpty() ? "Não foram encontrados resultados para a sua pergunta." : resultadoFinal;
     }
@@ -218,9 +192,7 @@ public class QuestionProcessor {
     private String limparValor(String item) {
         if (item == null) return "";
         String limpo = item.replaceAll("\\^\\^<http://www.w3.org/2001/XMLSchema#.*?>", "");
-        if (limpo.startsWith(BASE_ONTOLOGY_URI)) {
-            limpo = limpo.substring(BASE_ONTOLOGY_URI.length());
-        }
+        if (limpo.startsWith(BASE_ONTOLOGY_URI)) limpo = limpo.substring(BASE_ONTOLOGY_URI.length());
         return limpo.trim();
     }
 }
