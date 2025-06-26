@@ -1,3 +1,4 @@
+# Template 2A: Busca o ticker pelo nome da empresa
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 

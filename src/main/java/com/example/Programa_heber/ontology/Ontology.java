@@ -33,7 +33,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class Ontology {
 
     private static final Logger logger = LoggerFactory.getLogger(Ontology.class);
-
     private InfModel infModel;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -66,9 +65,7 @@ public class Ontology {
         if (inferredResource.exists() && inferredResource.contentLength() > 0) {
             logger.info("--- Modelo inferido pré-calculado '{}' encontrado. Carregando... ---", INFERENCE_OUTPUT_FILENAME);
             Model dataModel = ModelFactory.createDefaultModel();
-            try (InputStream in = inferredResource.getInputStream()) {
-                RDFDataMgr.read(dataModel, in, Lang.TURTLE);
-            }
+            try (InputStream in = inferredResource.getInputStream()) { RDFDataMgr.read(dataModel, in, Lang.TURTLE); }
             return ModelFactory.createRDFSModel(dataModel);
         } else {
             logger.warn("--- Modelo inferido '{}' não encontrado ou vazio. Construindo do zero (processo lento)... ---", INFERENCE_OUTPUT_FILENAME);
@@ -105,6 +102,7 @@ public class Ontology {
                 if (row.getRowNum() == 0) continue;
                 String nomeEmpresa = getStringCellValue(row.getCell(0));
                 String ticker = getStringCellValue(row.getCell(1));
+                String setor = getStringCellValue(row.getCell(5)); // Adicionado para carregar setor
                 if (nomeEmpresa == null || ticker == null) continue;
 
                 String tickerClean = ticker.trim();
@@ -119,7 +117,14 @@ public class Ontology {
                 addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa"));
                 addStatement(model, empresaRes, RDFS.label, nomeEmpresaClean, "pt");
 
-                addStatement(model, empresaRes, model.createProperty(ONT_PREFIX + "temValorMobiliarioNegociado"), vmRes);
+                addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "temValorMobiliarioNegociado"), vmRes);
+
+                if(setor != null) {
+                    Resource setorRes = model.createResource(ONT_PREFIX + "Setor_" + normalizarParaURI(setor.trim()));
+                    addStatement(model, setorRes, RDF.type, model.createResource(ONT_PREFIX + "Setor_Atuacao"));
+                    addStatement(model, setorRes, RDFS.label, setor.trim(), "pt");
+                    addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "atuaEm"), setorRes);
+                }
             }
         }
     }
@@ -141,7 +146,7 @@ public class Ontology {
                 Resource negociadoResource = model.createResource(ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
-                addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
+                addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX, "negociado"), negociadoResource);
 
                 Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
                 addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
@@ -204,7 +209,7 @@ public class Ontology {
         CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
         switch (type) {
             case STRING: return cell.getStringCellValue().trim();
-            case NUMERIC: return String.valueOf(cell.getNumericCellValue());
+            case NUMERIC: return String.valueOf((long)cell.getNumericCellValue()); // Evita notação científica
             default: return null;
         }
     }
