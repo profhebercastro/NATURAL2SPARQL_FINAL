@@ -3,16 +3,8 @@ PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker
 WHERE {
-  # 1. Encontra a entidade da empresa pelo seu nome (label em português).
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt .  # <--- CORREÇÃO AQUI
-  
-  # 2. A partir da empresa, encontra o valor mobiliário associado.
+  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-  
-  # 3. A partir do valor mobiliário, encontra a entidade do código.
-  ?valorMobiliario b3:representadoPor ?codigoInst .
-  
-  # 4. Desta entidade, pega o valor literal do ticker.
-  ?codigoInst b3:ticker ?ticker .
+  ?valorMobiliario b3:ticker ?ticker .
 }
 ORDER BY ?ticker

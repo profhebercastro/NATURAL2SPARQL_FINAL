@@ -3,21 +3,9 @@ PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  # 1. Encontra a instância do código de negociação pelo seu ticker literal.
-  # O placeholder #ENTIDADE_NOME# aqui será preenchido com o Ticker (ex: "CBAV3").
-  # A busca é por um literal simples, sem tag de idioma, o que está correto.
-  ?codigoInstancia b3:ticker #ENTIDADE_NOME# .
-  
-  # 2. Encontra o Valor Mobiliário que é representado por esse código.
-  ?valorMobiliario b3:representadoPor ?codigoInstancia .
-  
-  # 3. Encontra a instância de negociação para aquele Valor Mobiliário.
+  ?valorMobiliario b3:ticker #ENTIDADE_NOME# .
   ?valorMobiliario b3:negociado ?negociadoInst . 
-  
-  # 4. Filtra a negociação pela DATA específica.
   ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
-  
-  # 5. Seleciona o VALOR DESEJADO (ex: precoFechamento) dessa negociação.
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
 }
 LIMIT 10

@@ -40,7 +40,6 @@ public class Ontology {
     private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String[] PREGAO_FILES = { "datasets/dados_novos_anterior.xlsx", "datasets/dados_novos_atual.xlsx" };
     private static final String SCHEMA_FILE = "stock_market.owl";
-    private static final String BASE_DATA_FILE = "ontologiaB3.ttl";
     private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx";
     private static final String INFERENCE_OUTPUT_FILENAME = "ontologiaB3_com_inferencia.ttl";
 
@@ -64,7 +63,7 @@ public class Ontology {
 
     private InfModel loadOrCreateInferredModel() throws IOException {
         ClassPathResource inferredResource = new ClassPathResource(INFERENCE_OUTPUT_FILENAME);
-        if (inferredResource.exists()) {
+        if (inferredResource.exists() && inferredResource.contentLength() > 0) {
             logger.info("--- Modelo inferido pré-calculado '{}' encontrado. Carregando diretamente... ---", INFERENCE_OUTPUT_FILENAME);
             Model dataModel = ModelFactory.createDefaultModel();
             try (InputStream in = inferredResource.getInputStream()) {
@@ -72,7 +71,7 @@ public class Ontology {
             }
             return ModelFactory.createRDFSModel(dataModel);
         } else {
-            logger.warn("--- Modelo inferido '{}' não encontrado. Construindo do zero (processo lento)... ---", INFERENCE_OUTPUT_FILENAME);
+            logger.warn("--- Modelo inferido '{}' não encontrado ou vazio. Construindo do zero (processo lento)... ---", INFERENCE_OUTPUT_FILENAME);
             Model baseModel = buildBaseModelFromSources();
             validateBaseModelLoad(baseModel.size());
             Reasoner reasoner = ReasonerRegistry.getRDFSReasoner();
@@ -89,18 +88,84 @@ public class Ontology {
         model.setNsPrefix("b3", ONT_PREFIX);
         model.setNsPrefix("rdf", RDF.uri);
         model.setNsPrefix("rdfs", RDFS.uri);
-        model.setNsPrefix("owl", OWL.NS);
         model.setNsPrefix("xsd", XSDDatatype.XSD + "#");
-        
+
         loadRdfData(model, SCHEMA_FILE, Lang.RDFXML, "Schema OWL");
-        loadRdfData(model, BASE_DATA_FILE, Lang.TURTLE, "Dados base TTL");
-        
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
-        
         for (String filePath : PREGAO_FILES) {
             loadDadosPregaoExcel(model, filePath);
         }
         return model;
+    }
+
+    private void loadInformacoesEmpresas(Model model, String resourcePath) throws IOException {
+        logger.info(">> Carregando Informações Cadastrais de Empresas de: {}", resourcePath);
+        try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream();
+             Workbook workbook = new XSSFWorkbook(excelFile)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue;
+                String nomeEmpresa = getStringCellValue(row.getCell(0));
+                String ticker = getStringCellValue(row.getCell(1));
+                String setor = getStringCellValue(row.getCell(5));
+                if (nomeEmpresa == null || ticker == null || setor == null) continue;
+
+                String tickerClean = ticker.trim();
+                String nomeEmpresaClean = nomeEmpresa.trim();
+                String setorClean = setor.trim();
+
+                Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresaClean));
+                Resource vmRes = model.createResource(ONT_PREFIX + tickerClean);
+                Resource codigoRes = model.createResource(ONT_PREFIX + tickerClean + "_Codigo");
+                Resource setorRes = model.createResource(ONT_PREFIX + "Setor_" + normalizarParaURI(setorClean));
+
+                addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa_Capital_Aberto"));
+                addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
+                addStatement(model, codigoRes, RDF.type, model.createResource(ONT_PREFIX + "Codigo_Negociacao"));
+                addStatement(model, setorRes, RDF.type, model.createResource(ONT_PREFIX + "Setor_Atuacao"));
+
+                addStatement(model, empresaRes, RDFS.label, model.createLiteral(nomeEmpresaClean, "pt"));
+                addStatement(model, codigoRes, model.createProperty(ONT_PREFIX + "ticker"), model.createLiteral(tickerClean));
+                addStatement(model, setorRes, RDFS.label, model.createLiteral(setorClean, "pt"));
+
+                addStatement(model, empresaRes, model.createProperty(ONT_PREFIX + "temValorMobiliarioNegociado"), vmRes);
+                addStatement(model, vmRes, model.createProperty(ONT_PREFIX + "representadoPor"), codigoRes);
+                addStatement(model, empresaRes, model.createProperty(ONT_PREFIX + "atuaEm"), setorRes);
+            }
+        }
+    }
+
+    private void loadDadosPregaoExcel(Model model, String resourcePath) throws IOException {
+        logger.info(">> Carregando Dados de Pregão de: {}", resourcePath);
+        try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream();
+             Workbook workbook = new XSSFWorkbook(excelFile)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue;
+                String ticker = getStringCellValue(row.getCell(3));
+                Date dataPregao = getDateCellValue(row.getCell(1));
+                if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
+
+                Resource valorMobiliario = model.getResource(ONT_PREFIX + ticker.trim());
+
+                String dataFmt = rdfDateFormat.format(dataPregao);
+                String negociadoUri = ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt.replace("-", "");
+                Resource negociadoResource = model.createResource(negociadoUri);
+                addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
+                addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
+
+                Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
+                addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
+                addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
+
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(7)));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(8)));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(9)));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(11)));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
+            }
+        }
     }
 
     public List<Map<String, String>> executeQuery(String sparqlQuery) {
@@ -146,93 +211,6 @@ public class Ontology {
         }
     }
 
-    private void loadInformacoesEmpresas(Model model, String resourcePath) throws IOException {
-        logger.info(">> Carregando Informações de Empresas de: {}", resourcePath);
-        try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream();
-             Workbook workbook = new XSSFWorkbook(excelFile)) {
-            Sheet sheet = workbook.getSheetAt(0);
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
-                String nomeEmpresa = getStringCellValue(row.getCell(0));
-                String ticker = getStringCellValue(row.getCell(1));
-                String setor = getStringCellValue(row.getCell(5));
-                if (nomeEmpresa == null || ticker == null || setor == null) continue;
-
-                // Encontra ou cria o Valor Mobiliário usando o TICKER como chave única.
-                Resource vmResource = findOrCreateValorMobiliario(model, ticker.trim());
-
-                // Cria a entidade da Empresa
-                Resource empresaResource = createResource(model, ONT_PREFIX + normalizarTexto(nomeEmpresa));
-                addStatement(model, empresaResource, RDF.type, createResource(model, ONT_PREFIX + "Empresa_Capital_Aberto"));
-                addStatement(model, empresaResource, RDFS.label, model.createLiteral(nomeEmpresa.trim(), "pt"));
-                
-                // LIGAÇÃO CRUCIAL: Liga a Empresa ao Valor Mobiliário.
-                addStatement(model, empresaResource, createProperty(model, "temValorMobiliarioNegociado"), vmResource);
-                
-                // Cria e liga o setor
-                Resource setorResource = createResource(model, ONT_PREFIX + "Setor_" + normalizarTexto(setor));
-                addStatement(model, setorResource, RDF.type, createResource(model, ONT_PREFIX + "Setor_Atuacao"));
-                addStatement(model, setorResource, RDFS.label, model.createLiteral(setor.trim(), "pt"));
-                addStatement(model, empresaResource, createProperty(model, "atuaEm"), setorResource);
-            }
-        }
-    }
-
-    private void loadDadosPregaoExcel(Model model, String resourcePath) throws IOException {
-        logger.info(">> Carregando Dados de Pregão de: {}", resourcePath);
-        try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream();
-             Workbook workbook = new XSSFWorkbook(excelFile)) {
-            Sheet sheet = workbook.getSheetAt(0);
-            SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
-                String ticker = getStringCellValue(row.getCell(3));
-                Date dataPregao = getDateCellValue(row.getCell(1));
-                if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
-
-                // Encontra ou cria o Valor Mobiliário usando o TICKER.
-                Resource valorMobiliario = findOrCreateValorMobiliario(model, ticker.trim());
-
-                String dataFmt = rdfDateFormat.format(dataPregao);
-                String negociadoUri = ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt.replace("-", "");
-                Resource negociadoResource = createResource(model, negociadoUri);
-                addStatement(model, negociadoResource, RDF.type, createResource(model, "Negociado_Em_Pregao"));
-                
-                // LIGAÇÃO CRUCIAL: Liga o Valor Mobiliário a esta instância de negociação.
-                addStatement(model, valorMobiliario, createProperty(model, "negociado"), negociadoResource);
-                
-                Resource pregaoResource = createResource(model, ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
-                addStatement(model, pregaoResource, RDF.type, createResource(model, "Pregao"));
-                addStatement(model, pregaoResource, createProperty(model, "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
-                addStatement(model, negociadoResource, createProperty(model, "negociadoDurante"), pregaoResource);
-                
-                addNumericProperty(model, negociadoResource, createProperty(model, "precoAbertura"), getNumericCellValue(row.getCell(7)));
-                addNumericProperty(model, negociadoResource, createProperty(model, "precoMaximo"), getNumericCellValue(row.getCell(8)));
-                addNumericProperty(model, negociadoResource, createProperty(model, "precoMinimo"), getNumericCellValue(row.getCell(9)));
-                addNumericProperty(model, negociadoResource, createProperty(model, "precoFechamento"), getNumericCellValue(row.getCell(11)));
-                addNumericProperty(model, negociadoResource, createProperty(model, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
-            }
-        }
-    }
-    
-    private Resource findOrCreateValorMobiliario(Model model, String ticker) {
-        String vmUri = ONT_PREFIX + ticker;
-        Resource vmResource = model.createResource(vmUri);
-
-        if (!model.contains(vmResource, RDF.type, createResource(model, "Valor_Mobiliario"))) {
-            addStatement(model, vmResource, RDF.type, createResource(model, "Valor_Mobiliario"));
-            addStatement(model, vmResource, RDFS.label, model.createLiteral(ticker));
-            
-            Resource codigoResource = createResource(model, ONT_PREFIX + ticker + "_Codigo");
-            addStatement(model, codigoResource, RDF.type, createResource(model, "Codigo_Negociacao"));
-            addStatement(model, codigoResource, createProperty(model, "ticker"), model.createLiteral(ticker));
-            
-            addStatement(model, vmResource, createProperty(model, "representadoPor"), codigoResource);
-        }
-        return vmResource;
-    }
-    
-    // --- Funções Utilitárias ---
     private String getStringCellValue(Cell cell) {
         if (cell == null) return null;
         CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
@@ -264,13 +242,14 @@ public class Ontology {
         return Double.NaN;
     }
 
-    private String normalizarTexto(String texto) {
+    private String normalizarParaURI(String texto) {
         if (texto == null) return "";
         return Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
-                .replaceAll("[^a-zA-Z0-9_]", "_");
+                .replaceAll("[^a-zA-Z0-9_ -]", "")
+                .replaceAll("\\s+", "_");
     }
-    
+
     private void saveInferredModelToFileSystem(InfModel modelToSave) {
         Path outputPath = Paths.get(INFERENCE_OUTPUT_FILENAME);
         try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
@@ -279,10 +258,10 @@ public class Ontology {
             logger.warn("Não foi possível salvar o modelo inferido em disco.", e);
         }
     }
-    
+
     private Resource createResource(Model model, String uri) { return model.createResource(uri); }
     private Property createProperty(Model model, String localName) { return model.createProperty(ONT_PREFIX + localName); }
     private void addStatement(Model model, Resource s, Property p, RDFNode o) { if (s != null && p != null && o != null) model.add(s, p, o); }
     private void addNumericProperty(Model model, Resource s, Property p, double value) { if (!Double.isNaN(value)) addStatement(model, s, p, model.createTypedLiteral(value)); }
-    private void validateBaseModelLoad(long size) { if (size < 100) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
+    private void validateBaseModelLoad(long size) { if (size < 1000) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
 }

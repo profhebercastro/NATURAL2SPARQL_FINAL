@@ -4,18 +4,12 @@ PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker ?volume
 WHERE {
-    # PARTE 1: Encontrar todas as empresas do setor desejado.
-    ?setorUri rdfs:label #SETOR#@pt . # <--- CORREÇÃO AQUI
+    ?setorUri rdfs:label #SETOR#@pt .
     ?empresa b3:atuaEm ?setorUri .
-    
-    # PARTE 2: Para cada empresa, encontrar seu valor mobiliário e a instância de negociação.
     ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-    ?valorMobiliario b3:negociado ?negociadoInst .
-    
-    # PARTE 3: Pegar o ticker associado a esse valor mobiliário.
-    ?valorMobiliario b3:representadoPor/b3:ticker ?ticker .
+    ?valorMobiliario b3:ticker ?ticker .
 
-    # PARTE 4: Filtrar a negociação pela DATA e obter o volume.
+    ?valorMobiliario b3:negociado ?negociadoInst .
     ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
     ?negociadoInst b3:volumeNegociacao ?volume .
 } 

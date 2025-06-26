@@ -3,13 +3,8 @@ PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker 
 WHERE {
-  # 1. Encontra a instância do setor pelo seu nome (label).
-  ?setorUri rdfs:label #SETOR#@pt .  # <--- CORREÇÃO AQUI
-  
-  # 2. Encontra a empresa que atua nesse setor.
+  ?setorUri rdfs:label #SETOR#@pt .
   ?empresa b3:atuaEm ?setorUri .
-  
-  # 3. Para cada empresa, segue o caminho até o seu ticker.
-  ?empresa b3:temValorMobiliarioNegociado/b3:representadoPor/b3:ticker ?ticker .
+  ?empresa b3:temValorMobiliarioNegociado/b3:ticker ?ticker .
 }
 ORDER BY ?ticker
