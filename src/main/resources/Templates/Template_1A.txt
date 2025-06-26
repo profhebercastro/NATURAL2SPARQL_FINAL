@@ -3,16 +3,9 @@ PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  # 1. Encontra a instância de Valor Mobiliário pelo seu Ticker.
   ?valorMobiliario b3:ticker #ENTIDADE_NOME# .
-  
-  # 2. A partir do Valor Mobiliário, encontra sua negociação.
   ?valorMobiliario b3:negociado ?negociadoInst . 
-  
-  # 3. Filtra a negociação pela DATA específica.
   ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
-  
-  # 4. Seleciona o VALOR DESEJADO (ex: precoFechamento) dessa negociação.
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
 }
 LIMIT 10
