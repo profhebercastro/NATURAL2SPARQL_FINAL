@@ -1,4 +1,6 @@
 # Template 4A: Busca volume por setor e data
+# Este template também depende da informação de setor.
+
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
