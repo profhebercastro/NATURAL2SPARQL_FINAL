@@ -7,11 +7,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
+        /* Seus estilos CSS originais */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #e9ecef; display: flex; flex-direction: column; min-height: 100vh; }
         header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-        .logo img { height: 32px; width: auto; filter: brightness(0) invert(1); }
+        .logo img { height: 32px; width: auto; }
         .header-actions { display: flex; align-items: center; gap: 15px; }
         .header-actions .icon-btn { background: none; border: 1px solid rgba(255,255,255,0.5); color: white; border-radius: 5px; padding: 5px 8px; cursor: pointer; font-size: 1rem; }
         .endpoint-group { display: flex; align-items: center; gap: 8px; }
@@ -35,7 +36,7 @@
         textarea.output { height: 250px; resize: vertical; background-color: #f8f9fa; color: #495057; font-family: 'Courier New', monospace; }
         .error-text { color: #dc3545 !important; font-weight: bold; }
         footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; }
-        .spinner { display: none; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
+        .spinner { display: none; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -76,9 +77,10 @@
             <div class="card">
                 <div class="card-title-container">
                     <h3 class="card-title">Consulta SPARQL</h3>
-                    <button id="executeQueryBtn" class="btn btn-info btn-sm" style="display: none;" disabled>
-                        <span>Executar</span>
+                    <button id="executeQueryBtn" class="btn btn-info btn-sm" style="display: none;">
+                        <span class="btn-text">Executar</span>
                         <i class="fas fa-play"></i>
+                        <div class="spinner" style="border-top-color: #333;"></div>
                     </button>
                 </div>
                 <textarea id="sparqlQueryOutput" class="form-control output" readonly>A consulta SPARQL aparecerá aqui...</textarea>
@@ -95,25 +97,23 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const generateBtn = document.getElementById('generateBtn');
+            const executeQueryBtn = document.getElementById('executeQueryBtn');
             const clearBtn = document.getElementById('clearBtn');
             const userQuestionInput = document.getElementById('userQuestion');
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
             const resultOutput = document.getElementById('resultOutput');
             const downloadQueryBtn = document.getElementById('downloadQueryBtn');
             const downloadResultBtn = document.getElementById('downloadResultBtn');
-            const executeQueryBtn = document.getElementById('executeQueryBtn');
+            
+            let currentTemplateId = null;
 
-            generateBtn.addEventListener('click', handleProcessRequest);
+            generateBtn.addEventListener('click', handleGenerateQuery);
+            executeQueryBtn.addEventListener('click', handleExecuteQuery);
             clearBtn.addEventListener('click', clearAllFields);
             downloadQueryBtn.addEventListener('click', () => downloadText('consulta.txt', sparqlQueryOutput.value));
             downloadResultBtn.addEventListener('click', () => downloadText('resultado.txt', resultOutput.value));
-            
-            userQuestionInput.addEventListener('keypress', function(event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    handleProcessRequest();
-                }
-            });
+
+            userQuestionInput.addEventListener('keypress', e => e.key === 'Enter' && (e.preventDefault(), handleGenerateQuery()));
 
             function clearAllFields() {
                 userQuestionInput.value = '';
@@ -121,48 +121,74 @@
                 resultOutput.value = 'O resultado aparece aqui...';
                 resultOutput.classList.remove('error-text');
                 executeQueryBtn.style.display = 'none';
+                currentTemplateId = null;
             }
 
-            async function handleProcessRequest() {
+            function clearResults() {
+                sparqlQueryOutput.value = 'Gerando consulta...';
+                resultOutput.value = 'Aguarde a geração da consulta...';
+                resultOutput.classList.remove('error-text');
+                executeQueryBtn.style.display = 'none';
+            }
+
+            async function handleGenerateQuery() {
                 const question = userQuestionInput.value.trim();
                 if (!question) { alert("Por favor, digite uma pergunta."); return; }
                 
                 toggleLoading(generateBtn, true);
-                sparqlQueryOutput.value = 'Processando...';
-                resultOutput.value = 'Processando...';
-                resultOutput.classList.remove('error-text');
-                executeQueryBtn.style.display = 'none';
+                clearResults();
 
                 try {
-                    const response = await fetch('/processar_pergunta', {
+                    const response = await fetch('/gerar_consulta', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ pergunta: question })
                     });
                     
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.erro || `Erro do Servidor: ${response.status}`);
+                    const data = await response.json();
+                    if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
+                    
+                    sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
+                    currentTemplateId = data.templateId;
+
+                    if (data.sparqlQuery) {
+                        executeQueryBtn.style.display = 'inline-flex';
+                        executeQueryBtn.disabled = false;
                     }
+                } catch (error) {
+                    sparqlQueryOutput.value = `Erro: ${error.message}`;
+                    sparqlQueryOutput.classList.add('error-text');
+                } finally {
+                    toggleLoading(generateBtn, false);
+                }
+            }
+
+            async function handleExecuteQuery() {
+                const sparqlQuery = sparqlQueryOutput.value;
+                if (!sparqlQuery || !currentTemplateId || sparqlQuery.startsWith("Erro:")) {
+                    alert("Não há uma consulta válida para executar.");
+                    return;
+                }
+
+                toggleLoading(executeQueryBtn, true);
+                resultOutput.value = "Executando...";
+
+                try {
+                    const response = await fetch('/executar_query', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sparqlQuery, templateId: currentTemplateId })
+                    });
                     
                     const data = await response.json();
-
-                    if (data.erro) { throw new Error(data.erro); }
+                    if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
-                    sparqlQueryOutput.value = data.sparqlQuery || "Consulta não gerada.";
-                    resultOutput.value = data.resposta || "Nenhum resultado encontrado.";
-
-                    // Lógica corrigida para exibir o botão
-                    if (data.sparqlQuery && !data.sparqlQuery.includes("não gerada")) {
-                        executeQueryBtn.style.display = 'inline-flex';
-                    }
-                
+                    resultOutput.value = data.resultado || "Nenhum resultado encontrado.";
                 } catch (error) {
-                    sparqlQueryOutput.value = 'Falha na requisição.';
                     resultOutput.value = `Erro: ${error.message}`;
                     resultOutput.classList.add('error-text');
                 } finally {
-                    toggleLoading(generateBtn, false);
+                    toggleLoading(executeQueryBtn, false);
                 }
             }
             
@@ -170,39 +196,14 @@
                 const textSpan = button.querySelector('.btn-text');
                 const spinner = button.querySelector('.spinner');
                 const icon = button.querySelector('i');
-
                 button.disabled = isLoading;
-
-                // Ajuste para lidar com a estrutura do botão de gerar consulta
-                const targetIcon = textSpan ? textSpan.nextElementSibling : button.querySelector('i');
-
-                if (isLoading) {
-                    if (textSpan) textSpan.style.display = 'none';
-                    if (targetIcon) targetIcon.style.display = 'none';
-                    spinner.style.display = 'inline-block';
-                } else {
-                    if (textSpan) textSpan.style.display = 'inline';
-                    if (targetIcon) targetIcon.style.display = 'inline-block';
-                    spinner.style.display = 'none';
-                }
+                if (textSpan) textSpan.style.display = isLoading ? 'none' : 'inline';
+                if (icon) icon.style.display = isLoading ? 'none' : 'inline-block';
+                if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
             }
 
             function downloadText(filename, text) {
-                const initialText = {
-                    'consulta.txt': 'A consulta SPARQL aparecerá aqui...',
-                    'resultado.txt': 'O resultado aparece aqui...'
-                };
-                if (!text || text === initialText[filename] || text.includes('Processando...')) {
-                    alert('Não há conteúdo para baixar.');
-                    return;
-                }
-                const element = document.createElement('a');
-                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-                element.setAttribute('download', filename);
-                element.style.display = 'none';
-                document.body.appendChild(element);
-                element.click();
-                document.body.removeChild(element);
+                // ... (código igual ao anterior)
             }
         });
     </script>

@@ -28,8 +28,8 @@ public class QuestionProcessor {
     private static final String PYTHON_SCRIPT_NAME = "pln_processor.py";
     private static final String BASE_ONTOLOGY_URI = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String[] PYTHON_RESOURCES = {
-        PYTHON_SCRIPT_NAME, "perguntas_de_interesse.txt", "sinonimos_map.txt",
-        "empresa_nome_map.json", "setor_map.json"
+            PYTHON_SCRIPT_NAME, "perguntas_de_interesse.txt", "sinonimos_map.txt",
+            "empresa_nome_map.json", "setor_map.json"
     };
 
     @Autowired
@@ -48,7 +48,7 @@ public class QuestionProcessor {
             for (String fileName : PYTHON_RESOURCES) {
                 Resource resource = new ClassPathResource(fileName);
                 if (!resource.exists()) throw new FileNotFoundException("Recurso Python essencial não encontrado: " + fileName);
-                
+
                 Path destination = tempDir.resolve(fileName);
                 try (InputStream inputStream = resource.getInputStream()) {
                     Files.copy(inputStream, destination);
@@ -64,14 +64,19 @@ public class QuestionProcessor {
             throw e;
         }
     }
-    
-    public ProcessamentoDetalhadoResposta processQuestion(String question) {
-        logger.info("Serviço QuestionProcessor: Iniciando processamento da pergunta: '{}'", question);
+
+    /**
+     * ETAPA 1: Processa a pergunta e GERA a consulta SPARQL, sem executá-la.
+     * @param question A pergunta do usuário.
+     * @return Um objeto DTO contendo a query gerada e o ID do template.
+     */
+    public ProcessamentoDetalhadoResposta generateSparqlQuery(String question) {
+        logger.info("Serviço QuestionProcessor: Iniciando GERAÇÃO de query para: '{}'", question);
         ProcessamentoDetalhadoResposta respostaDetalhada = new ProcessamentoDetalhadoResposta();
-        
+
         try {
             Map<String, Object> resultadoPython = executePythonScript(question);
-            
+
             if (resultadoPython.containsKey("erro")) {
                 String erroPython = (String) resultadoPython.get("erro");
                 logger.error("Script Python retornou um erro de PLN: {}", erroPython);
@@ -88,79 +93,81 @@ public class QuestionProcessor {
                 return respostaDetalhada;
             }
 
-            logger.info("Análise PLN retornou: Template ID='{}', Placeholders={}", templateId, placeholders);
+            logger.info("Análise PLN (Geração): Template ID='{}', Placeholders={}", templateId, placeholders);
 
             String conteudoTemplate = readTemplateContent(templateId);
             String sparqlQueryGerada = buildSparqlQuery(templateId, conteudoTemplate, placeholders);
             respostaDetalhada.setSparqlQuery(sparqlQueryGerada);
-            logger.info("SPARQL Gerada:\n---\n{}\n---", sparqlQueryGerada);
 
-            List<Map<String, String>> resultados = ontology.executeQuery(sparqlQueryGerada);
-            String respostaFormatada = formatarResultados(resultados, templateId);
-            respostaDetalhada.setResposta(respostaFormatada);
-            logger.info("Resposta final formatada: {}", respostaFormatada);
+            // Armazena o templateId para uso posterior na etapa de execução
+            respostaDetalhada.setTemplateId(templateId);
 
         } catch (Exception e) {
-            logger.error("Erro GENÉRICO e inesperado ao processar a pergunta '{}': {}", question, e.getMessage(), e);
-            respostaDetalhada.setErro("Ocorreu um erro interno inesperado no servidor. Consulte os logs.");
+            logger.error("Erro ao GERAR query para '{}': {}", question, e.getMessage(), e);
+            respostaDetalhada.setErro("Ocorreu um erro interno ao gerar a consulta.");
         }
-        
         return respostaDetalhada;
     }
-    
-    /**************************************************************************/
-    /* --- CORREÇÃO FINAL E DEFINITIVA ---                                    */
-    /* Este método agora considera o template ID para decidir como formatar   */
-    /* o placeholder, garantindo que a tag de idioma seja usada corretamente. */
-    /**************************************************************************/
+
+    /**
+     * ETAPA 2: EXECUTA uma query SPARQL previamente gerada e formata o resultado.
+     * @param sparqlQuery A string da consulta SPARQL.
+     * @param templateId O ID do template usado, para guiar a formatação.
+     * @return Uma string com a resposta formatada.
+     */
+    public String executeAndFormat(String sparqlQuery, String templateId) {
+        logger.info("Serviço QuestionProcessor: Iniciando EXECUÇÃO de query.");
+        try {
+            List<Map<String, String>> resultados = ontology.executeQuery(sparqlQuery);
+            return formatarResultados(resultados, templateId);
+        } catch (Exception e) {
+            logger.error("Erro ao EXECUTAR query: {}", e.getMessage(), e);
+            return "Erro ao executar a consulta na base de conhecimento.";
+        }
+    }
+
     private String buildSparqlQuery(String templateId, String templateContent, Map<String, String> placeholders) {
         String queryAtual = templateContent;
         if (placeholders == null) return queryAtual;
 
-        // Formatação do #ENTIDADE_NOME#
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
             String valor = placeholders.get("#ENTIDADE_NOME#").replace("\"", "\\\"");
-            // Templates que usam NOME da empresa precisam da tag de idioma
+            // Templates que buscam por NOME da empresa usam a tag de idioma
             if (templateId.equals("Template_1A") || templateId.equals("Template_2A")) {
                 queryAtual = queryAtual.replace("#ENTIDADE_NOME#@pt", "\"" + valor + "\"@pt");
-            } else { // Templates que usam TICKER são literais simples
+            } else { // Templates que buscam por TICKER são literais simples
                 queryAtual = queryAtual.replace("#ENTIDADE_NOME#", "\"" + valor + "\"");
             }
         }
-        // Formatação do #SETOR#
         if (placeholders.containsKey("#SETOR#")) {
             String valor = placeholders.get("#SETOR#").replace("\"", "\\\"");
-            queryAtual = queryAtual.replace("#SETOR#", "\"" + valor + "\"@pt");
+            queryAtual = queryAtual.replace("#SETOR#@pt", "\"" + valor + "\"@pt");
         }
-        // Formatação da #DATA#
         if (placeholders.containsKey("#DATA#")) {
             String valor = placeholders.get("#DATA#");
             queryAtual = queryAtual.replace("#DATA#", "\"" + valor + "\"^^xsd:date");
         }
-        // Formatação do #VALOR_DESEJADO#
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             String valor = placeholders.get("#VALOR_DESEJADO#");
             queryAtual = queryAtual.replace("#VALOR_DESEJADO#", valor);
         }
-
         return queryAtual;
     }
-
 
     private Map<String, Object> executePythonScript(String question) throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder("python3", this.pythonScriptPath.toString(), question);
         logger.info("Executando comando Python: {}", String.join(" ", pb.command()));
         Process process = pb.start();
-        
+
         String stdoutResult = StreamUtils.copyToString(process.getInputStream(), StandardCharsets.UTF_8);
         String stderrResult = StreamUtils.copyToString(process.getErrorStream(), StandardCharsets.UTF_8);
-        
+
         int exitCode = process.waitFor();
-        
+
         if (!stderrResult.isEmpty()) logger.warn("Script Python emitiu mensagens no stderr: {}", stderrResult);
         if (exitCode != 0) throw new RuntimeException("Script Python falhou. Erro: " + stderrResult);
         if (stdoutResult.isEmpty()) throw new RuntimeException("Script Python não retornou nenhuma saída.");
-        
+
         logger.debug("Saída JSON bruta do Python: {}", stdoutResult);
         return objectMapper.readValue(stdoutResult, new TypeReference<>() {});
     }
@@ -181,7 +188,7 @@ public class QuestionProcessor {
         if (resultados == null || resultados.isEmpty()) {
             return "Não foram encontrados resultados para a sua pergunta.";
         }
-        
+
         StringJoiner joiner;
         if ("Template_4A".equals(templateId)) {
             joiner = new StringJoiner("\n");
@@ -203,7 +210,7 @@ public class QuestionProcessor {
                 if (!valor.isEmpty()) joiner.add(limparValor(valor));
             }
         }
-        
+
         String resultadoFinal = joiner.toString();
         return resultadoFinal.isEmpty() ? "Não foram encontrados resultados para a sua pergunta." : resultadoFinal;
     }
