@@ -189,15 +189,6 @@ public class Ontology {
         }
     }
 
-    private void loadRdfData(Model model, String resourcePath, Lang language, String description) throws IOException {
-        try (InputStream in = new ClassPathResource(resourcePath).getInputStream()) {
-            RDFDataMgr.read(model, in, language);
-        } catch (IOException e) {
-            logger.error("ERRO FATAL ao ler o recurso RDF '{}'", resourcePath, e);
-            throw e;
-        }
-    }
-    
     private String getStringCellValue(Cell cell) {
         if (cell == null) return null;
         CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();

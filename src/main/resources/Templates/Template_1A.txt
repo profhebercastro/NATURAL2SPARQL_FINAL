@@ -14,8 +14,7 @@ WHERE {
   ?valorMobiliario b3:negociado ?negociadoInst .
   
   # 4. Filtra a negociação pela data
-  ?negociadoInst b3:negociadoDurante ?pregao .
-  ?pregao b3:ocorreEmData #DATA# .
+  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
   
   # 5. Pega o valor desejado
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
