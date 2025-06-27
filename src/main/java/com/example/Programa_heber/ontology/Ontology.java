@@ -141,7 +141,8 @@ public class Ontology {
                 Resource negociadoResource = model.createResource(ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
-                addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
+                // LIGAÇÃO CORRIGIDA: Da Negociação PARA o Valor Mobiliário
+                addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "ehNegociacaoDe"), valorMobiliario);
 
                 Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
                 addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
