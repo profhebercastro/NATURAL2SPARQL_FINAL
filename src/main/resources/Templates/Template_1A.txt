@@ -6,13 +6,14 @@ PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  # 1. Encontra a empresa pelo seu nome formal (label)
+  # 1. Encontra a empresa pelo seu nome formal (label em português)
   ?empresa rdfs:label #ENTIDADE_NOME#@pt .
   
   # 2. A partir da empresa, encontra o Valor Mobiliário associado
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
   
   # 3. A partir do Valor Mobiliário, encontra a instância de Negociação
+  # (Corrigido para a modelagem final)
   ?valorMobiliario b3:negociado ?negociadoInst .
   
   # 4. Filtra a negociação pela data correta
