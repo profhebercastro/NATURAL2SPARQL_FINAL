@@ -4,19 +4,19 @@ PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  # 1. Encontra a empresa pelo nome
+  # CONDIÇÃO 1: Existe uma empresa com este nome.
   ?empresa rdfs:label #ENTIDADE_NOME#@pt .
   
-  # 2. Encontra o Valor Mobiliário associado
+  # CONDIÇÃO 2: Essa empresa tem um valor mobiliário.
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
   
-  # 3. Encontra a instância de Negociação ligada DIRETAMENTE ao Valor Mobiliário
+  # CONDIÇÃO 3: Existe uma negociação para este mesmo valor mobiliário.
   ?valorMobiliario b3:negociado ?negociadoInst .
   
-  # 4. Filtra a negociação pela data
+  # CONDIÇÃO 4: Essa negociação ocorreu na data especificada.
   ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
   
-  # 5. Pega o valor desejado
+  # CONDIÇÃO 5: Essa mesma negociação tem um preço de fechamento.
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
 } 
 LIMIT 10
