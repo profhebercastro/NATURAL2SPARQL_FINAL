@@ -1,25 +1,10 @@
-# Template 1A: Busca um valor para uma EMPRESA em uma DATA
-
+# Template_1A.txt (para busca por nome)
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
-PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-
-SELECT DISTINCT ?valor
-WHERE {
-  # 1. Encontra a empresa pelo seu nome formal
+# ... outros prefixos
+SELECT DISTINCT ?valor WHERE {
   ?empresa rdfs:label #ENTIDADE_NOME#@pt .
-  
-  # 2. Encontra o Valor Mobiliário associado a ela
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-  
-  # 3. Encontra a instância de Negociação ligada DIRETAMENTE ao Valor Mobiliário
   ?valorMobiliario b3:negociado ?negociadoInst .
-  
-  # 4. Filtra a negociação pela data correta
-  ?negociadoInst b3:negociadoDurante ?pregao .
-  ?pregao b3:ocorreEmData #DATA# .
-  
-  # 5. Pega o valor desejado (ex: precoFechamento)
-  ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
+  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
+  ?negociadoInst b3:precoFechamento ?valor .
 } 
-LIMIT 10
