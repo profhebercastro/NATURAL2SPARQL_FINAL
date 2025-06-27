@@ -1,20 +1,24 @@
-# Template 1A: Busca por Ticker
+# Template 1A: Busca um valor de cotação para uma EMPRESA em uma DATA
 
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  # 1. Encontra o Valor Mobiliário pelo seu ticker literal.
-  ?valorMobiliario b3:ticker #ENTIDADE_NOME# .
+  # 1. Encontra a empresa pelo seu nome formal (label)
+  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
   
-  # 2. Encontra a Negociação que "é uma negociação de" este Valor Mobiliário.
-  ?negociadoInst b3:ehNegociacaoDe ?valorMobiliario . 
+  # 2. A partir da empresa, encontra o Valor Mobiliário associado
+  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
   
-  # 3. Filtra pela data.
+  # 3. A partir do Valor Mobiliário, encontra a instância de Negociação
+  ?valorMobiliario b3:negociado ?negociadoInst .
+  
+  # 4. Filtra a negociação pela data correta
   ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
   
-  # 4. Pega o valor desejado.
+  # 5. Pega o valor desejado (ex: precoFechamento)
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
-}
+} 
 LIMIT 10
