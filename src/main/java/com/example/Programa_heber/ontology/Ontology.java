@@ -40,6 +40,7 @@ public class Ontology {
     private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String[] PREGAO_FILES = { "datasets/dados_novos_anterior.xlsx", "datasets/dados_novos_atual.xlsx" };
     private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx";
+    private static final String SCHEMA_FILE = "stock_market.owl";
     private static final String INFERENCE_OUTPUT_FILENAME = "ontologiaB3_com_inferencia.ttl";
 
     @PostConstruct
@@ -87,16 +88,16 @@ public class Ontology {
         model.setNsPrefix("b3", ONT_PREFIX);
         model.setNsPrefix("rdfs", RDFS.uri);
 
-        // A ordem de carregamento é crucial para garantir as ligações corretas
+        // A ordem de carregamento é crucial
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
         for (String filePath : PREGAO_FILES) {
             loadDadosPregaoExcel(model, filePath);
         }
         return model;
     }
-
+    
     private void loadInformacoesEmpresas(Model model, String resourcePath) throws IOException {
-        logger.info(">> Carregando Cadastro (S1, S2, O1, P1, P2)...");
+        logger.info(">> Carregando Cadastro de Empresas...");
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream(); Workbook workbook = new XSSFWorkbook(excelFile)) {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
@@ -105,29 +106,24 @@ public class Ontology {
                 String ticker = getStringCellValue(row.getCell(1));
                 if (nomeEmpresa == null || ticker == null) continue;
 
-                // Cria os recursos (nós S1, S2, O1)
-                Resource s1_Empresa = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresa.trim()));
-                Resource s2_ValorMobiliario = model.createResource(ONT_PREFIX + ticker.trim());
-                Resource o1_CodigoNegociacao = model.createResource(ONT_PREFIX + ticker.trim() + "_Codigo");
+                // Cria o Recurso para o Valor Mobiliário (a entidade central)
+                Resource vmRes = model.createResource(ONT_PREFIX + ticker.trim());
+                addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
+                addStatement(model, vmRes, model.createProperty(ONT_PREFIX, "ticker"), ticker.trim());
                 
-                // Define os tipos
-                addStatement(model, s1_Empresa, RDF.type, model.createResource(ONT_PREFIX + "Empresa_Capital_Aberto"));
-                addStatement(model, s2_ValorMobiliario, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario_Negociado"));
-                addStatement(model, o1_CodigoNegociacao, RDF.type, model.createResource(ONT_PREFIX + "Codigo_Negociacao"));
+                // Cria o Recurso para a Empresa
+                Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresa.trim()));
+                addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa"));
+                addStatement(model, empresaRes, RDFS.label, nomeEmpresa.trim(), "pt");
 
-                // Define as propriedades de dados (labels, tickers)
-                addStatement(model, s1_Empresa, RDFS.label, nomeEmpresa.trim(), "pt");
-                addStatement(model, o1_CodigoNegociacao, model.createProperty(ONT_PREFIX, "ticker"), ticker.trim());
-
-                // Cria as ligações (P1, P2)
-                addStatement(model, s1_Empresa, model.createProperty(ONT_PREFIX, "temValorMobiliarioNegociado"), s2_ValorMobiliario);
-                addStatement(model, s2_ValorMobiliario, model.createProperty(ONT_PREFIX, "representadoPor"), o1_CodigoNegociacao);
+                // CRIA A LIGAÇÃO CORRETA E ÚNICA
+                addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "temValorMobiliarioNegociado"), vmRes);
             }
         }
     }
 
     private void loadDadosPregaoExcel(Model model, String resourcePath) throws IOException {
-        logger.info(">> Carregando Dados de Pregão (S3, S4, O2, P3, P4, P5, P6)...");
+        logger.info(">> Carregando Dados de Pregão de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream(); Workbook workbook = new XSSFWorkbook(excelFile)) {
             Sheet sheet = workbook.getSheetAt(0);
             SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -137,33 +133,28 @@ public class Ontology {
                 Date dataPregao = getDateCellValue(row.getCell(1));
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
 
-                // Encontra o nó S2 (Valor_Mobiliario) que JÁ DEVE EXISTIR
-                Resource s2_ValorMobiliario = model.getResource(ONT_PREFIX + ticker.trim());
+                // Encontra o nó Valor Mobiliário que JÁ DEVE EXISTIR
+                Resource valorMobiliario = model.getResource(ONT_PREFIX + ticker.trim());
 
-                // Cria os recursos (nós S3, S4)
+                // Cria a instância de Negociação
                 String dataFmt = rdfDateFormat.format(dataPregao);
-                Resource s3_Negociado = model.createResource(ONT_PREFIX + ticker.trim() + "_" + dataFmt.replace("-", "") + "_Negociado");
-                Resource s4_Pregao = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
+                Resource negociadoRes = model.createResource(ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt);
+                addStatement(model, negociadoRes, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
-                // Define os tipos
-                addStatement(model, s3_Negociado, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
-                addStatement(model, s4_Pregao, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
-
-                // Define a propriedade de dados (P6) para o nó S4
-                addStatement(model, s4_Pregao, model.createProperty(ONT_PREFIX, "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
-
-                // Cria as ligações (P3, P5)
-                addStatement(model, s2_ValorMobiliario, model.createProperty(ONT_PREFIX, "negociado"), s3_Negociado);
-                addStatement(model, s3_Negociado, model.createProperty(ONT_PREFIX, "negociadoDurante"), s4_Pregao);
-
-                // Define as propriedades de dados (P4) para o nó S3
-                addNumericProperty(model, s3_Negociado, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(7)));
-                addNumericProperty(model, s3_Negociado, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(8)));
-                addNumericProperty(model, s3_Negociado, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(9)));
-                addNumericProperty(model, s3_Negociado, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(11)));
-                addNumericProperty(model, s3_Negociado, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
-                addNumericProperty(model, s3_Negociado, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCellValue(row.getCell(13)));
-                addNumericProperty(model, s3_Negociado, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(10)));
+                // CRIA A LIGAÇÃO DIRETA E CORRETA
+                addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX, "negociado"), negociadoRes);
+                
+                // Cria o Pregão e o liga à Negociação
+                Resource pregaoRes = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt);
+                addStatement(model, pregaoRes, model.createProperty(ONT_PREFIX, "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
+                addStatement(model, negociadoRes, model.createProperty(ONT_PREFIX, "negociadoDurante"), pregaoRes);
+                
+                // Adiciona os dados numéricos à instância de Negociação
+                addNumericProperty(model, negociadoRes, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(7)));
+                addNumericProperty(model, negociadoRes, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(8)));
+                addNumericProperty(model, negociadoRes, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(9)));
+                addNumericProperty(model, negociadoRes, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(11)));
+                addNumericProperty(model, negociadoRes, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
             }
         }
     }
