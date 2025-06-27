@@ -87,7 +87,6 @@ public class Ontology {
         model.setNsPrefix("b3", ONT_PREFIX);
         model.setNsPrefix("rdfs", RDFS.uri);
 
-        // A ordem de carregamento é crucial
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
         for (String filePath : PREGAO_FILES) {
             loadDadosPregaoExcel(model, filePath);
@@ -105,17 +104,14 @@ public class Ontology {
                 String ticker = getStringCellValue(row.getCell(1));
                 if (nomeEmpresa == null || ticker == null) continue;
 
-                // Cria ou obtém o Recurso para o Valor Mobiliário (entidade central)
                 Resource vmRes = model.createResource(ONT_PREFIX + ticker.trim());
                 addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
                 addStatement(model, vmRes, model.createProperty(ONT_PREFIX, "ticker"), ticker.trim());
-                
-                // Cria ou obtém o Recurso para a Empresa
+
                 Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresa.trim()));
                 addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa"));
                 addStatement(model, empresaRes, RDFS.label, nomeEmpresa.trim(), "pt");
 
-                // CRIA A LIGAÇÃO CORRETA E ÚNICA
                 addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "temValorMobiliarioNegociado"), vmRes);
             }
         }
@@ -132,25 +128,19 @@ public class Ontology {
                 Date dataPregao = getDateCellValue(row.getCell(1));
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
 
-                // Encontra o nó Valor Mobiliário que JÁ DEVE EXISTIR
                 Resource valorMobiliario = model.getResource(ONT_PREFIX + ticker.trim());
 
-                // Cria a instância de Negociação
                 String dataFmt = rdfDateFormat.format(dataPregao);
                 Resource negociadoRes = model.createResource(ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt);
                 addStatement(model, negociadoRes, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
-                // CRIA A LIGAÇÃO DIRETA E CORRETA
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX, "negociado"), negociadoRes);
-                
-                // Cria o Pregão e o liga à Negociação
+
                 Resource pregaoRes = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt);
                 addStatement(model, pregaoRes, model.createProperty(ONT_PREFIX, "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoRes, model.createProperty(ONT_PREFIX, "negociadoDurante"), pregaoRes);
-                
-                // Adiciona os dados
+
                 addNumericProperty(model, negociadoRes, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(11)));
-                // Adicione os outros aqui...
             }
         }
     }
@@ -227,7 +217,7 @@ public class Ontology {
                 .replaceAll("[^a-zA-Z0-9_ -]", "")
                 .replaceAll("\\s+", "_");
     }
-    
+
     private void saveInferredModelToFileSystem(InfModel modelToSave) {
         Path outputPath = Paths.get(INFERENCE_OUTPUT_FILENAME);
         try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
@@ -236,10 +226,57 @@ public class Ontology {
             logger.warn("Não foi possível salvar o modelo inferido em disco.", e);
         }
     }
-    
+
     private void addStatement(Model model, Resource s, Property p, RDFNode o) { if (s != null && p != null && o != null) model.add(s, p, o); }
     private void addStatement(Model model, Resource s, Property p, String o) { if (s != null && p != null && o != null && !o.isEmpty()) model.add(s, p, o); }
     private void addStatement(Model model, Resource s, Property p, String o, String lang) { if (s != null && p != null && o != null && !o.isEmpty()) model.add(s, p, o, lang); }
     private void addNumericProperty(Model model, Resource s, Property p, double value) { if (!Double.isNaN(value)) addStatement(model, s, p, model.createTypedLiteral(value)); }
     private void validateBaseModelLoad(long size) { if (size < 1000) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
+
+    /**
+     * Método de teste local para depuração.
+     * Execute este método para gerar um arquivo .ttl local e testar uma query.
+     */
+    public static void main(String[] args) throws IOException {
+        System.out.println("INICIANDO TESTE DE CONSTRUÇÃO LOCAL...");
+        Ontology ontology = new Ontology();
+        Model testModel = ontology.buildBaseModelFromSources();
+
+        try (OutputStream out = new FileOutputStream("modelo_gerado_localmente.ttl")) {
+            RDFDataMgr.write(out, testModel, Lang.TURTLE);
+            System.out.println("SUCESSO: Modelo de teste salvo em 'modelo_gerado_localmente.ttl'");
+        }
+
+        String testQuery = """
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+            PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+            SELECT DISTINCT ?valor WHERE {
+              ?empresa rdfs:label "CSN MINERAÇÃO S.A."@pt .
+              ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+              ?valorMobiliario b3:negociado ?negociadoInst .
+              ?negociadoInst b3:negociadoDurante ?pregao .
+              ?pregao b3:ocorreEmData "2023-05-08"^^xsd:date .
+              ?negociadoInst b3:precoFechamento ?valor .
+            }
+        """;
+
+        System.out.println("\nEXECUTANDO QUERY DE TESTE...");
+        try (QueryExecution qexec = QueryExecutionFactory.create(testQuery, testModel)) {
+            ResultSet results = qexec.execSelect();
+            if (!results.hasNext()) {
+                System.err.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                System.err.println("TESTE LOCAL FALHOU: A query não retornou resultados.");
+                System.err.println("VERIFIQUE SE OS NOMES/TICKERS NOS ARQUIVOS EXCEL ESTÃO CORRETOS.");
+                System.err.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            } else {
+                while (results.hasNext()) {
+                    QuerySolution soln = results.nextSolution();
+                    System.out.println("******************************************");
+                    System.out.println("TESTE LOCAL SUCESSO! Resultado: " + soln.get("valor"));
+                    System.out.println("******************************************");
+                }
+            }
+        }
+    }
 }

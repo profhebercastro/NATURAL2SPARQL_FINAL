@@ -1,22 +1,11 @@
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
-PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT DISTINCT ?valor
 WHERE {
-  # CONDIÇÃO 1: Existe uma empresa com este nome.
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
-  
-  # CONDIÇÃO 2: Essa empresa tem um valor mobiliário.
-  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-  
-  # CONDIÇÃO 3: Existe uma negociação para este mesmo valor mobiliário.
+  ?valorMobiliario b3:ticker #ENTIDADE_NOME# .
   ?valorMobiliario b3:negociado ?negociadoInst .
-  
-  # CONDIÇÃO 4: Essa negociação ocorreu na data especificada.
   ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
-  
-  # CONDIÇÃO 5: Essa mesma negociação tem um preço de fechamento.
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
-} 
-LIMIT 10
+}
+LIMIT 1

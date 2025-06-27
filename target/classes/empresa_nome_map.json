@@ -66,13 +66,20 @@
   "itau unibanco": "ITAÚ UNIBANCO HOLDING S.A.",
   "itub3": "ITUB3",
   "itub4": "ITUB4",
-  "csn": "CIA SIDERURGICA NACIONAL",
-  "csna3": "CSNA3",
+
+  "csn": "CSN MINERAÇÃO S.A.",
   "csn mineração": "CSN MINERAÇÃO S.A.",
   "cmin3": "CMIN3",
+  
+  "cia siderurgica nacional": "CIA SIDERURGICA NACIONAL",
+  "csna3": "CSNA3",
+
   "gerdau": "GERDAU S.A.",
+  "gerdau s.a.": "GERDAU S.A.",
   "ggbr3": "GGBR3",
   "ggbr4": "GGBR4",
+
   "cba": "COMPANHIA BRASILEIRA DE ALUMÍNIO",
+  "companhia brasileira de aluminio": "COMPANHIA BRASILEIRA DE ALUMÍNIO",
   "cbav3": "CBAV3"
 }

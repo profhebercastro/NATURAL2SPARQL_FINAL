@@ -1,19 +1,14 @@
-# Template_3A: Busca todos os tickers de um SETOR específico.
-# Ex: "Quais são as ações do setor bancário?"
+# Template 3A: Busca todos os tickers de um setor
+# Este template pode não funcionar se a informação de setor não estiver sendo carregada
+# na versão simplificada da Ontology.java. A lógica abaixo assume que ela é carregada.
 
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?ticker 
 WHERE {
-  # 1. Encontra a instância do setor pelo seu nome (label).
-  ?setorUri rdfs:label #SETOR# . 
-  
-  # 2. Encontra todas as empresas que atuam nesse setor.
+  ?setorUri rdfs:label #SETOR#@pt .
   ?empresa b3:atuaEm ?setorUri .
-  
-  # 3. Para cada empresa, segue o caminho até o seu ticker.
-  # (Empresa -> Valor Mobiliário -> Código de Negociação -> ticker)
-  ?empresa b3:temValorMobiliarioNegociado/b3:representadoPor/b3:ticker ?ticker .
+  ?empresa b3:temValorMobiliarioNegociado/b3:ticker ?ticker .
 }
 ORDER BY ?ticker
