@@ -28,8 +28,8 @@ public class QuestionProcessor {
     private static final String PYTHON_SCRIPT_NAME = "pln_processor.py";
     private static final String BASE_ONTOLOGY_URI = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String[] PYTHON_RESOURCES = {
-        PYTHON_SCRIPT_NAME, "perguntas_de_interesse.txt", "sinonimos_map.txt",
-        "empresa_nome_map.json", "setor_map.json"
+            PYTHON_SCRIPT_NAME, "perguntas_de_interesse.txt", "sinonimos_map.txt",
+            "empresa_nome_map.json", "setor_map.json"
     };
 
     @Autowired
@@ -48,7 +48,7 @@ public class QuestionProcessor {
             for (String fileName : PYTHON_RESOURCES) {
                 Resource resource = new ClassPathResource(fileName);
                 if (!resource.exists()) throw new FileNotFoundException("Recurso Python essencial não encontrado: " + fileName);
-                
+
                 Path destination = tempDir.resolve(fileName);
                 try (InputStream inputStream = resource.getInputStream()) {
                     Files.copy(inputStream, destination);
@@ -64,14 +64,14 @@ public class QuestionProcessor {
             throw e;
         }
     }
-    
+
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String question) {
         logger.info("Serviço QuestionProcessor: Iniciando GERAÇÃO de query para: '{}'", question);
         ProcessamentoDetalhadoResposta respostaDetalhada = new ProcessamentoDetalhadoResposta();
-        
+
         try {
             Map<String, Object> resultadoPython = executePythonScript(question);
-            
+
             if (resultadoPython.containsKey("erro")) {
                 String erroPython = (String) resultadoPython.get("erro");
                 logger.error("Script Python retornou um erro de PLN: {}", erroPython);
@@ -101,7 +101,7 @@ public class QuestionProcessor {
         }
         return respostaDetalhada;
     }
-    
+
     public String executeAndFormat(String sparqlQuery, String templateId) {
         logger.info("Serviço QuestionProcessor: Iniciando EXECUÇÃO de query.");
         try {
