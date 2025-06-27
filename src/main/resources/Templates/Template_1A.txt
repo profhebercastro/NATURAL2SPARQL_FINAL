@@ -1,10 +1,23 @@
-# Template_1A.txt (para busca por nome)
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-# ... outros prefixos
-SELECT DISTINCT ?valor WHERE {
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+
+SELECT DISTINCT ?valor
+WHERE {
+  # 1. Encontra a empresa pelo nome
   ?empresa rdfs:label #ENTIDADE_NOME#@pt .
+  
+  # 2. Encontra o Valor Mobiliário associado
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  
+  # 3. Encontra a instância de Negociação ligada DIRETAMENTE ao Valor Mobiliário
   ?valorMobiliario b3:negociado ?negociadoInst .
-  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
-  ?negociadoInst b3:precoFechamento ?valor .
+  
+  # 4. Filtra a negociação pela data
+  ?negociadoInst b3:negociadoDurante ?pregao .
+  ?pregao b3:ocorreEmData #DATA# .
+  
+  # 5. Pega o valor desejado
+  ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
 } 
+LIMIT 10
