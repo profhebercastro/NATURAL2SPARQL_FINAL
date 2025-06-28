@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------
-# ARQUIVO: pln_processor.py (VERSÃO FINAL OTIMIZADA E DEPURADA)
+# ARQUIVO: pln_processor.py (VERSÃO ESTRATÉGIA 1 - MODELO spaCy PEQUENO)
 # -----------------------------------------------------------------
 import sys
 import json
@@ -56,9 +56,10 @@ try:
     SETOR_MAP = carregar_recurso(os.path.join(SCRIPT_DIR, "setor_map.json"), 'json')
     logging.info("Recursos de mapas carregados com sucesso.")
 
-    logging.info("Carregando modelo spaCy 'pt_core_news_lg'...")
-    # Usar 'pt_core_news_sm' (small) pode ser mais rápido no Render se 'lg' (large) estiver causando timeouts
-    nlp = spacy.load("pt_core_news_lg")
+    # --- CORREÇÃO DE MEMÓRIA ---
+    # Carrega o modelo PEQUENO ('sm') do spaCy, que é muito mais leve.
+    logging.info("Carregando modelo spaCy 'pt_core_news_sm'...")
+    nlp = spacy.load("pt_core_news_sm")
     logging.info("Modelo spaCy carregado com sucesso.")
 
 except Exception as e:
@@ -89,7 +90,6 @@ def selecionar_template(pergunta_usuario):
             template_selecionado = template_id
             
     logging.info(f"Melhor score de similaridade: {melhor_score:.4f} para o template '{template_selecionado}'")
-    # Aumentar o limiar pode ajudar a evitar falsos positivos
     return template_selecionado if melhor_score > 0.75 else None
 
 def extrair_placeholders(pergunta_usuario):
