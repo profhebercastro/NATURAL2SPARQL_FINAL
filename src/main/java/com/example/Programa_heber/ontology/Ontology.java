@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------
-// ARQUIVO: Ontology.java (VERSÃO FINAL E COMPLETA, CORRIGIDA)
+// ARQUIVO: Ontology.java (VERSÃO FINAL E COMPLETA, CORRIGIDA v3)
 // -----------------------------------------------------------------
 package com.example.Programa_heber.ontology;
 
@@ -95,19 +95,17 @@ public class Ontology {
 
                 Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresa.trim()));
                 addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa"));
-                // --- CORREÇÃO DE SINTAXE APLICADA AQUI ---
                 addStatement(model, empresaRes, RDFS.label, nomeEmpresa.trim(), "pt");
 
                 Resource vmRes = model.createResource(ONT_PREFIX + ticker.trim());
                 addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
-                addStatement(model, vmRes, model.createProperty(ONT_PREFIX, "ticker"), ticker.trim());
+                addStatement(model, vmRes, model.createProperty(ONT_PREFIX, "ticker"), ticker.trim()); // Esta linha é o foco do erro
 
                 addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "temValorMobiliarioNegociado"), vmRes);
 
                 if (setor != null && !setor.trim().isEmpty()){
                     Resource setorRes = model.createResource(ONT_PREFIX + normalizarParaURI(setor.trim()));
                     addStatement(model, setorRes, RDF.type, model.createResource(ONT_PREFIX + "Setor_Atuacao"));
-                    // --- CORREÇÃO DE SINTAXE APLICADA AQUI ---
                     addStatement(model, setorRes, RDFS.label, setor.trim(), "pt");
                     addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "atuaEm"), setorRes);
                 }
@@ -145,7 +143,6 @@ public class Ontology {
                 Resource negociadoRes = model.createResource(ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt);
                 addStatement(model, negociadoRes, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
-                // A LIGAÇÃO CRUCIAL:
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX, "negociado"), negociadoRes);
 
                 Resource pregaoRes = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt);
@@ -250,8 +247,16 @@ public class Ontology {
                 .replaceAll("[\\s-]+", "_");
     }
 
+    // --- MÉTODOS HELPER CORRIGIDOS ---
     private void addStatement(Model model, Resource s, Property p, RDFNode o) { if (s != null && p != null && o != null) model.add(s, p, o); }
     private void addStatement(Model model, Resource s, Property p, String o, String lang) { if (s != null && p != null && o != null && !o.isEmpty()) model.add(s, p, o, lang); }
+    
+    // --- NOVO MÉTODO ADICIONADO PARA CORRIGIR O ERRO ---
+    private void addStatement(Model model, Resource s, Property p, String o) { 
+        if (s != null && p != null && o != null && !o.isEmpty()) {
+            model.add(s, p, o);
+        }
+    }
     
     private void validateBaseModelLoad(long size) { if (size < 1000) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
 
