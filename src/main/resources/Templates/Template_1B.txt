@@ -1,10 +1,30 @@
-# Template 1B: Busca valor por ticker e data (idêntico ao 1A)
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+# -----------------------------------------------------------------
+# ARQUIVO: Template_1A.txt / Template_1B.txt (VERSÃO FINAL E CORRIGIDA)
+# DESCRIÇÃO: Busca um valor (ex: preço) por nome de empresa OU ticker e data.
+# -----------------------------------------------------------------
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
 SELECT DISTINCT ?valor WHERE {
-  ?valorMobiliario b3:ticker #ENTIDADE_NOME# .
-  ?valorMobiliario b3:negociado ?negociadoInst . 
-  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
+  # Busca flexível que aceita tanto nome da empresa quanto ticker
+  {
+    ?empresa rdfs:label ?label .
+    FILTER(CONTAINS(LCASE(?label), LCASE(#ENTIDADE_NOME#)))
+    ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  }
+  UNION
+  {
+    ?valorMobiliario b3:ticker ?ticker .
+    FILTER(CONTAINS(LCASE(?ticker), LCASE(#ENTIDADE_NOME#)))
+  }
+
+  # A partir do valor mobiliário encontrado, busca os dados do pregão
+  ?valorMobiliario b3:negociado ?negociadoInst .
+  ?negociadoInst b3:negociadoDurante ?pregao .
+  ?pregao b3:ocorreEmData #DATA# .
+  
+  # Placeholder para o valor desejado (ex: b3:precoFechamento)
   ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
-} LIMIT 10
+}
+LIMIT 1

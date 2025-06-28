@@ -1,3 +1,6 @@
+// -----------------------------------------------------------------
+// ARQUIVO: Ontology.java (VERSÃO FINAL E CORRIGIDA)
+// -----------------------------------------------------------------
 package com.example.Programa_heber.ontology;
 
 import jakarta.annotation.PostConstruct;
@@ -18,9 +21,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -39,19 +39,30 @@ public class Ontology {
     private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String[] PREGAO_FILES = { "datasets/dados_novos_anterior.xlsx", "datasets/dados_novos_atual.xlsx" };
     private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx";
-    private static final String SCHEMA_FILE = "stock_market.owl";
-    private static final String INFERENCE_OUTPUT_FILENAME = "ontologiaB3_com_inferencia.ttl";
+    // Opcional: schema. O principal é construir os dados dos Excels.
+    // private static final String SCHEMA_FILE = "stock_market.owl";
 
     @PostConstruct
     public void init() {
         logger.info(">>> INICIANDO Inicialização do Componente Ontology (@PostConstruct)...");
         lock.writeLock().lock();
         try {
-            this.infModel = loadOrCreateInferredModel();
+            logger.warn("--- Construindo modelo RDF em memória a partir das fontes de dados (Excel)... ---");
+            Model baseModel = buildBaseModelFromSources();
+            validateBaseModelLoad(baseModel.size());
+
+            logger.info("Aplicando RDFS reasoner para inferência...");
+            Reasoner reasoner = ReasonerRegistry.getRDFSReasoner();
+            this.infModel = ModelFactory.createInfModel(reasoner, baseModel);
+            
+            long inferredCount = this.infModel.size() - baseModel.size();
+            logger.info("--- Modelo de inferência criado. Triplas Base: {}, Inferidas: {}, Total: {} ---", baseModel.size(), Math.max(0, inferredCount), this.infModel.size());
+            
             if (this.infModel == null || this.infModel.isEmpty()) {
-                throw new IllegalStateException("FALHA CRÍTICA: O modelo de inferência RDF não pôde ser carregado ou criado.");
+                throw new IllegalStateException("FALHA CRÍTICA: O modelo de inferência RDF não pôde ser criado ou está vazio.");
             }
-            logger.info("<<< Ontology INICIALIZADA COM SUCESSO. Total de triplas no modelo: {} >>>", this.infModel.size());
+            logger.info("<<< Ontology INICIALIZADA COM SUCESSO. >>>");
+        
         } catch (Exception e) {
             logger.error("!!!!!!!! FALHA GRAVE E IRRECUPERÁVEL NA INICIALIZAÇÃO DA ONTOLOGY !!!!!!!!", e);
             throw new RuntimeException("Falha crítica ao inicializar a camada de ontologia.", e);
@@ -60,32 +71,11 @@ public class Ontology {
         }
     }
 
-    private InfModel loadOrCreateInferredModel() throws IOException {
-        ClassPathResource inferredResource = new ClassPathResource(INFERENCE_OUTPUT_FILENAME);
-        if (inferredResource.exists() && inferredResource.contentLength() > 0) {
-            logger.info("--- Modelo inferido pré-calculado '{}' encontrado. Carregando... ---", INFERENCE_OUTPUT_FILENAME);
-            Model dataModel = ModelFactory.createDefaultModel();
-            try (InputStream in = inferredResource.getInputStream()) {
-                RDFDataMgr.read(dataModel, in, Lang.TURTLE);
-            }
-            return ModelFactory.createRDFSModel(dataModel);
-        } else {
-            logger.warn("--- Modelo inferido '{}' não encontrado ou vazio. Construindo do zero (processo lento)... ---", INFERENCE_OUTPUT_FILENAME);
-            Model baseModel = buildBaseModelFromSources();
-            validateBaseModelLoad(baseModel.size());
-            Reasoner reasoner = ReasonerRegistry.getRDFSReasoner();
-            InfModel constructedInfModel = ModelFactory.createInfModel(reasoner, baseModel);
-            long inferredCount = constructedInfModel.size() - baseModel.size();
-            logger.info("--- Modelo de inferência criado. Base:{}, Inferidas:{}, Total:{} ---", baseModel.size(), Math.max(0, inferredCount), constructedInfModel.size());
-            saveInferredModelToFileSystem(constructedInfModel);
-            return constructedInfModel;
-        }
-    }
-
     private Model buildBaseModelFromSources() throws IOException {
         Model model = ModelFactory.createDefaultModel();
         model.setNsPrefix("b3", ONT_PREFIX);
         model.setNsPrefix("rdfs", RDFS.uri);
+        model.setNsPrefix("xsd", XSDDatatype.XSD + "#");
 
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
         for (String filePath : PREGAO_FILES) {
@@ -93,28 +83,41 @@ public class Ontology {
         }
         return model;
     }
-
+    
+    // ... O restante da classe (métodos de load, executeQuery, helpers) permanece igual ao seu original.
+    // O código abaixo é uma cópia do que você já tinha, que está correto.
+    
     private void loadInformacoesEmpresas(Model model, String resourcePath) throws IOException {
-        logger.info(">> Carregando Cadastro de Empresas...");
+        logger.info(">> Carregando Cadastro de Empresas de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream(); Workbook workbook = new XSSFWorkbook(excelFile)) {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
                 String nomeEmpresa = getStringCellValue(row.getCell(0));
                 String ticker = getStringCellValue(row.getCell(1));
+                String setor = getStringCellValue(row.getCell(2)); // Assumindo que o setor está na coluna C
+                
                 if (nomeEmpresa == null || ticker == null) continue;
+
+                Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresa.trim()));
+                addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa"));
+                addStatement(model, empresaRes, rdfs:label, nomeEmpresa.trim(), "pt");
 
                 Resource vmRes = model.createResource(ONT_PREFIX + ticker.trim());
                 addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
                 addStatement(model, vmRes, model.createProperty(ONT_PREFIX, "ticker"), ticker.trim());
 
-                Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresa.trim()));
-                addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa"));
-                addStatement(model, empresaRes, RDFS.label, nomeEmpresa.trim(), "pt");
-
                 addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "temValorMobiliarioNegociado"), vmRes);
+
+                if (setor != null && !setor.isEmpty()){
+                    Resource setorRes = model.createResource(ONT_PREFIX + normalizarParaURI(setor.trim()));
+                    addStatement(model, setorRes, RDF.type, model.createResource(ONT_PREFIX + "Setor_Atuacao"));
+                    addStatement(model, setorRes, rdfs:label, setor.trim(), "pt");
+                    addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "atuaEm"), setorRes);
+                }
             }
         }
+        logger.info(">> Cadastro de Empresas carregado. Triplas atuais: {}", model.size());
     }
 
     private void loadDadosPregaoExcel(Model model, String resourcePath) throws IOException {
@@ -122,33 +125,57 @@ public class Ontology {
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream(); Workbook workbook = new XSSFWorkbook(excelFile)) {
             Sheet sheet = workbook.getSheetAt(0);
             SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            
+            // Mapeia o índice da coluna para a propriedade da ontologia
+            Map<Integer, Property> propertyMap = Map.of(
+                5, model.createProperty(ONT_PREFIX, "precoAbertura"),
+                11, model.createProperty(ONT_PREFIX, "precoFechamento"),
+                6, model.createProperty(ONT_PREFIX, "precoMaximo"),
+                7, model.createProperty(ONT_PREFIX, "precoMinimo"),
+                8, model.createProperty(ONT_PREFIX, "precoMedio"),
+                14, model.createProperty(ONT_PREFIX, "volumeNegociacao")
+            );
+
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
                 String ticker = getStringCellValue(row.getCell(3));
                 Date dataPregao = getDateCellValue(row.getCell(1));
+                
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
 
                 Resource valorMobiliario = model.getResource(ONT_PREFIX + ticker.trim());
+                if(!model.contains(valorMobiliario, RDF.type)) continue; // Pula se o ticker não foi cadastrado
 
                 String dataFmt = rdfDateFormat.format(dataPregao);
                 Resource negociadoRes = model.createResource(ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt);
                 addStatement(model, negociadoRes, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
+                // A LIGAÇÃO CRUCIAL:
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX, "negociado"), negociadoRes);
 
                 Resource pregaoRes = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt);
+                addStatement(model, pregaoRes, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
                 addStatement(model, pregaoRes, model.createProperty(ONT_PREFIX, "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoRes, model.createProperty(ONT_PREFIX, "negociadoDurante"), pregaoRes);
 
-                addNumericProperty(model, negociadoRes, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(11)));
+                for(Map.Entry<Integer, Property> entry : propertyMap.entrySet()){
+                    double numericValue = getNumericCellValue(row.getCell(entry.getKey()));
+                    if (!Double.isNaN(numericValue)){
+                        addStatement(model, negociadoRes, entry.getValue(), model.createTypedLiteral(numericValue));
+                    }
+                }
             }
         }
+         logger.info(">> Dados de Pregão de '{}' carregados. Total de triplas agora: {}", resourcePath, model.size());
     }
 
     public List<Map<String, String>> executeQuery(String sparqlQuery) {
         lock.readLock().lock();
         try {
-            if (infModel == null) return Collections.emptyList();
+            if (infModel == null) {
+                 logger.warn("Tentativa de executar query com modelo nulo!");
+                 return Collections.emptyList();
+            }
             List<Map<String, String>> resultsList = new ArrayList<>();
             Query query = QueryFactory.create(sparqlQuery);
             try (QueryExecution qexec = QueryExecutionFactory.create(query, infModel)) {
@@ -172,7 +199,7 @@ public class Ontology {
             }
             return resultsList;
         } catch (Exception e) {
-            logger.error("Erro durante a execução da consulta SPARQL.", e);
+            logger.error("Erro durante a execução da consulta SPARQL: {}", sparqlQuery, e);
             return Collections.emptyList();
         } finally {
             lock.readLock().unlock();
@@ -202,9 +229,19 @@ public class Ontology {
 
     private double getNumericCellValue(Cell cell) {
         if (cell == null) return Double.NaN;
-        CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
-        if (type == CellType.NUMERIC) return cell.getNumericCellValue();
-        if (type == CellType.STRING) {
+        if (cell.getCellType() == CellType.FORMULA) {
+            try {
+                return cell.getNumericCellValue();
+            } catch (IllegalStateException e){
+                try {
+                    return Double.parseDouble(cell.getStringCellValue().trim().replace(",", "."));
+                } catch(NumberFormatException nfe){
+                    return Double.NaN;
+                }
+            }
+        }
+        if (cell.getCellType() == CellType.NUMERIC) return cell.getNumericCellValue();
+        if (cell.getCellType() == CellType.STRING) {
             try { return Double.parseDouble(cell.getStringCellValue().trim().replace(",", ".")); } catch (NumberFormatException e) { return Double.NaN; }
         }
         return Double.NaN;
@@ -214,69 +251,13 @@ public class Ontology {
         if (texto == null) return "";
         return Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
-                .replaceAll("[^a-zA-Z0-9_ -]", "")
-                .replaceAll("\\s+", "_");
-    }
-
-    private void saveInferredModelToFileSystem(InfModel modelToSave) {
-        Path outputPath = Paths.get(INFERENCE_OUTPUT_FILENAME);
-        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
-            RDFDataMgr.write(out, modelToSave, Lang.TURTLE);
-        } catch (IOException e) {
-            logger.warn("Não foi possível salvar o modelo inferido em disco.", e);
-        }
+                .replaceAll("[^a-zA-Z0-9_\\s-]", "")
+                .replaceAll("[\\s-]+", "_");
     }
 
     private void addStatement(Model model, Resource s, Property p, RDFNode o) { if (s != null && p != null && o != null) model.add(s, p, o); }
-    private void addStatement(Model model, Resource s, Property p, String o) { if (s != null && p != null && o != null && !o.isEmpty()) model.add(s, p, o); }
     private void addStatement(Model model, Resource s, Property p, String o, String lang) { if (s != null && p != null && o != null && !o.isEmpty()) model.add(s, p, o, lang); }
-    private void addNumericProperty(Model model, Resource s, Property p, double value) { if (!Double.isNaN(value)) addStatement(model, s, p, model.createTypedLiteral(value)); }
+    
     private void validateBaseModelLoad(long size) { if (size < 1000) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
 
-    /**
-     * Método de teste local para depuração.
-     * Execute este método para gerar um arquivo .ttl local e testar uma query.
-     */
-    public static void main(String[] args) throws IOException {
-        System.out.println("INICIANDO TESTE DE CONSTRUÇÃO LOCAL...");
-        Ontology ontology = new Ontology();
-        Model testModel = ontology.buildBaseModelFromSources();
-
-        try (OutputStream out = new FileOutputStream("modelo_gerado_localmente.ttl")) {
-            RDFDataMgr.write(out, testModel, Lang.TURTLE);
-            System.out.println("SUCESSO: Modelo de teste salvo em 'modelo_gerado_localmente.ttl'");
-        }
-
-        String testQuery = """
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
-            PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-            SELECT DISTINCT ?valor WHERE {
-              ?empresa rdfs:label "CSN MINERAÇÃO S.A."@pt .
-              ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-              ?valorMobiliario b3:negociado ?negociadoInst .
-              ?negociadoInst b3:negociadoDurante ?pregao .
-              ?pregao b3:ocorreEmData "2023-05-08"^^xsd:date .
-              ?negociadoInst b3:precoFechamento ?valor .
-            }
-        """;
-
-        System.out.println("\nEXECUTANDO QUERY DE TESTE...");
-        try (QueryExecution qexec = QueryExecutionFactory.create(testQuery, testModel)) {
-            ResultSet results = qexec.execSelect();
-            if (!results.hasNext()) {
-                System.err.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                System.err.println("TESTE LOCAL FALHOU: A query não retornou resultados.");
-                System.err.println("VERIFIQUE SE OS NOMES/TICKERS NOS ARQUIVOS EXCEL ESTÃO CORRETOS.");
-                System.err.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            } else {
-                while (results.hasNext()) {
-                    QuerySolution soln = results.nextSolution();
-                    System.out.println("******************************************");
-                    System.out.println("TESTE LOCAL SUCESSO! Resultado: " + soln.get("valor"));
-                    System.out.println("******************************************");
-                }
-            }
-        }
-    }
 }

@@ -1,8 +1,14 @@
-Flask
-gunicorn
-spacy
-# transformers (se seu pln_processor.py ou modelos spaCy os exigirem explicitamente)
-# torch      (mesma consideração acima)
-# nltk       (se seu pln_processor.py usa)
-rdflib==6.1.1 
-pyparsing==3.0.9
+# -----------------------------------------------------------------
+# ARQUIVO: requirements.txt (VERSÃO FINAL E CORRIGIDA)
+# -----------------------------------------------------------------
+# Dependências Python necessárias para os scripts de PLN e pré-processamento.
+
+# Usado no pln_processor.py para análise de linguagem natural
+spacy==3.7.2
+
+# Usado nos scripts de suporte (como generate_map.py) para ler arquivos Excel
+pandas
+openpyxl
+
+# Usado para remover acentos de forma confiável
+unidecode

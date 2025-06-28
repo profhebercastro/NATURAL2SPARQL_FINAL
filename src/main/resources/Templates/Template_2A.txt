@@ -1,10 +1,14 @@
-# Template 2A: Busca o ticker pelo nome da empresa
+# -----------------------------------------------------------------
+# ARQUIVO: Template_2A.txt (VERSÃO FINAL E CORRIGIDA)
+# DESCRIÇÃO: Busca ticker(s) pelo nome da empresa.
+# -----------------------------------------------------------------
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
-SELECT DISTINCT ?ticker
-WHERE {
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
+SELECT DISTINCT ?ticker WHERE {
+  ?empresa rdfs:label ?label .
+  FILTER(CONTAINS(LCASE(?label), LCASE(#ENTIDADE_NOME#)))
+  
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
   ?valorMobiliario b3:ticker ?ticker .
 }

@@ -1,7 +1,7 @@
-# Template 3A: Busca todos os tickers de um setor
-# Este template pode não funcionar se a informação de setor não estiver sendo carregada
-# na versão simplificada da Ontology.java. A lógica abaixo assume que ela é carregada.
-
+# -----------------------------------------------------------------
+# ARQUIVO: Template_3A.txt (VERSÃO FINAL E CORRIGIDA)
+# DESCRIÇÃO: Busca todos os tickers de um setor.
+# -----------------------------------------------------------------
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 
