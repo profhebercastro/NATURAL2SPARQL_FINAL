@@ -1,16 +1,14 @@
 // -----------------------------------------------------------------
-// ARQUIVO: Ontology.java (VERSÃO FINAL E CORRIGIDA)
+// ARQUIVO: Ontology.java (VERSÃO FINAL E COMPLETA, CORRIGIDA)
 // -----------------------------------------------------------------
 package com.example.Programa_heber.ontology;
 
 import jakarta.annotation.PostConstruct;
+import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.reasoner.ReasonerRegistry;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.poi.ss.usermodel.*;
@@ -20,7 +18,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.Normalizer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -39,8 +38,6 @@ public class Ontology {
     private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String[] PREGAO_FILES = { "datasets/dados_novos_anterior.xlsx", "datasets/dados_novos_atual.xlsx" };
     private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx";
-    // Opcional: schema. O principal é construir os dados dos Excels.
-    // private static final String SCHEMA_FILE = "stock_market.owl";
 
     @PostConstruct
     public void init() {
@@ -84,9 +81,6 @@ public class Ontology {
         return model;
     }
     
-    // ... O restante da classe (métodos de load, executeQuery, helpers) permanece igual ao seu original.
-    // O código abaixo é uma cópia do que você já tinha, que está correto.
-    
     private void loadInformacoesEmpresas(Model model, String resourcePath) throws IOException {
         logger.info(">> Carregando Cadastro de Empresas de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream(); Workbook workbook = new XSSFWorkbook(excelFile)) {
@@ -95,13 +89,14 @@ public class Ontology {
                 if (row.getRowNum() == 0) continue;
                 String nomeEmpresa = getStringCellValue(row.getCell(0));
                 String ticker = getStringCellValue(row.getCell(1));
-                String setor = getStringCellValue(row.getCell(2)); // Assumindo que o setor está na coluna C
+                String setor = getStringCellValue(row.getCell(2));
                 
-                if (nomeEmpresa == null || ticker == null) continue;
+                if (nomeEmpresa == null || nomeEmpresa.trim().isEmpty() || ticker == null || ticker.trim().isEmpty()) continue;
 
                 Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresa.trim()));
                 addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa"));
-                addStatement(model, empresaRes, rdfs:label, nomeEmpresa.trim(), "pt");
+                // --- CORREÇÃO DE SINTAXE APLICADA AQUI ---
+                addStatement(model, empresaRes, RDFS.label, nomeEmpresa.trim(), "pt");
 
                 Resource vmRes = model.createResource(ONT_PREFIX + ticker.trim());
                 addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
@@ -109,10 +104,11 @@ public class Ontology {
 
                 addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "temValorMobiliarioNegociado"), vmRes);
 
-                if (setor != null && !setor.isEmpty()){
+                if (setor != null && !setor.trim().isEmpty()){
                     Resource setorRes = model.createResource(ONT_PREFIX + normalizarParaURI(setor.trim()));
                     addStatement(model, setorRes, RDF.type, model.createResource(ONT_PREFIX + "Setor_Atuacao"));
-                    addStatement(model, setorRes, rdfs:label, setor.trim(), "pt");
+                    // --- CORREÇÃO DE SINTAXE APLICADA AQUI ---
+                    addStatement(model, setorRes, RDFS.label, setor.trim(), "pt");
                     addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "atuaEm"), setorRes);
                 }
             }
@@ -126,7 +122,6 @@ public class Ontology {
             Sheet sheet = workbook.getSheetAt(0);
             SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
             
-            // Mapeia o índice da coluna para a propriedade da ontologia
             Map<Integer, Property> propertyMap = Map.of(
                 5, model.createProperty(ONT_PREFIX, "precoAbertura"),
                 11, model.createProperty(ONT_PREFIX, "precoFechamento"),
@@ -144,7 +139,7 @@ public class Ontology {
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
 
                 Resource valorMobiliario = model.getResource(ONT_PREFIX + ticker.trim());
-                if(!model.contains(valorMobiliario, RDF.type)) continue; // Pula se o ticker não foi cadastrado
+                if(!model.contains(valorMobiliario, RDF.type)) continue;
 
                 String dataFmt = rdfDateFormat.format(dataPregao);
                 Resource negociadoRes = model.createResource(ONT_PREFIX + "Negociado_" + ticker.trim() + "_" + dataFmt);
