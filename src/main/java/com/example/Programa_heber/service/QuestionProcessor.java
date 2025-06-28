@@ -1,3 +1,6 @@
+// -----------------------------------------------------------------
+// ARQUIVO: QuestionProcessor.java (VERSÃO FINAL E CORRIGIDA)
+// -----------------------------------------------------------------
 package com.example.Programa_heber.service;
 
 import com.example.Programa_heber.model.ProcessamentoDetalhadoResposta;
@@ -11,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StreamUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -117,39 +119,77 @@ public class QuestionProcessor {
         String queryAtual = templateContent;
         if (placeholders == null) return queryAtual;
 
-        if (placeholders.containsKey("#ENTIDADE_NOME#")) {
-            String valor = placeholders.get("#ENTIDADE_NOME#").replace("\"", "\\\"");
-            if (queryAtual.contains("#ENTIDADE_NOME#@pt")) {
-                queryAtual = queryAtual.replace("#ENTIDADE_NOME#@pt", "\"" + valor + "\"@pt");
+        // Itera sobre todos os placeholders retornados pelo Python
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            String placeholder = entry.getKey(); // Ex: "#ENTIDADE_NOME#"
+            String valor = entry.getValue();
+
+            // Escapa aspas para evitar injeção de SPARQL maliciosa
+            String valorSeguro = valor.replace("\"", "\\\"");
+
+            if (placeholder.equals("#DATA#")) {
+                // Formato especial para datas
+                queryAtual = queryAtual.replace(placeholder, "\"" + valorSeguro + "\"^^xsd:date");
             } else {
-                queryAtual = queryAtual.replace("#ENTIDADE_NOME#", "\"" + valor + "\"");
+                // Formato padrão para strings
+                queryAtual = queryAtual.replace(placeholder, "\"" + valorSeguro + "\"");
             }
         }
-        if (placeholders.containsKey("#SETOR#")) {
-            String valor = placeholders.get("#SETOR#").replace("\"", "\\\"");
-            queryAtual = queryAtual.replace("#SETOR#@pt", "\"" + valor + "\"@pt");
-        }
-        if (placeholders.containsKey("#DATA#")) {
-            String valor = placeholders.get("#DATA#");
-            queryAtual = queryAtual.replace("#DATA#", "\"" + valor + "\"^^xsd:date");
-        }
-        if (placeholders.containsKey("#VALOR_DESEJADO#")) {
-            String valor = placeholders.get("#VALOR_DESEJADO#");
-            queryAtual = queryAtual.replace("#VALOR_DESEJADO#", valor);
-        }
+        
+        logger.info("Query SPARQL final construída:\n{}", queryAtual);
         return queryAtual;
     }
 
     private Map<String, Object> executePythonScript(String question) throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder("python3", this.pythonScriptPath.toString(), question);
         logger.info("Executando comando Python: {}", String.join(" ", pb.command()));
+        
         Process process = pb.start();
-        String stdoutResult = StreamUtils.copyToString(process.getInputStream(), StandardCharsets.UTF_8);
-        String stderrResult = StreamUtils.copyToString(process.getErrorStream(), StandardCharsets.UTF_8);
+        
+        // Captura as saídas em threads separadas para evitar bloqueio
+        StringWriter stdoutWriter = new StringWriter();
+        StringWriter stderrWriter = new StringWriter();
+        
+        Thread stdoutReader = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                reader.lines().forEach(line -> stdoutWriter.write(line + "\n"));
+            } catch (IOException e) {
+                logger.error("Erro ao ler stdout do Python", e);
+            }
+        });
+        
+        Thread stderrReader = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+                reader.lines().forEach(line -> stderrWriter.write(line + "\n"));
+            } catch (IOException e) {
+                logger.error("Erro ao ler stderr do Python", e);
+            }
+        });
+
+        stdoutReader.start();
+        stderrReader.start();
+        
+        // Aguarda o processo terminar e os leitores finalizarem
         int exitCode = process.waitFor();
-        if (!stderrResult.isEmpty()) logger.warn("Script Python emitiu mensagens no stderr: {}", stderrResult);
-        if (exitCode != 0) throw new RuntimeException("Script Python falhou. Erro: " + stderrResult);
-        if (stdoutResult.isEmpty()) throw new RuntimeException("Script Python não retornou nenhuma saída.");
+        stdoutReader.join();
+        stderrReader.join();
+
+        String stdoutResult = stdoutWriter.toString().trim();
+        String stderrResult = stderrWriter.toString().trim();
+
+        if (!stderrResult.isEmpty()) {
+            logger.warn("Script Python emitiu mensagens no stderr:\n---\n{}\n---", stderrResult);
+        }
+        
+        if (exitCode != 0) {
+            throw new RuntimeException("Script Python falhou com código de saída " + exitCode + ". Erro: " + stderrResult);
+        }
+        
+        if (stdoutResult.isEmpty()) {
+            throw new RuntimeException("Script Python não retornou nenhuma saída (stdout). Verifique os logs de erro (stderr).");
+        }
+        
+        logger.info("Saída (stdout) recebida do Python: {}", stdoutResult);
         return objectMapper.readValue(stdoutResult, new TypeReference<>() {});
     }
 
