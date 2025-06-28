@@ -1,10 +1,6 @@
-# -----------------------------------------------------------------
-# ARQUIVO: Template_3A.txt (VERSÃO FINAL E CORRIGIDA)
-# DESCRIÇÃO: Busca todos os tickers de um setor.
-# -----------------------------------------------------------------
+# Template para buscar todos os tickers de um SETOR específico.
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-
 SELECT DISTINCT ?ticker 
 WHERE {
   ?setorUri rdfs:label #SETOR#@pt .

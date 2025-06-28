@@ -1,15 +1,9 @@
-# -----------------------------------------------------------------
-# ARQUIVO: Template_2A.txt (VERSÃO FINAL E CORRIGIDA)
-# DESCRIÇÃO: Busca ticker(s) pelo nome da empresa.
-# -----------------------------------------------------------------
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-
-SELECT DISTINCT ?ticker WHERE {
-  ?empresa rdfs:label ?label .
-  FILTER(CONTAINS(LCASE(?label), LCASE(#ENTIDADE_NOME#)))
-  
-  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-  ?valorMobiliario b3:ticker ?ticker .
-}
-ORDER BY ?ticker
+# Template para buscar um valor de cotação para uma entidade (via ticker) em uma DATA.
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+SELECT DISTINCT ?valor WHERE {
+  ?valorMobiliario b3:ticker #ENTIDADE_NOME# .
+  ?valorMobiliario b3:negociado ?negociadoInst . 
+  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
+  ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
+} LIMIT 10

@@ -1,19 +1,10 @@
-# -----------------------------------------------------------------
-# ARQUIVO: Template_4A.txt (VERSÃO FINAL E CORRIGIDA)
-# DESCRIÇÃO: Busca volume negociado por setor e data.
-# -----------------------------------------------------------------
+# Template para buscar todos os tickers de um SETOR específico.
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-
-SELECT DISTINCT ?ticker ?volume
+SELECT DISTINCT ?ticker 
 WHERE {
-    ?setorUri rdfs:label #SETOR#@pt .
-    ?empresa b3:atuaEm ?setorUri .
-    ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-    ?valorMobiliario b3:ticker ?ticker .
-    ?valorMobiliario b3:negociado ?negociadoInst .
-    ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
-    ?negociadoInst b3:volumeNegociacao ?volume .
-} 
+  ?setorUri rdfs:label #SETOR#@pt .
+  ?empresa b3:atuaEm ?setorUri .
+  ?empresa b3:temValorMobiliarioNegociado/b3:ticker ?ticker .
+}
 ORDER BY ?ticker
