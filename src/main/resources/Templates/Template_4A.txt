@@ -1,17 +1,19 @@
-# Template_4A.txt - Busca o volume negociado para todas as ações de um setor em uma data.
+# Template_4A.txt - Versão final e super flexível
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?ticker (SUM(?volumeValor) AS ?volume)
 WHERE {
-  # Encontra o setor e as empresas
   ?setor rdfs:label #SETOR# .
   ?empresa b3:atuaEm ?setor .
   ?empresa b3:temValorMobiliarioNegociado ?acao .
-  ?acao b3:ticker ?ticker .
   
-  # Navega pela estrutura de negociação (flexível para nós intermediários)
+  # Caminho flexível para o ticker
+  ?acao (b3:ticker|(b3:representadoPor/b3:ticker)) ?ticker .
+  
+  # Caminho flexível para a negociação, que lida com o nó intermediário "_TipoDesconhecido"
+  # Ele segue a propriedade 'temValorMobiliarioNegociado' 0 ou mais vezes, e então a 'negociado'
   ?acao (b3:temValorMobiliarioNegociado)*/b3:negociado ?negociadoEmPregao .
   
   # Filtra pela data e pega o volume

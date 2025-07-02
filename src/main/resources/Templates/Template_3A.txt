@@ -1,19 +1,14 @@
-# Template_3A.txt - Busca todas as ações de um determinado setor.
+# Template_3A.txt - Versão final e flexível
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?ticker
 WHERE {
-  # Encontra o setor pelo seu label exato (o @pt será adicionado pelo Java)
   ?setor rdfs:label #SETOR# .
-  
-  # Encontra as empresas que atuam nesse setor
   ?empresa b3:atuaEm ?setor .
-  
-  # Para cada empresa, encontra o valor mobiliário associado
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
   
-  # Pega o ticker
-  ?valorMobiliario b3:ticker ?ticker .
+  # Caminho flexível para o ticker
+  ?valorMobiliario (b3:ticker|(b3:representadoPor/b3:ticker)) ?ticker .
 }
 ORDER BY ?ticker
