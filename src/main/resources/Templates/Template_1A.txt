@@ -1,18 +1,35 @@
-# Pergunta: Qual foi o [preço de fechamento] da [CSN / CSNA3] em [08/05/2023]?
+# Template_1A.txt - Versão final, baseada na estrutura exata do grafo do Protégé.
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?valor
 WHERE {
-  ?empresa rdfs:label ?labelEmpresa .
-  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  # PASSO 1: Encontra a empresa pelo seu nome (label) ou a ação pelo seu ticker.
+  # O UNION lida com ambos os casos: o usuário digita "CSN Mineração" ou "CMIN3".
+  {
+    # Rota A: Via nome da empresa
+    ?empresa rdfs:label #ENTIDADE_NOME# .
+    ?empresa b3:temValorMobiliarioNegociado ?valorMobiliarioNode .
+  }
+  UNION
+  {
+    # Rota B: Via ticker da ação
+    ?codigo b3:ticker #ENTIDADE_NOME# .
+    ?valorMobiliarioNode b3:representadoPor ?codigo .
+  }
   
-  #ENTIDADE_FILTER#
-
-  ?valorMobiliario b3:negociado ?negociadoEmPregao .
+  # PASSO 2: Navega pela estrutura complexa.
+  # O '?' depois da propriedade a torna opcional, o que deixa a query mais robusta
+  # caso um dos nós intermediários não exista para alguma ação.
+  ?valorMobiliarioNode (b3:temValorMobiliarioNegociado)? ?negociadoNode .
+  
+  # PASSO 3: Encontra a negociação na data correta.
+  ?negociadoNode b3:negociado ?negociadoEmPregao .
   ?negociadoEmPregao b3:negociadoDurante ?pregao .
   ?pregao b3:ocorreEmData #DATA# .
+  
+  # PASSO 4: Pega o valor desejado.
   ?negociadoEmPregao #VALOR_DESEJADO# ?valor .
 }
 LIMIT 1

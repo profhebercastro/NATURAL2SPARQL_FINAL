@@ -124,60 +124,52 @@ public class QuestionProcessor {
     }
 
     /**
-     * CORRIGIDO: Método final e robusto para construir a query SPARQL.
-     * Usa uma cláusula FILTER dinâmica para lidar com nomes de empresas ou tickers.
+     * CORRIGIDO: Método final para construir a query SPARQL de forma robusta.
+     * Formata os placeholders de acordo com o tipo (data, label, ticker, etc).
      */
     private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
         String query = templateContent;
         if (placeholders == null) return query;
 
-        if (placeholders.containsKey("#ENTIDADE_NOME#")) {
-            String entidade = placeholders.get("#ENTIDADE_NOME#");
-
-            // Para templates que usam o filtro dinâmico #ENTIDADE_FILTER#
-            if (query.contains("#ENTIDADE_FILTER#")) {
-                String filterClause;
-                if (TICKER_PATTERN.matcher(entidade).matches()) {
-                    // Se for um ticker, filtra pela URI do Valor Mobiliário.
-                    // Isso é mais direto e eficiente.
-                    filterClause = String.format("FILTER(?valorMobiliario = b3:%s)", entidade);
-                } else {
-                    // Se for um nome, filtra pelo label da empresa.
-                    String nomeFormatado = "\"" + entidade.replace("\"", "\\\"") + "\"@pt";
-                    filterClause = String.format("FILTER(?labelEmpresa = %s)", nomeFormatado);
-                }
-                query = query.replace("#ENTIDADE_FILTER#", filterClause);
-            }
-
-            // Para templates mais simples que usam apenas #ENTIDADE_LABEL# (como Template_2A)
-            if (query.contains("#ENTIDADE_LABEL#")) {
-                 // Assume que este tipo de template sempre espera um nome de empresa.
-                 String nomeFormatado = "\"" + entidade.replace("\"", "\\\"") + "\"@pt";
-                 query = query.replace("#ENTIDADE_LABEL#", nomeFormatado);
-            }
-        }
-
-        if (placeholders.containsKey("#SETOR#")) {
-            String setorFormatado = "\"" + placeholders.get("#SETOR#").replace("\"", "\\\"") + "\"@pt";
-            query = query.replace("#SETOR#", setorFormatado);
-        }
-
+        // Substitui placeholders simples primeiro
         if (placeholders.containsKey("#DATA#")) {
-            String dataFormatada = "\"" + placeholders.get("#DATA#") + "\"^^xsd:date";
-            query = query.replace("#DATA#", dataFormatada);
+            query = query.replace("#DATA#", "\"" + placeholders.get("#DATA#") + "\"^^xsd:date");
         }
-
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             query = query.replace("#VALOR_DESEJADO#", "b3:" + placeholders.get("#VALOR_DESEJADO#"));
         }
+        if (placeholders.containsKey("#SETOR#")) {
+            // Adiciona a tag de idioma @pt para os setores
+            query = query.replace("#SETOR#", "\"" + placeholders.get("#SETOR#").replace("\"", "\\\"") + "\"@pt");
+        }
+
+        // Lida com o placeholder de entidade de forma especial
+        if (placeholders.containsKey("#ENTIDADE_NOME#")) {
+            String entidade = placeholders.get("#ENTIDADE_NOME#");
+            // Escapa aspas para segurança
+            String entidadeEscapada = entidade.replace("\"", "\\\"");
+            
+            String valorFormatado;
+            // Verifica se a entidade é um ticker ou um nome de empresa
+            if (TICKER_PATTERN.matcher(entidade).matches()) {
+                // Se for um ticker, o valor é uma string literal
+                valorFormatado = "\"" + entidadeEscapada + "\"";
+            } else {
+                // Se for um nome de empresa, adiciona a tag de idioma @pt
+                valorFormatado = "\"" + entidadeEscapada + "\"@pt";
+            }
+            query = query.replace("#ENTIDADE_NOME#", valorFormatado);
+        }
         
-        // Limpeza final: remove qualquer placeholder de filtro que não tenha sido substituído
-        // para evitar erros de sintaxe na query final.
-        query = query.replace("#ENTIDADE_FILTER#", "");
+        // Versão antiga de substituição de placeholder de label, mantida para retrocompatibilidade se necessário
+        if (placeholders.containsKey("#ENTIDADE_LABEL#")) {
+            query = query.replace("#ENTIDADE_LABEL#", "\"" + placeholders.get("#ENTIDADE_LABEL#").replace("\"", "\\\"") + "\"@pt");
+        }
 
         logger.info("Query SPARQL Final Gerada:\n{}", query);
         return query;
     }
+
 
     private Map<String, Object> executePythonScript(String question) throws IOException, InterruptedException {
         // Usa python3, que é mais padrão em ambientes Linux modernos.
@@ -247,7 +239,7 @@ public class QuestionProcessor {
             String varName = resultados.get(0).keySet().stream().findFirst().orElse("valor");
             for (Map<String, String> row : resultados) {
                 String valor = row.getOrDefault(varName, "");
-                if (!valor.isEmpty()) {
+                if (valor != null && !valor.isEmpty()) {
                     joiner.add(limparValor(valor));
                 }
             }
