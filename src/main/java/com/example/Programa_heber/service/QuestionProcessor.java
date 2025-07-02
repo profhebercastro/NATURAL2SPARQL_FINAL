@@ -122,29 +122,38 @@ public class QuestionProcessor {
             return "Erro ao executar a consulta na base de conhecimento.";
         }
     }
-    
+
     /**
-     * CORRIGIDO: Método inteligente para construir a query SPARQL.
-     * Ele agora diferencia entre um nome de empresa (literal) e um ticker (URI).
+     * CORRIGIDO: Método final e robusto para construir a query SPARQL.
+     * Usa uma cláusula FILTER dinâmica para lidar com nomes de empresas ou tickers.
      */
     private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
         String query = templateContent;
         if (placeholders == null) return query;
 
-        // Trata #ENTIDADE_NOME#
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
             String entidade = placeholders.get("#ENTIDADE_NOME#");
-            
-            // Verifica se a entidade é um ticker (ex: "CSNA3") ou um nome de empresa (ex: "GERDAU")
-            if (TICKER_PATTERN.matcher(entidade).matches()) {
-                // Se for um ticker, substitui o placeholder pela URI completa.
-                query = query.replace("#ENTIDADE_URI#", "b3:" + entidade);
-                query = query.replace("#ENTIDADE_LABEL#", "''"); // Deixa a parte do label vazia
-            } else {
-                // Se for um nome, substitui o placeholder pelo literal com a tag de idioma.
-                String nomeFormatado = "\"" + entidade.replace("\"", "\\\"") + "\"@pt";
-                query = query.replace("#ENTIDADE_LABEL#", nomeFormatado);
-                query = query.replace("#ENTIDADE_URI#", "b3:entidadeInvalida"); // Deixa a parte da URI vazia
+
+            // Para templates que usam o filtro dinâmico #ENTIDADE_FILTER#
+            if (query.contains("#ENTIDADE_FILTER#")) {
+                String filterClause;
+                if (TICKER_PATTERN.matcher(entidade).matches()) {
+                    // Se for um ticker, filtra pela URI do Valor Mobiliário.
+                    // Isso é mais direto e eficiente.
+                    filterClause = String.format("FILTER(?valorMobiliario = b3:%s)", entidade);
+                } else {
+                    // Se for um nome, filtra pelo label da empresa.
+                    String nomeFormatado = "\"" + entidade.replace("\"", "\\\"") + "\"@pt";
+                    filterClause = String.format("FILTER(?labelEmpresa = %s)", nomeFormatado);
+                }
+                query = query.replace("#ENTIDADE_FILTER#", filterClause);
+            }
+
+            // Para templates mais simples que usam apenas #ENTIDADE_LABEL# (como Template_2A)
+            if (query.contains("#ENTIDADE_LABEL#")) {
+                 // Assume que este tipo de template sempre espera um nome de empresa.
+                 String nomeFormatado = "\"" + entidade.replace("\"", "\\\"") + "\"@pt";
+                 query = query.replace("#ENTIDADE_LABEL#", nomeFormatado);
             }
         }
 
@@ -162,6 +171,11 @@ public class QuestionProcessor {
             query = query.replace("#VALOR_DESEJADO#", "b3:" + placeholders.get("#VALOR_DESEJADO#"));
         }
         
+        // Limpeza final: remove qualquer placeholder de filtro que não tenha sido substituído
+        // para evitar erros de sintaxe na query final.
+        query = query.replace("#ENTIDADE_FILTER#", "");
+
+        logger.info("Query SPARQL Final Gerada:\n{}", query);
         return query;
     }
 
@@ -177,7 +191,7 @@ public class QuestionProcessor {
         int exitCode = process.waitFor();
         
         if (!stderrResult.isEmpty()) {
-            // Loga o stderr como WARN, pois o script Python usa stderr para seus próprios logs.
+            // Loga o stderr como WARN, pois o script Python pode usar stderr para seus próprios logs de INFO.
             logger.warn("Script Python emitiu mensagens no stderr: {}", stderrResult);
         }
         
@@ -216,7 +230,7 @@ public class QuestionProcessor {
             for (Map<String, String> row : resultados) {
                 String ticker = limparValor(row.getOrDefault("ticker", "N/A"));
                 try {
-                    // Formata o volume como um número com separador de milhar.
+                    // Formata o volume como um número com separador de milhar e duas casas decimais.
                     double volumeValue = Double.parseDouble(row.getOrDefault("volume", "0"));
                     String volumeFormatado = String.format("%,.2f", volumeValue);
                     joiner.add(String.format("%-10s | %s", ticker, volumeFormatado));
@@ -245,9 +259,9 @@ public class QuestionProcessor {
 
     private String limparValor(String item) {
         if (item == null) return "";
-        // Remove a URI de datatype do final do literal.
+        // Remove a URI de datatype do final do literal (ex: ^^<http://...#double>).
         String limpo = item.replaceAll("\\^\\^<http://www.w3.org/2001/XMLSchema#.*?>", "");
-        // Se for uma URI completa, extrai apenas o fragmento.
+        // Se for uma URI completa da nossa ontologia, extrai apenas o fragmento (o nome).
         if (limpo.startsWith(BASE_ONTOLOGY_URI)) {
             limpo = limpo.substring(BASE_ONTOLOGY_URI.length());
         }

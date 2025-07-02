@@ -1,16 +1,18 @@
-# Pergunta: Qual foi o [preço de fechamento] da [CSN] em [08/05/2023]?
-# Mapeia: #VALOR_DESEJADO#, #ENTIDADE_NOME#, #DATA#
-
+# Pergunta: Qual foi o [preço de fechamento] da [CSN / CSNA3] em [08/05/2023]?
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?valor
 WHERE {
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
+  ?empresa rdfs:label ?labelEmpresa .
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  
+  #ENTIDADE_FILTER#
+
   ?valorMobiliario b3:negociado ?negociadoEmPregao .
   ?negociadoEmPregao b3:negociadoDurante ?pregao .
   ?pregao b3:ocorreEmData #DATA# .
-  ?negociadoEmPregao b3:#VALOR_DESEJADO# ?valor .
+  ?negociadoEmPregao #VALOR_DESEJADO# ?valor .
 }
+LIMIT 1

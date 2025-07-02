@@ -1,12 +1,10 @@
 # Pergunta: Qual o código de negociação da ação da [Gerdau]?
-# Mapeia: #ENTIDADE_NOME#
-
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?ticker
 WHERE {
-  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
+  ?empresa rdfs:label #ENTIDADE_LABEL# .
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
   ?valorMobiliario b3:ticker ?ticker .
 }
