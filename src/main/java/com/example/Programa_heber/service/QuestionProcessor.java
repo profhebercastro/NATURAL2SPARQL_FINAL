@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.regex.Pattern;
 
 @Service
 public class QuestionProcessor {
@@ -27,6 +28,8 @@ public class QuestionProcessor {
     private static final Logger logger = LoggerFactory.getLogger(QuestionProcessor.class);
     private static final String PYTHON_SCRIPT_NAME = "pln_processor.py";
     private static final String BASE_ONTOLOGY_URI = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
+    
+    // Lista de recursos que o script Python precisa para funcionar.
     private static final String[] PYTHON_RESOURCES = {
         PYTHON_SCRIPT_NAME, "perguntas_de_interesse.txt", "sinonimos_map.txt",
         "empresa_nome_map.json", "setor_map.json"
@@ -37,17 +40,22 @@ public class QuestionProcessor {
 
     private Path pythonScriptPath;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    // Pattern compilado para checar se uma string tem formato de Ticker.
+    private static final Pattern TICKER_PATTERN = Pattern.compile("^[A-Z]{4}\\d{1,2}$");
 
     @PostConstruct
     public void initialize() throws IOException {
         logger.info("Iniciando QuestionProcessor (@PostConstruct): Configurando ambiente Python...");
         try {
+            // Cria um diretório temporário para os scripts Python, que será apagado ao fechar a JVM.
             Path tempDir = Files.createTempDirectory("pyscripts_temp_");
             tempDir.toFile().deleteOnExit();
 
             for (String fileName : PYTHON_RESOURCES) {
                 Resource resource = new ClassPathResource(fileName);
-                if (!resource.exists()) throw new FileNotFoundException("Recurso Python essencial não encontrado: " + fileName);
+                if (!resource.exists()) {
+                    throw new FileNotFoundException("Recurso Python essencial não encontrado: " + fileName);
+                }
                 
                 Path destination = tempDir.resolve(fileName);
                 try (InputStream inputStream = resource.getInputStream()) {
@@ -55,13 +63,14 @@ public class QuestionProcessor {
                 }
                 if (fileName.equals(PYTHON_SCRIPT_NAME)) {
                     this.pythonScriptPath = destination;
+                    // Torna o script executável no ambiente (importante para Linux/macOS)
                     this.pythonScriptPath.toFile().setExecutable(true, false);
                 }
             }
             logger.info("QuestionProcessor inicializado com sucesso. Ambiente Python pronto em: {}", tempDir);
         } catch (IOException e) {
             logger.error("FALHA CRÍTICA AO CONFIGURAR AMBIENTE PYTHON.", e);
-            throw e;
+            throw e; // Lança a exceção para impedir o boot da aplicação em caso de falha.
         }
     }
     
@@ -72,6 +81,7 @@ public class QuestionProcessor {
         try {
             Map<String, Object> resultadoPython = executePythonScript(question);
             
+            // Se o script Python retornou um erro de negócio, repassa para o usuário.
             if (resultadoPython.containsKey("erro")) {
                 String erroPython = (String) resultadoPython.get("erro");
                 logger.error("Script Python retornou um erro de PLN: {}", erroPython);
@@ -103,7 +113,7 @@ public class QuestionProcessor {
     }
     
     public String executeAndFormat(String sparqlQuery, String templateId) {
-        logger.info("Serviço QuestionProcessor: Iniciando EXECUÇÃO de query.");
+        logger.info("Serviço QuestionProcessor: Iniciando EXECUÇÃO de query com template {}.", templateId);
         try {
             List<Map<String, String>> resultados = ontology.executeQuery(sparqlQuery);
             return formatarResultados(resultados, templateId);
@@ -112,44 +122,72 @@ public class QuestionProcessor {
             return "Erro ao executar a consulta na base de conhecimento.";
         }
     }
-
+    
+    /**
+     * CORRIGIDO: Método inteligente para construir a query SPARQL.
+     * Ele agora diferencia entre um nome de empresa (literal) e um ticker (URI).
+     */
     private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
-        String queryAtual = templateContent;
-        if (placeholders == null) return queryAtual;
+        String query = templateContent;
+        if (placeholders == null) return query;
 
+        // Trata #ENTIDADE_NOME#
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
-            String valor = placeholders.get("#ENTIDADE_NOME#").replace("\"", "\\\"");
-            if (queryAtual.contains("#ENTIDADE_NOME#@pt")) {
-                queryAtual = queryAtual.replace("#ENTIDADE_NOME#@pt", "\"" + valor + "\"@pt");
+            String entidade = placeholders.get("#ENTIDADE_NOME#");
+            
+            // Verifica se a entidade é um ticker (ex: "CSNA3") ou um nome de empresa (ex: "GERDAU")
+            if (TICKER_PATTERN.matcher(entidade).matches()) {
+                // Se for um ticker, substitui o placeholder pela URI completa.
+                query = query.replace("#ENTIDADE_URI#", "b3:" + entidade);
+                query = query.replace("#ENTIDADE_LABEL#", "''"); // Deixa a parte do label vazia
             } else {
-                queryAtual = queryAtual.replace("#ENTIDADE_NOME#", "\"" + valor + "\"");
+                // Se for um nome, substitui o placeholder pelo literal com a tag de idioma.
+                String nomeFormatado = "\"" + entidade.replace("\"", "\\\"") + "\"@pt";
+                query = query.replace("#ENTIDADE_LABEL#", nomeFormatado);
+                query = query.replace("#ENTIDADE_URI#", "b3:entidadeInvalida"); // Deixa a parte da URI vazia
             }
         }
+
         if (placeholders.containsKey("#SETOR#")) {
-            String valor = placeholders.get("#SETOR#").replace("\"", "\\\"");
-            queryAtual = queryAtual.replace("#SETOR#@pt", "\"" + valor + "\"@pt");
+            String setorFormatado = "\"" + placeholders.get("#SETOR#").replace("\"", "\\\"") + "\"@pt";
+            query = query.replace("#SETOR#", setorFormatado);
         }
+
         if (placeholders.containsKey("#DATA#")) {
-            String valor = placeholders.get("#DATA#");
-            queryAtual = queryAtual.replace("#DATA#", "\"" + valor + "\"^^xsd:date");
+            String dataFormatada = "\"" + placeholders.get("#DATA#") + "\"^^xsd:date";
+            query = query.replace("#DATA#", dataFormatada);
         }
+
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
-            String valor = placeholders.get("#VALOR_DESEJADO#");
-            queryAtual = queryAtual.replace("#VALOR_DESEJADO#", valor);
+            query = query.replace("#VALOR_DESEJADO#", "b3:" + placeholders.get("#VALOR_DESEJADO#"));
         }
-        return queryAtual;
+        
+        return query;
     }
 
     private Map<String, Object> executePythonScript(String question) throws IOException, InterruptedException {
+        // Usa python3, que é mais padrão em ambientes Linux modernos.
         ProcessBuilder pb = new ProcessBuilder("python3", this.pythonScriptPath.toString(), question);
         logger.info("Executando comando Python: {}", String.join(" ", pb.command()));
+        
         Process process = pb.start();
         String stdoutResult = StreamUtils.copyToString(process.getInputStream(), StandardCharsets.UTF_8);
         String stderrResult = StreamUtils.copyToString(process.getErrorStream(), StandardCharsets.UTF_8);
+        
         int exitCode = process.waitFor();
-        if (!stderrResult.isEmpty()) logger.warn("Script Python emitiu mensagens no stderr: {}", stderrResult);
-        if (exitCode != 0) throw new RuntimeException("Script Python falhou. Erro: " + stderrResult);
-        if (stdoutResult.isEmpty()) throw new RuntimeException("Script Python não retornou nenhuma saída.");
+        
+        if (!stderrResult.isEmpty()) {
+            // Loga o stderr como WARN, pois o script Python usa stderr para seus próprios logs.
+            logger.warn("Script Python emitiu mensagens no stderr: {}", stderrResult);
+        }
+        
+        if (exitCode != 0) {
+            throw new RuntimeException("Script Python falhou com código de saída " + exitCode + ". Erro: " + stderrResult);
+        }
+        if (stdoutResult.isEmpty()) {
+            throw new RuntimeException("Script Python não retornou nenhuma saída (stdout). Erro: " + stderrResult);
+        }
+        
         return objectMapper.readValue(stdoutResult, new TypeReference<>() {});
     }
 
@@ -166,35 +204,53 @@ public class QuestionProcessor {
     }
 
     private String formatarResultados(List<Map<String, String>> resultados, String templateId) {
-        if (resultados == null || resultados.isEmpty()) return "Não foram encontrados resultados para a sua pergunta.";
-        StringJoiner joiner;
+        if (resultados == null || resultados.isEmpty()) {
+            return "Não foram encontrados resultados para a sua pergunta.";
+        }
+        
+        // Tratamento especial para Template_4A que retorna Ticker e Volume
         if ("Template_4A".equals(templateId)) {
-            joiner = new StringJoiner("\n");
-            joiner.add("Ticker - Volume Negociado");
-            joiner.add("-------------------------");
+            StringJoiner joiner = new StringJoiner("\n");
+            joiner.add(String.format("%-10s | %s", "Ticker", "Volume Negociado"));
+            joiner.add("------------------------------------");
             for (Map<String, String> row : resultados) {
-                String ticker = limparValor(row.getOrDefault("ticker", "?"));
-                String volume = limparValor(row.getOrDefault("volume", "?"));
-                joiner.add(String.format("%-7s - %s", ticker, volume));
+                String ticker = limparValor(row.getOrDefault("ticker", "N/A"));
+                try {
+                    // Formata o volume como um número com separador de milhar.
+                    double volumeValue = Double.parseDouble(row.getOrDefault("volume", "0"));
+                    String volumeFormatado = String.format("%,.2f", volumeValue);
+                    joiner.add(String.format("%-10s | %s", ticker, volumeFormatado));
+                } catch (NumberFormatException e) {
+                     joiner.add(String.format("%-10s | %s", ticker, row.getOrDefault("volume", "N/A")));
+                }
             }
             return joiner.toString();
         }
-        joiner = new StringJoiner(", ");
+
+        // Formatação padrão para os outros templates que retornam uma lista de valores.
+        StringJoiner joiner = new StringJoiner(", ");
         if (!resultados.get(0).isEmpty()) {
             String varName = resultados.get(0).keySet().stream().findFirst().orElse("valor");
             for (Map<String, String> row : resultados) {
                 String valor = row.getOrDefault(varName, "");
-                if (!valor.isEmpty()) joiner.add(limparValor(valor));
+                if (!valor.isEmpty()) {
+                    joiner.add(limparValor(valor));
+                }
             }
         }
+        
         String resultadoFinal = joiner.toString();
         return resultadoFinal.isEmpty() ? "Não foram encontrados resultados para a sua pergunta." : resultadoFinal;
     }
 
     private String limparValor(String item) {
         if (item == null) return "";
+        // Remove a URI de datatype do final do literal.
         String limpo = item.replaceAll("\\^\\^<http://www.w3.org/2001/XMLSchema#.*?>", "");
-        if (limpo.startsWith(BASE_ONTOLOGY_URI)) limpo = limpo.substring(BASE_ONTOLOGY_URI.length());
+        // Se for uma URI completa, extrai apenas o fragmento.
+        if (limpo.startsWith(BASE_ONTOLOGY_URI)) {
+            limpo = limpo.substring(BASE_ONTOLOGY_URI.length());
+        }
         return limpo.trim();
     }
 }

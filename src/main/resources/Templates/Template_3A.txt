@@ -1,10 +1,14 @@
-# Template para buscar todos os tickers de um SETOR específico.
+# Pergunta: Quais são as ações do setor [eletrico]?
+# Mapeia: #SETOR#
+
+PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-SELECT DISTINCT ?ticker 
+
+SELECT DISTINCT ?ticker
 WHERE {
-  ?setorUri rdfs:label #SETOR#@pt .
-  ?empresa b3:atuaEm ?setorUri .
-  ?empresa b3:temValorMobiliarioNegociado/b3:ticker ?ticker .
+  ?setor rdfs:label #SETOR#@pt .
+  ?empresa b3:atuaEm ?setor .
+  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  ?valorMobiliario b3:ticker ?ticker .
 }
 ORDER BY ?ticker

@@ -1,10 +1,20 @@
-# Template para buscar todos os tickers de um SETOR específico.
+# Pergunta: Qual foi o volume negociado das ações do setor [bancário] em [05/05/2023]?
+# Mapeia: #SETOR#, #DATA#
+
+PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX b3:   <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-SELECT DISTINCT ?ticker 
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT DISTINCT ?ticker (SUM(?volumeValor) AS ?volume)
 WHERE {
-  ?setorUri rdfs:label #SETOR#@pt .
-  ?empresa b3:atuaEm ?setorUri .
-  ?empresa b3:temValorMobiliarioNegociado/b3:ticker ?ticker .
+  ?setor rdfs:label #SETOR#@pt .
+  ?empresa b3:atuaEm ?setor .
+  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  ?valorMobiliario b3:ticker ?ticker .
+  ?valorMobiliario b3:negociado ?negociadoEmPregao .
+  ?negociadoEmPregao b3:negociadoDurante ?pregao .
+  ?pregao b3:ocorreEmData #DATA# .
+  ?negociadoEmPregao b3:volumeNegociacao ?volumeValor .
 }
+GROUP BY ?ticker
 ORDER BY ?ticker

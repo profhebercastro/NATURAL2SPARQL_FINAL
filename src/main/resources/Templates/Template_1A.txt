@@ -1,9 +1,16 @@
-# Template para buscar um valor de cotação para uma entidade (via ticker) em uma DATA.
+# Pergunta: Qual foi o [preço de fechamento] da [CSN] em [08/05/2023]?
+# Mapeia: #VALOR_DESEJADO#, #ENTIDADE_NOME#, #DATA#
+
+PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-SELECT DISTINCT ?valor WHERE {
-  ?valorMobiliario b3:ticker #ENTIDADE_NOME# .
-  ?valorMobiliario b3:negociado ?negociadoInst . 
-  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
-  ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
-} LIMIT 10
+
+SELECT ?valor
+WHERE {
+  ?empresa rdfs:label #ENTIDADE_NOME#@pt .
+  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  ?valorMobiliario b3:negociado ?negociadoEmPregao .
+  ?negociadoEmPregao b3:negociadoDurante ?pregao .
+  ?pregao b3:ocorreEmData #DATA# .
+  ?negociadoEmPregao b3:#VALOR_DESEJADO# ?valor .
+}

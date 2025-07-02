@@ -1,9 +1,0 @@
-# Template para buscar um valor de cotação para uma entidade (via ticker) em uma DATA.
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX b3:  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-SELECT DISTINCT ?valor WHERE {
-  ?valorMobiliario b3:ticker #ENTIDADE_NOME# .
-  ?valorMobiliario b3:negociado ?negociadoInst . 
-  ?negociadoInst b3:negociadoDurante [ b3:ocorreEmData #DATA# ] .
-  ?negociadoInst b3:#VALOR_DESEJADO# ?valor .
-} LIMIT 10
