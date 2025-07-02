@@ -1,14 +1,25 @@
-# Template_1A.txt - Versão 5, baseada na consulta que funcionou no Protégé.
+# Template_1A.txt - Versão 7, a mais robusta.
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?valor
 WHERE {
+    # Rota 1: Busca pelo nome da Empresa
     ?empresa rdfs:label #ENTIDADE_NOME# .
-    ?empresa b3:temValorMobiliarioNegociado ?valorMobiliarioNode .
-    ?valorMobiliarioNode b3:temValorMobiliarioNegociado ?negociadoNode .
-    ?negociadoNode b3:negociado ?negociadoEmPregao .
+    ?empresa b3:temValorMobiliarioNegociado ?vm1 .
+    
+    # Rota 2: Busca pelo ticker (caso o usuário digite CMIN3)
+    # O UNION garante que uma das duas rotas funcione.
+    { ?vm1 b3:ticker ?ticker . } UNION { BIND(?vm1 AS ?vm1) }
+
+    # Navega pelos nós intermediários (0, 1, ou mais vezes)
+    ?vm1 (b3:temValorMobiliarioNegociado)* ?vmFinal .
+    
+    # Encontra a negociação a partir do nó final
+    ?vmFinal b3:negociado ?negociadoEmPregao .
+
+    # Filtra pela data e pega o valor
     ?negociadoEmPregao b3:negociadoDurante ?pregao .
     ?pregao b3:ocorreEmData #DATA# .
     ?negociadoEmPregao #VALOR_DESEJADO# ?valor .
