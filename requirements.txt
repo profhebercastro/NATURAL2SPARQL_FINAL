@@ -1,14 +1,6 @@
-# -----------------------------------------------------------------
-# ARQUIVO: requirements.txt (VERSÃO FINAL E CORRIGIDA)
-# -----------------------------------------------------------------
-# Dependências Python necessárias para os scripts de PLN e pré-processamento.
+# Framework Web não é necessário aqui, pois o Java/Spring é o servidor
+# rdflib não é necessário aqui, pois o Java/Jena manipula o RDF
 
-# Usado no pln_processor.py para análise de linguagem natural
-spacy==3.7.2
-
-# Usado nos scripts de suporte (como generate_map.py) para ler arquivos Excel
-pandas
-openpyxl
-
-# Usado para remover acentos de forma confiável
-unidecode
+# Dependências apenas para o script de PLN
+spacy==3.5.0
+https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.5.0/pt_core_news_sm-3.5.0.tar.gz

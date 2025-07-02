@@ -1,67 +1,39 @@
-# Arquivo: Dockerfile - Versão 11 (Final, Robusto e Explícito)
+# Arquivo: Dockerfile - Versão 13 (Baseada na sua excelente alternativa)
 
-# ----------------- ESTÁGIO 1: BUILD (ROBUSTO) -----------------
-# Usa a imagem Focal, que sabemos que existe e é estável.
-FROM maven:3.9.6-eclipse-temurin-17-focal AS build
+# --- ESTÁGIO 1: BUILD DA APLICAÇÃO JAVA COM MAVEN ---
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
-# Define o diretório de trabalho.
 WORKDIR /build
-
-# --- Instala TODAS as dependências necessárias explicitamente ---
-# Isso torna o build resiliente a mudanças na imagem base.
-# 1. build-essential: Para compilar código C/C++ (dependências do spaCy).
-# 2. python3-dev: Para os arquivos de cabeçalho do Python.
-# 3. python3-pip: Para instalar pacotes Python.
-# 4. git & ca-certificates: Ocasionalmente necessários pelo pip para pacotes complexos.
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    python3-dev \
-    python3-pip \
-    git \
-    ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copia o requirements.txt para instalar as dependências Python.
-COPY requirements.txt .
-
-# Instala as dependências Python.
-# Usar --no-cache-dir é uma boa prática para manter a imagem limpa.
-RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install --no-cache-dir -r requirements.txt && \
-    python3 -m spacy download pt_core_news_sm
-
-# Copia o resto do código fonte do projeto.
-COPY . .
-
-# Executa o build do Maven para criar o JAR.
+COPY pom.xml .
+# Otimização: baixa as dependências antes para cachear esta camada
+RUN mvn dependency:go-offline
+COPY src ./src
 RUN mvn clean package -DskipTests
 
 
-# ----------------- ESTÁGIO 2: EXECUÇÃO (LEVE E COMPROVADO) -----------------
-# Usa a imagem JRE baseada no Focal, que é leve e sabemos que existe.
-FROM eclipse-temurin:17-jre-focal
+# --- ESTÁGIO 2: IMAGEM FINAL DE EXECUÇÃO ---
+# Começa com uma imagem Python leve e oficial
+FROM python:3.9-slim
 
 WORKDIR /app
 
-# --- Instala APENAS o interpretador Python no estágio final ---
-# Não precisamos das ferramentas de build aqui, apenas do python3 para executar o script.
+# Instala o Java Runtime Environment (JRE) e as ferramentas de build para o Python
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 && \
+    apt-get install -y --no-install-recommends openjdk-17-jre-headless build-essential gcc && \
     rm -rf /var/lib/apt/lists/*
 
-# Copia o JAR compilado do estágio de build.
-COPY --from=build /build/target/*.jar app.jar
+# Copia o arquivo de requisitos
+COPY requirements.txt .
 
-# Copia as bibliotecas Python já instaladas e os modelos do spaCy do estágio de build.
-# O caminho do Python em ambas as imagens Focal é python3.8, então a cópia é direta.
-COPY --from=build /usr/local/lib/python3.8/dist-packages/ /usr/local/lib/python3.8/dist-packages/
+# Instala as dependências Python (modelo incluído) de forma robusta
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Define as variáveis de ambiente.
-ENV JAVA_TOOL_OPTIONS="-Xmx384m"
+# Copia o JAR executável criado no estágio anterior
+COPY --from=builder /build/target/*.jar app.jar
 
-# Expõe a porta que a aplicação Spring Boot usará (Render definirá a variável $PORT).
-EXPOSE 8080
+# Expõe a porta que o Render vai usar. O valor real virá da variável $PORT
+EXPOSE 10000
 
-# Comando para rodar a aplicação.
-CMD ["java", "-Dserver.port=${PORT}", "-jar", "app.jar"]
+# Comando para iniciar a aplicação Java, compatível com a injeção de porta do Render
+# Usamos a forma "exec" para que o Java seja o processo principal (PID 1)
+CMD ["java", "-Dserver.port=${PORT}", "-jar", "/app/app.jar"]
