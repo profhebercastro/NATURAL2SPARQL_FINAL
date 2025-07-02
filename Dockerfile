@@ -1,8 +1,8 @@
-# Arquivo: Dockerfile
+# Arquivo: Dockerfile - Versão 4 (Final e Resiliente)
 
 # ----------------- ESTÁGIO 1: BUILD -----------------
 # Usa uma imagem base que JÁ CONTÉM Maven, JDK 17 e Python 3.
-# Isso elimina a necessidade de usar 'apt-get' e torna o build mais rápido e confiável.
+# Isso evita a necessidade de 'apt-get' e torna o build mais rápido e confiável.
 FROM maven:3.9.6-eclipse-temurin-17-focal AS build
 
 # Define o diretório de trabalho.
@@ -11,9 +11,11 @@ WORKDIR /build
 # Copia o requirements.txt para instalar as dependências Python.
 COPY requirements.txt .
 
-# Instala as dependências Python usando o pip que já vem na imagem.
-# O --no-cache-dir é uma boa prática para manter a camada pequena.
-RUN pip install --no-cache-dir -r requirements.txt && \
+# CORREÇÃO: Invoca 'pip' como um módulo do python ('python -m pip') para garantir
+# que o executável correto seja encontrado, resolvendo o erro "pip: not found".
+# Atualiza o pip para a versão mais recente antes de instalar os pacotes.
+RUN python -m pip install --upgrade pip && \
+    python -m pip install --no-cache-dir -r requirements.txt && \
     python -m spacy download pt_core_news_sm
 
 # Copia o resto do código fonte do projeto.
@@ -25,23 +27,21 @@ RUN mvn clean package -DskipTests
 
 
 # ----------------- ESTÁGIO 2: EXECUÇÃO -----------------
-# Usa uma imagem JRE mínima que também já inclui Python 3.
-# A imagem 'eclipse-temurin:17-jre-focal' contém o essencial.
+# Usa uma imagem JRE mínima que já contém Python 3 por padrão (focal).
 FROM eclipse-temurin:17-jre-focal
 
 WORKDIR /app
-
-# Instala apenas o 'pip' para poder usar as bibliotecas Python.
-# Esta é uma operação muito mais leve e confiável do que instalar o python inteiro.
-RUN apt-get update && apt-get install -y python3-pip && rm -rf /var/lib/apt/lists/*
 
 # Copia o JAR compilado do estágio de build.
 COPY --from=build /build/target/*.jar app.jar
 
 # Copia as bibliotecas Python já instaladas do estágio de build.
-# O diretório de pacotes do sistema na imagem focal é /usr/lib/python3/dist-packages
-# e os pacotes do usuário/pip em /usr/local/lib/python3.8/dist-packages.
-COPY --from=build /usr/local/lib/python3.8/dist-packages /usr/local/lib/python3.8/dist-packages
+# A imagem base 'maven' instala pacotes pip em /usr/local/lib/python3.8/dist-packages.
+# Copiamos para o mesmo local na imagem de destino.
+COPY --from=build /usr/local/lib/python3.8/dist-packages/ /usr/local/lib/python3.8/dist-packages/
+
+# Copia os modelos do spaCy já baixados.
+COPY --from=build /usr/local/lib/python3.8/dist-packages/pt_core_news_sm-3.7.0 /usr/local/lib/python3.8/dist-packages/pt_core_news_sm-3.7.0
 
 # Define as variáveis de ambiente.
 ENV JAVA_TOOL_OPTIONS="-Xmx384m"
