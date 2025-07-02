@@ -1,10 +1,16 @@
-# Pergunta: Qual o código de negociação da ação da [Gerdau]?
+# Template_2A.txt - Busca os tickers de uma empresa pelo nome.
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?ticker
+SELECT DISTINCT ?ticker
 WHERE {
-  ?empresa rdfs:label #ENTIDADE_LABEL# .
+  # Encontra a empresa pelo seu label exato
+  ?empresa rdfs:label #ENTIDADE_NOME# .
+  
+  # Segue a ligação para o valor mobiliário
   ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
+  
+  # Pega o ticker do valor mobiliário
   ?valorMobiliario b3:ticker ?ticker .
 }
+ORDER BY ?ticker

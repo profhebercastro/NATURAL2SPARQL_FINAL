@@ -1,17 +1,20 @@
-# Pergunta: Qual foi o volume negociado das ações do setor [bancário] em [05/05/2023]?
-# Mapeia: #SETOR#, #DATA#
-
+# Template_4A.txt - Busca o volume negociado para todas as ações de um setor em uma data.
 PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT DISTINCT ?ticker (SUM(?volumeValor) AS ?volume)
+SELECT ?ticker (SUM(?volumeValor) AS ?volume)
 WHERE {
-  ?setor rdfs:label #SETOR#@pt .
+  # Encontra o setor e as empresas
+  ?setor rdfs:label #SETOR# .
   ?empresa b3:atuaEm ?setor .
-  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-  ?valorMobiliario b3:ticker ?ticker .
-  ?valorMobiliario b3:negociado ?negociadoEmPregao .
+  ?empresa b3:temValorMobiliarioNegociado ?acao .
+  ?acao b3:ticker ?ticker .
+  
+  # Navega pela estrutura de negociação (flexível para nós intermediários)
+  ?acao (b3:temValorMobiliarioNegociado)*/b3:negociado ?negociadoEmPregao .
+  
+  # Filtra pela data e pega o volume
   ?negociadoEmPregao b3:negociadoDurante ?pregao .
   ?pregao b3:ocorreEmData #DATA# .
   ?negociadoEmPregao b3:volumeNegociacao ?volumeValor .
