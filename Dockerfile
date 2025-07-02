@@ -1,22 +1,34 @@
-# Arquivo: Dockerfile - Versão 10 (Final - Combina o melhor dos dois mundos)
+# Arquivo: Dockerfile - Versão 11 (Final, Robusto e Explícito)
 
 # ----------------- ESTÁGIO 1: BUILD (ROBUSTO) -----------------
-# Usa uma imagem base mais recente (Debian 12 Bookworm)
-# que JÁ INCLUI Python 3, pip, e ferramentas de build essenciais.
-# Isso evita a necessidade de 'apt-get' e torna o build mais rápido e confiável.
-FROM maven:3.9-eclipse-temurin-17-bookworm AS build
+# Usa a imagem Focal, que sabemos que existe e é estável.
+FROM maven:3.9.6-eclipse-temurin-17-focal AS build
 
 # Define o diretório de trabalho.
 WORKDIR /build
 
-# A imagem já tem python3 e pip. Apenas atualizamos o pip.
+# --- Instala TODAS as dependências necessárias explicitamente ---
+# Isso torna o build resiliente a mudanças na imagem base.
+# 1. build-essential: Para compilar código C/C++ (dependências do spaCy).
+# 2. python3-dev: Para os arquivos de cabeçalho do Python.
+# 3. python3-pip: Para instalar pacotes Python.
+# 4. git & ca-certificates: Ocasionalmente necessários pelo pip para pacotes complexos.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    python3-dev \
+    python3-pip \
+    git \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copia o requirements.txt para instalar as dependências Python.
 COPY requirements.txt .
 
 # Instala as dependências Python.
-# O --break-system-packages é necessário em imagens Debian mais recentes para permitir o uso do pip.
+# Usar --no-cache-dir é uma boa prática para manter a imagem limpa.
 RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt && \
+    python3 -m pip install --no-cache-dir -r requirements.txt && \
     python3 -m spacy download pt_core_news_sm
 
 # Copia o resto do código fonte do projeto.
@@ -27,14 +39,13 @@ RUN mvn clean package -DskipTests
 
 
 # ----------------- ESTÁGIO 2: EXECUÇÃO (LEVE E COMPROVADO) -----------------
-# Volta a usar a imagem JRE baseada no Focal, que sabemos que existe e é estável.
+# Usa a imagem JRE baseada no Focal, que é leve e sabemos que existe.
 FROM eclipse-temurin:17-jre-focal
 
 WORKDIR /app
 
 # --- Instala APENAS o interpretador Python no estágio final ---
-# A imagem JRE 'focal' não tem Python, então precisamos instalá-lo aqui.
-# Mantemos as otimizações de rede para garantir.
+# Não precisamos das ferramentas de build aqui, apenas do python3 para executar o script.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends python3 && \
     rm -rf /var/lib/apt/lists/*
@@ -43,9 +54,8 @@ RUN apt-get update && \
 COPY --from=build /build/target/*.jar app.jar
 
 # Copia as bibliotecas Python já instaladas e os modelos do spaCy do estágio de build.
-# O caminho do Python no Debian Bookworm é python3.11, mas o Docker lida com a cópia.
-# O importante é que a imagem final (Focal, com Python 3.8) terá essas bibliotecas prontas.
-COPY --from=build /usr/local/lib/python3.11/dist-packages/ /usr/local/lib/python3.8/dist-packages/
+# O caminho do Python em ambas as imagens Focal é python3.8, então a cópia é direta.
+COPY --from=build /usr/local/lib/python3.8/dist-packages/ /usr/local/lib/python3.8/dist-packages/
 
 # Define as variáveis de ambiente.
 ENV JAVA_TOOL_OPTIONS="-Xmx384m"
