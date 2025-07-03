@@ -29,7 +29,6 @@ public class SPARQLProcessor {
     private static final Logger logger = LoggerFactory.getLogger(SPARQLProcessor.class);
     private static final String PYTHON_SCRIPT_NAME = "nlp_controller.py";
 
-    // A lista de recursos agora aponta para os novos arquivos
     private static final String[] PYTHON_RESOURCES = {
         PYTHON_SCRIPT_NAME, "Thesaurus.json"
     };
@@ -197,7 +196,8 @@ public class SPARQLProcessor {
 
     private String readTemplateContent(String templateId) throws IOException {
         String templateFileName = templateId + ".txt";
-        String templateResourcePath = "templates/" + templateFileName;
+        // CORREÇÃO: Usando "Templates" com 'T' maiúsculo para corresponder ao nome da pasta no Git.
+        String templateResourcePath = "Templates/" + templateFileName; 
         Resource resource = new ClassPathResource(templateResourcePath);
         if (!resource.exists()) {
             throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
