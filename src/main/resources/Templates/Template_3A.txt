@@ -1,8 +1,7 @@
 SELECT DISTINCT ?O1 WHERE {
-  ?S5 a C5 .
   ?S5 P18 #SETOR# .
   ?S1 P9 ?S5 .
-  ?S1 a C1 .
   ?S1 P1 ?S2 .
-  ?S2 P19 ?O1 .
-} ORDER BY ?O1
+  ?S2 (P19|(P2/P19)) ?O1 .
+}
+ORDER BY ?O1
