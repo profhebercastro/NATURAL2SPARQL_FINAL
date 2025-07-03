@@ -129,13 +129,13 @@ public class SPARQLProcessor {
             query = query.replace("#SETOR#", "\"" + placeholders.get("#SETOR#").replace("\"", "\\\"") + "\"@pt");
         }
 
-        // ETAPA 2: Resolver o placeholder semântico #VALOR_DESEJADO# para um placeholder de predicado genérico
+        // ETAPA 2: Resolver o placeholder semântico #VALOR_DESEJADO#
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             String valorDesejadoKey = "resposta." + placeholders.get("#VALOR_DESEJADO#");
-            String predicadoGenerico = ontologyProfile.get(valorDesejadoKey);
+            String predicadoGenerico = ontologyProfile.get(valorDesejadoKey); 
             query = query.replace("#VALOR_DESEJADO#", predicadoGenerico);
         }
-
+        
         // ETAPA 3: Substituir TODOS os placeholders de perfil (S, P, C, O, ANS)
         query = ontologyProfile.replacePlaceholders(query);
 
@@ -149,7 +149,7 @@ public class SPARQLProcessor {
         logger.info("Query SPARQL Final Gerada:\n{}", finalQuery);
         return finalQuery;
     }
-    
+
     private String formatarEntidade(String entidade) {
         String entidadeEscapada = entidade.replace("\"", "\\\"");
         return TICKER_PATTERN.matcher(entidade).matches()
@@ -192,24 +192,35 @@ public class SPARQLProcessor {
         if (resultados == null || resultados.isEmpty()) {
             return "Não foram encontrados resultados para a sua pergunta.";
         }
+        
+        // CORREÇÃO: Pegar o nome da variável do resultado diretamente, em vez de depender do perfil.
+        // O Jena retorna as chaves exatamente como estão na cláusula SELECT final.
+        String tickerVarName = "ticker"; // Nome da variável na query do Template 2A, 3A e 4A
+        String volumeVarName = "volume"; // Nome da variável na query do Template 4A
+        String respostaVarName = "valor"; // Nome da variável no Template 1A
+
         if ("Template_4A".equals(templateId)) {
             StringJoiner joiner = new StringJoiner("\n");
             joiner.add(String.format("%-10s | %s", "Ticker", "Volume Negociado"));
             joiner.add("------------------------------------");
             for (Map<String, String> row : resultados) {
-                String ticker = limparValor(row.getOrDefault(ontologyProfile.get("O1").substring(1), "N/A"));
+                // Tenta pegar pelo nome final 'ticker'
+                String ticker = limparValor(row.getOrDefault(tickerVarName, "N/A"));
                 try {
-                    double volumeValue = Double.parseDouble(row.getOrDefault("volume", "0"));
+                    // Tenta pegar pelo nome final 'volume'
+                    double volumeValue = Double.parseDouble(row.getOrDefault(volumeVarName, "0"));
                     String volumeFormatado = String.format("%,.2f", volumeValue);
                     joiner.add(String.format("%-10s | %s", ticker, volumeFormatado));
                 } catch (NumberFormatException e) {
-                     joiner.add(String.format("%-10s | %s", ticker, row.getOrDefault("volume", "N/A")));
+                     joiner.add(String.format("%-10s | %s", ticker, row.getOrDefault(volumeVarName, "N/A")));
                 }
             }
             return joiner.toString();
         }
+
         StringJoiner joiner = new StringJoiner(", ");
         if (!resultados.get(0).isEmpty()) {
+            // Lógica mais genérica para pegar o valor da primeira coluna do resultado
             String varName = resultados.get(0).keySet().stream().findFirst().orElse("valor");
             for (Map<String, String> row : resultados) {
                 String valor = row.getOrDefault(varName, "");
@@ -218,6 +229,7 @@ public class SPARQLProcessor {
                 }
             }
         }
+        
         String resultadoFinal = joiner.toString();
         return resultadoFinal.isEmpty() ? "Não foram encontrados resultados para a sua pergunta." : resultadoFinal;
     }
