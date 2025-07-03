@@ -1,14 +1,6 @@
-# Template_2A.txt - Versão final e flexível
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-
-SELECT DISTINCT ?ticker
-WHERE {
-  ?empresa rdfs:label #ENTIDADE_NOME# .
-  ?empresa b3:temValorMobiliarioNegociado ?valorMobiliario .
-  
-  # Caminho flexível para o ticker:
-  # Tenta ?valorMobiliario -> ticker OU ?valorMobiliario -> representadoPor -> ticker
-  ?valorMobiliario (b3:ticker|(b3:representadoPor/b3:ticker)) ?ticker .
+SELECT DISTINCT ?O1 WHERE {
+  ?S1 P8 C1 .
+  ?S1 P18 #ENTIDADE_NOME# .
+  ?S1 P1 ?S2 .
+  ?S2 P19 ?O1 .
 }
-ORDER BY ?ticker

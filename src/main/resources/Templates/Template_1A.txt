@@ -1,16 +1,9 @@
-# Template_1A.txt - Versão 5, baseada na consulta que funcionou no Protégé.
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-SELECT ?valor
-WHERE {
-    ?empresa rdfs:label #ENTIDADE_NOME# .
-    ?empresa b3:temValorMobiliarioNegociado ?valorMobiliarioNode .
-    ?valorMobiliarioNode b3:temValorMobiliarioNegociado ?negociadoNode .
-    ?negociadoNode b3:negociado ?negociadoEmPregao .
-    ?negociadoEmPregao b3:negociadoDurante ?pregao .
-    ?pregao b3:ocorreEmData #DATA# .
-    ?negociadoEmPregao #VALOR_DESEJADO# ?valor .
-}
-LIMIT 1
+SELECT DISTINCT ?ANS WHERE {
+  ?S1 P8 C1 .
+  ?S1 P18 #ENTIDADE_NOME# .
+  ?S1 P1 ?S2 .
+  ?S2 P3 ?S3 .
+  ?S3 P4 ?S4 .
+  ?S4 P6 #O2# .
+  ?S3 #VALOR_DESEJADO# ?ANS .
+} LIMIT 1

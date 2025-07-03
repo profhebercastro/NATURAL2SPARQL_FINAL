@@ -1,25 +1,12 @@
-# Template_4A.txt - Versão final e super flexível
-PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-SELECT ?ticker (SUM(?volumeValor) AS ?volume)
-WHERE {
-  ?setor rdfs:label #SETOR# .
-  ?empresa b3:atuaEm ?setor .
-  ?empresa b3:temValorMobiliarioNegociado ?acao .
-  
-  # Caminho flexível para o ticker
-  ?acao (b3:ticker|(b3:representadoPor/b3:ticker)) ?ticker .
-  
-  # Caminho flexível para a negociação, que lida com o nó intermediário "_TipoDesconhecido"
-  # Ele segue a propriedade 'temValorMobiliarioNegociado' 0 ou mais vezes, e então a 'negociado'
-  ?acao (b3:temValorMobiliarioNegociado)*/b3:negociado ?negociadoEmPregao .
-  
-  # Filtra pela data e pega o volume
-  ?negociadoEmPregao b3:negociadoDurante ?pregao .
-  ?pregao b3:ocorreEmData #DATA# .
-  ?negociadoEmPregao b3:volumeNegociacao ?volumeValor .
+SELECT ?O1 (?ANS AS ?volume) WHERE {
+  ?S5 P8 C5 .
+  ?S5 P18 #SETOR# .
+  ?S1 P9 ?S5 .
+  ?S1 P8 C1 .
+  ?S1 P1 ?S2 .
+  ?S2 P19 ?O1 .
+  ?S2 P3 ?S3 .
+  ?S3 P4 ?S4 .
+  ?S4 P6 #O2# .
+  ?S3 #VALOR_DESEJADO# ?ANS .
 }
-GROUP BY ?ticker
-ORDER BY ?ticker
