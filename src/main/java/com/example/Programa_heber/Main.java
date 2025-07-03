@@ -3,7 +3,7 @@ package com.example.Programa_heber;
 import com.example.Programa_heber.model.ExecuteQueryRequest;
 import com.example.Programa_heber.model.PerguntaRequest;
 import com.example.Programa_heber.model.ProcessamentoDetalhadoResposta;
-import com.example.Programa_heber.service.QuestionProcessor;
+import com.example.Programa_heber.service.SPARQLProcessor; // MUDANÇA AQUI
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,20 +23,19 @@ import java.util.Map;
 public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
-    private final QuestionProcessor questionProcessor;
+    // MUDANÇA AQUI: Renomeando a dependência
+    private final SPARQLProcessor sparqlProcessor;
 
     @Autowired
-    public Main(QuestionProcessor questionProcessor) {
-        this.questionProcessor = questionProcessor;
+    // MUDANÇA AQUI: Atualizando o construtor
+    public Main(SPARQLProcessor sparqlProcessor) {
+        this.sparqlProcessor = sparqlProcessor;
     }
 
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
 
-    /**
-     * Endpoint 1: Apenas GERA a consulta SPARQL.
-     */
     @PostMapping("/gerar_consulta")
     public ResponseEntity<ProcessamentoDetalhadoResposta> gerarConsulta(@RequestBody PerguntaRequest request) {
         String question = request.getPergunta();
@@ -47,7 +46,8 @@ public class Main {
         }
 
         logger.info("Recebida requisição para GERAR consulta para: '{}'", question);
-        ProcessamentoDetalhadoResposta resposta = questionProcessor.generateSparqlQuery(question);
+        // MUDANÇA AQUI: Usando a nova variável
+        ProcessamentoDetalhadoResposta resposta = sparqlProcessor.generateSparqlQuery(question);
 
         if (resposta.getErro() != null) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resposta);
@@ -55,9 +55,6 @@ public class Main {
         return ResponseEntity.ok(resposta);
     }
 
-    /**
-     * Endpoint 2: EXECUTA uma consulta SPARQL já gerada.
-     */
     @PostMapping("/executar_query")
     public ResponseEntity<Map<String, String>> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getSparqlQuery();
@@ -68,7 +65,8 @@ public class Main {
         }
 
         logger.info("Recebida requisição para EXECUTAR consulta com template ID: {}", templateId);
-        String resultado = questionProcessor.executeAndFormat(sparqlQuery, templateId);
+        // MUDANÇA AQUI: Usando a nova variável
+        String resultado = sparqlProcessor.executeAndFormat(sparqlQuery, templateId);
 
         return ResponseEntity.ok(Map.of("resultado", resultado));
     }
