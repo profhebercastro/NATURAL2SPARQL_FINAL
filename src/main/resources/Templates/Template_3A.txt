@@ -1,3 +1,16 @@
+#Template 3A;
+#Quais são as ações do setor <setor>?
+
+#PlaceHolders Utilizados: 
+#S1 = ?empresa, 
+#S5 = ?setor,
+#S2 = ?valorMobiliarioNode,
+#O1 = ?ticker,
+#P9 = b3:atuaEm,
+#P18 = rdfs:label,
+#P19 = b3:ticker,
+#ANS = ?valor
+
 SELECT DISTINCT ?O1 WHERE {
   ?S5 P18 #SETOR# .
   ?S1 P9 ?S5 .

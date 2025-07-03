@@ -1,3 +1,15 @@
+#Template 2A
+#Qual o código de negociação da ação da Gerdau?
+
+#PlaceHolders Utilizados: 
+#S1 = ?empresa, 
+#S2 = ?valorMobiliarioNode,
+#O1 = ?ticker,
+#P18 = rdfs:label,
+#P19 = b3:ticker,
+#ANS = ?valor
+
+
 SELECT DISTINCT ?O1 WHERE {
   ?S1 P18 #ENTIDADE_NOME# .
   ?S1 P1 ?S2 .
