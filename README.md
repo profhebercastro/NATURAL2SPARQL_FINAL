@@ -1,249 +1,152 @@
-Natural2SPARQL_2025
+# Natural2SPARQL_2025 💬 ➡️  SPARQL
 
-Natural2SPARQL é um sistema que traduz perguntas em linguagem natural (português) para consultas SPARQL. Ele utiliza uma aplicação backend em Java/Spring Boot que orquestra o processo, chamando um script Python para análise de linguagem natural e consultando uma base de conhecimento RDF com Apache Jena para fornecer respostas aos usuários através de uma interface web.
-Funcionalidades Principais
+[![Java](https://img.shields.io/badge/Java-17-blue.svg?style=for-the-badge&logo=openjdk)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+[![Python](https://img.shields.io/badge/Python-3.9-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/downloads/release/python-390/)
+[![Spring](https://img.shields.io/badge/Spring_Boot-3-green.svg?style=for-the-badge&logo=spring)](https://spring.io/projects/spring-boot)
+[![Apache Jena](https://img.shields.io/badge/Apache-Jena-orange.svg?style=for-the-badge&logo=apache)](https://jena.apache.org/)
+[![Docker](https://img.shields.io/badge/Docker-gray.svg?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-    Tradução de Linguagem Natural para SPARQL: Converte perguntas como "Qual o preço de fechamento da Vale em 05/05/2023?" em consultas SPARQL formais e executáveis.
+Um sistema que traduz perguntas em linguagem natural (Português) sobre o mercado de ações em consultas **SPARQL**, executando-as contra uma base de conhecimento RDF para obter respostas precisas.
 
-    Processamento de Linguagem Natural (PLN): Utiliza um script Python com uma abordagem baseada em regras, similaridade de strings (difflib) e dicionários para identificar a intenção do usuário, extrair entidades (empresas, datas, etc.) e normalizá-las.
+---
 
-    Construção Automática da Base de Conhecimento: Utiliza uma ontologia (RDF/TTL) que é automaticamente populada e cacheada na primeira inicialização do sistema, lendo os dados de planilhas Excel (.xlsx) da B3 (informações de empresas, setores, dados históricos de pregões).
+### ✨ **[Acesse a Demonstração Online](https://natural2sparql-2025.onrender.com)** ✨
 
-    Consultas Baseadas em Templates: Emprega um sistema de templates SPARQL que são preenchidos dinamicamente com as entidades extraídas pela camada de PLN.
 
-    Interface Web Responsiva: Fornece uma interface de usuário single-page (HTML/JS/CSS) servida diretamente pelo backend Java, permitindo a interação em duas etapas: geração da consulta e execução.
 
-    Deploy em Nuvem: O projeto está configurado para deploy na plataforma Render usando Docker.
+---
 
-Tecnologias Utilizadas
+## 📜 Índice
 
-    Backend & Orquestração:
+*   [Funcionalidades Principais](#-funcionalidades-principais)
+*   [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+*   [Arquitetura e Fluxo de Dados](#-arquitetura-e-fluxo-de-dados)
+*   [Como Executar o Projeto](#-como-executar-o-projeto)
+*   [Como Usar a Aplicação](#-como-usar-a-aplicação)
+*   [Atualizando os Dados](#-atualizando-os-dados)
 
-        Java 17
+## ✨ Funcionalidades Principais
 
-        Spring Boot 3
+*   **🗣️ Interface em Linguagem Natural**: Permite que usuários façam perguntas complexas sobre dados financeiros sem saber SPARQL.
+*   **⚙️ Orquestração Híbrida**: Combina o poder do **Java/Spring** para robustez e gerenciamento de ontologias com a simplicidade do **Python** para processamento de linguagem.
+*   **🏗️ Construção Automática da Ontologia**: Na primeira inicialização, o sistema lê arquivos `.xlsx` e constrói a base de conhecimento RDF, incluindo um cache com inferências para startups futuras ultrarrápidas.
+*   **🧩 Motor Baseado em Templates**: Arquitetura extensível que permite adicionar suporte a novos tipos de perguntas apenas criando um novo arquivo de template, sem alterar o código Java principal.
+*   **☁️ Pronto para a Nuvem**: Containerizado com **Docker** e configurado para deploy contínuo na plataforma **Render**.
 
-        Apache Jena (para manipulação da ontologia e execução de SPARQL)
+## ⚙️ Tecnologias Utilizadas
 
-        Apache POI (para leitura de arquivos Excel)
+| Categoria                      | Tecnologia                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| **Backend & Orquestração**     | `Java 17`, `Spring Boot 3`, `Apache Jena`, `Apache POI`                                                  |
+| **Processamento de Linguagem** | `Python 3.9` (com bibliotecas padrão `difflib`, `re`, `json`)                                          |
+| **Frontend**                   | `HTML5`, `CSS3`, `JavaScript` (vanilla)                                                                |
+| **Base de Dados**              | `RDF/TTL` (para a ontologia), `.xlsx` (como fonte de dados primária)                                     |
+| **DevOps & Build**             | `Docker` (build multi-stage), `Maven`                                                                  |
 
-    Processamento de Linguagem Natural:
+## 🏗️ Arquitetura e Fluxo de Dados
 
-        Python 3.9
+<details>
+<summary><strong>Clique para expandir e ver o fluxo detalhado de uma requisição</strong></summary>
 
-        Bibliotecas padrão do Python (difflib, re, json)
+1.  **Frontend**: O usuário digita "Qual o preço de fechamento da CSN em 08/05/2023?" e clica em `GERAR CONSULTA`.
+2.  **API Call 1 (`/gerar_consulta`)**: A pergunta é enviada para o backend Java.
+3.  **Java (`QuestionProcessor`)**: Invoca o script `pln_processor.py`.
+4.  **Python (`pln_processor.py`)**:
+    *   **Classifica a Intenção**: Compara a pergunta com os padrões em `perguntas_de_interesse.txt` e seleciona `Template_1A`.
+    *   **Extrai Entidades**: Identifica "preço de fechamento", "CSN" e "08/05/2023".
+    *   **Normaliza Dados**: Usa `empresa_nome_map.json` para converter "CSN" no nome canônico "CSN MINERAÇÃO S.A.".
+    *   **Retorna JSON**: Devolve `{"template_nome": "Template_1A", "mapeamentos": {...}}` para o Java.
+5.  **Java (`QuestionProcessor`)**:
+    *   Lê o conteúdo de `Template_1A.txt`.
+    *   Substitui os placeholders (`#ENTIDADE_NOME#`, `#DATA#`, etc.) com os valores recebidos, montando a consulta SPARQL.
+    *   Envia a consulta gerada de volta ao Frontend.
+6.  **Frontend**: Exibe a consulta SPARQL e habilita o botão `Executar`.
+7.  **API Call 2 (`/executar_query`)**: O usuário clica em `Executar`, e a consulta SPARQL é enviada para o backend.
+8.  **Java (`Ontology`)**: O componente de ontologia executa a consulta SPARQL contra o modelo RDF em memória usando **Apache Jena**.
+9.  **Resposta Final**: O resultado é formatado de forma amigável e enviado ao Frontend para exibição.
 
-    Frontend:
+</details>
 
-        HTML5, CSS3, JavaScript (Vanilla)
+## 🚀 Como Executar o Projeto
 
-    Base de Dados:
+### Pré-requisitos
 
-        RDF/TTL (para a base de conhecimento)
+*   `Java JDK 17+`
+*   `Apache Maven 3.6+`
+*   `Python 3.9+`
+*   `Docker` (opcional, para execução em container)
 
-        Arquivos Excel (.xlsx) como fonte primária dos dados.
+---
 
-    DevOps:
+<details>
+<summary><strong>Opção 1: Execução Local (Recomendado para desenvolvimento)</strong></summary>
 
-        Docker (com build multi-stage)
-
-        Maven (para gerenciamento de dependências e build do projeto Java)
-
-Arquitetura e Fluxo de Dados
-
-O sistema opera com um fluxo de requisição claro e bem definido:
-
-    Interface do Usuário (Frontend): O usuário digita uma pergunta no index2.html e clica em "GERAR CONSULTA".
-
-    Controlador REST (Java/Spring Boot): O frontend envia a pergunta para o endpoint /gerar_consulta no backend Java.
-
-    Serviço Orquestrador (Java QuestionProcessor):
-
-        Recebe a pergunta e invoca o script pln_processor.py, passando a pergunta como argumento.
-
-    Processador de PLN (Script Python):
-
-        Analisa a pergunta usando difflib para encontrar o template mais similar em perguntas_de_interesse.txt.
-
-        Extrai e normaliza entidades (empresas, datas, etc.) usando regex e os mapas em empresa_nome_map.json e setor_map.json.
-
-        Retorna um objeto JSON contendo o ID do template e as entidades extraídas para o serviço Java.
-
-    Construtor de Consultas (Java):
-
-        O QuestionProcessor recebe o JSON do Python.
-
-        Lê o arquivo de template SPARQL correspondente (ex: Template_1A.txt).
-
-        Preenche o template com as entidades, gerando a consulta SPARQL final.
-
-        A consulta é enviada de volta para o frontend para exibição.
-
-    Execução da Consulta (Frontend e Backend):
-
-        O usuário clica em "Executar" no frontend.
-
-        A consulta SPARQL e o ID do template são enviados para o endpoint /executar_query.
-
-        O QuestionProcessor passa a consulta para o componente Ontology.
-
-    Motor de Consulta (Java - Ontology com Apache Jena):
-
-        Executa a consulta SPARQL contra o modelo RDF em memória (carregado de ontologiaB3_com_inferencia.ttl).
-
-        Formata o resultado em um formato amigável e retorna para o frontend.
-
-Configuração e Instalação
-Pré-requisitos
-
-    Java JDK 17 ou superior
-
-    Apache Maven 3.6+ (para construir o projeto Java)
-
-    Python 3.9 ou superior
-
-    pip (gerenciador de pacotes Python)
-
-    Docker (para rodar em container ou para deploy)
-
-Passos de Instalação Local
-
-    Clone o repositório:
-    Generated bash
-
-          
+1.  **Clone o repositório:**
+    ```bash
     git clone https://github.com/hebercastro79/Natural2SPARQL_2025.git
     cd Natural2SPARQL_2025
+    ```
 
-        
+2.  **Instale as dependências Python:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-    IGNORE_WHEN_COPYING_START
+3.  **Execute a aplicação com Maven:**
+    ```bash
+    ./mvnw spring-boot:run
+    ```
+    > **Nota:** Na primeira execução, o sistema irá construir a base de conhecimento a partir dos arquivos Excel, o que pode levar alguns segundos. As inicializações seguintes serão quase instantâneas.
 
-Use code with caution. Bash
-IGNORE_WHEN_COPYING_END
+4.  Acesse a aplicação em [**http://localhost:8080**](http://localhost:8080).
 
-Instale as dependências Python:
-Generated bash
+</details>
 
-      
-pip install -r requirements.txt
+<details>
+<summary><strong>Opção 2: Execução com Docker</strong></summary>
 
-    
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/hebercastro79/Natural2SPARQL_2025.git
+    cd Natural2SPARQL_2025
+    ```
 
-IGNORE_WHEN_COPYING_START
-Use code with caution. Bash
-IGNORE_WHEN_COPYING_END
-
-Nota: requirements.txt pode listar spacy, mas a implementação atual usa apenas bibliotecas padrão do Python, então a instalação é rápida.
-
-Construa e execute a aplicação Java:
-Generated bash
-
-      
-# Usando o Maven Wrapper (recomendado)
-./mvnw spring-boot:run
-
-# Ou, para criar o JAR e executá-lo manualmente:
-# 1. Construa o JAR
-./mvnw clean package
-# 2. Execute o JAR
-java -jar target/natural2sparql-0.0.1-SNAPSHOT.jar
-
-    
-
-IGNORE_WHEN_COPYING_START
-
-    Use code with caution. Bash
-    IGNORE_WHEN_COPYING_END
-
-    A aplicação estará acessível em http://localhost:8080.
-
-Importante: Na primeira vez que a aplicação é executada, ela irá ler todos os arquivos .xlsx das pastas resources/Datasets e resources/Templates para construir o arquivo de cache da ontologia (target/classes/ontologiaB3_com_inferencia.ttl). Este processo pode levar alguns segundos. Nas inicializações seguintes, o sistema carregará este arquivo de cache diretamente, tornando o startup quase instantâneo.
-Executando com Docker
-
-O Dockerfile foi projetado para construir e rodar a aplicação de forma autocontida.
-
-    Construa a imagem Docker:
-    Generated bash
-
-          
+2.  **Construa a imagem Docker:**
+    O `Dockerfile` multi-stage cuida de todo o processo de build do Java e da configuração do Python.
+    ```bash
     docker build -t natural2sparql .
+    ```
 
-        
+3.  **Execute o container:**
+    ```bash
+    docker run -e PORT=8080 -p 8080:8080 -it natural2sparql
+    ```
 
-    IGNORE_WHEN_COPYING_START
+4.  Acesse a aplicação em [**http://localhost:8080**](http://localhost:8080).
 
-Use code with caution. Bash
-IGNORE_WHEN_COPYING_END
+</details>
 
-Execute o container Docker:
-A aplicação é configurada para usar uma porta fornecida pela variável de ambiente PORT.
-Generated bash
+## 🕹️ Como Usar a Aplicação
 
-      
-docker run -e PORT=8080 -p 8080:8080 -it natural2sparql
+1.  Acesse a interface web: [**Demo Online**](https://natural2sparql-2025.onrender.com) ou `http://localhost:8080`.
+2.  Digite sua pergunta no campo de texto.
 
-    
+    > **Exemplos de perguntas que você pode fazer:**
+    > *   `Qual foi o preço de fechamento da ação da CSN em 08/05/2023?`
+    > *   `Qual o código de negociação da ação da Gerdau?`
+    > *   `Quais são as ações do setor eletrico?`
+    > *   `Qual foi o volume negociado nas ações do setor bancário em 05/05/2023?`
 
-IGNORE_WHEN_COPYING_START
+3.  Clique em **GERAR CONSULTA**. A consulta SPARQL correspondente aparecerá.
+4.  Clique em **Executar** para ver o resultado final.
 
-    Use code with caution. Bash
-    IGNORE_WHEN_COPYING_END
+## 🔄 Atualizando os Dados
 
-    A aplicação estará acessível em http://localhost:8080.
+O sistema é projetado para ser facilmente atualizável com novos dados.
 
-Como Usar
-
-    Acesse a interface web no link de deploy ou localmente:
-
-        Deploy Público: https://natural2sparql-2025.onrender.com
-
-        Local: http://localhost:8080
-
-    Digite sua pergunta no campo de texto. Exemplos de perguntas suportadas:
-
-        Qual foi o preço de fechamento da ação da CSN em 08/05/2023?
-
-        Qual foi o preço de abertura da CBAV3 em 08/05/2023?
-
-        Qual o código de negociação da ação da Gerdau?
-
-        Quais são as ações do setor eletrico?
-
-        Qual foi o volume negociado nas ações do setor bancário em 05/05/2023?
-
-    Clique em "GERAR CONSULTA". A consulta SPARQL correspondente aparecerá.
-
-    Clique em "Executar". O resultado final será exibido.
-
-Manutenção e Atualização de Dados
-
-O sistema foi projetado para ser facilmente atualizável:
-
-    Atualize os Dados: Substitua ou adicione novos arquivos de dados .xlsx nas pastas:
-
-        src/main/resources/Datasets/ (para dados de pregões)
-
-        src/main/resources/Templates/ (para o arquivo Informacoes_Empresas.xlsx)
-
-    Limpe o Cache: Exclua o arquivo de cache da ontologia gerado anteriormente, que se encontra em:
-
-        target/classes/ontologiaB3_com_inferencia.ttl
-        (A forma mais fácil de garantir a limpeza é executar mvn clean).
-
-    Reconstrua e Reinicie: Recompile e reinicie a aplicação.
-    Generated bash
-
-          
-    # Parar a aplicação se estiver rodando
-    ./mvnw clean package
-    java -jar target/natural2sparql-0.0.1-SNAPSHOT.jar
-
-        
-
-    IGNORE_WHEN_COPYING_START
-
-    Use code with caution. Bash
-    IGNORE_WHEN_COPYING_END
-
-Ao reiniciar, a aplicação detectará a ausência do arquivo de cache e irá gerá-lo novamente usando os novos dados das planilhas.
+1.  **Adicione/Substitua Planilhas**: Coloque os novos arquivos `.xlsx` nas pastas `src/main/resources/Datasets/` (dados de pregões) ou `src/main/resources/Templates/` (informações de empresas).
+2.  **Limpe o Cache Antigo**: A forma mais segura de forçar a reconstrução da base de conhecimento é executar o comando `clean` do Maven, que apaga a pasta `target/`.
+    ```bash
+    ./mvnw clean
+    ```
+3.  **Reinicie a Aplicação**: Execute o projeto novamente (com `mvn spring-boot:run` ou reconstruindo a imagem Docker). O sistema detectará a ausência do cache e irá gerar um novo a partir dos dados atualizados.
