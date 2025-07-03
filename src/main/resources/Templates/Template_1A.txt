@@ -1,9 +1,9 @@
 SELECT DISTINCT ?ANS WHERE {
-  ?S1 a C1 .
   ?S1 P18 #ENTIDADE_NOME# .
   ?S1 P1 ?S2 .
-  ?S2 P3 ?S3 .
-  ?S3 P4 ?S4 .
+  ?S2 P20 ?S3 . 
+  ?S3 P3 ?S6 .
+  ?S6 P4 ?S4 .
   ?S4 P6 #O2# .
-  ?S3 #VALOR_DESEJADO# ?ANS .
+  ?S6 #VALOR_DESEJADO# ?ANS .
 } LIMIT 1
