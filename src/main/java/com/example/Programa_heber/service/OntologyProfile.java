@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.regex.Matcher;
 
 @Component
 public class OntologyProfile {
@@ -29,11 +30,6 @@ public class OntologyProfile {
         }
     }
 
-    /**
-     * Obtém um valor do perfil. Se não encontrar, retorna a própria chave para depuração.
-     * @param key A chave a ser buscada no perfil.
-     * @return O valor correspondente ou a própria chave se não for encontrada.
-     */
     public String get(String key) {
         String value = profile.getProperty(key);
         if (value == null) {
@@ -45,7 +41,8 @@ public class OntologyProfile {
 
     /**
      * Substitui todos os placeholders genéricos (S, P, C, O, ANS) na string da query
-     * pelos seus valores correspondentes do perfil.
+     * pelos seus valores correspondentes do perfil, usando word boundaries para evitar
+     * substituições parciais (ex: P1 em P18).
      * @param query A string da query com placeholders genéricos.
      * @return A query com os placeholders substituídos.
      */
@@ -53,7 +50,7 @@ public class OntologyProfile {
         String result = query;
         // Itera sobre todas as chaves do arquivo de propriedades (S1, P1, C1, etc.)
         for (String key : profile.stringPropertyNames()) {
-            // Ignora chaves de configuração como "prefix.b3" e "resposta.*"
+            // Ignora chaves de configuração que não são placeholders de query
             if (key.startsWith("prefix.") || key.startsWith("resposta.")) {
                 continue;
             }
@@ -63,10 +60,13 @@ public class OntologyProfile {
 
             // Se a chave for de uma variável (S, O, ANS), adiciona o '?' para a busca
             if (key.matches("^(S|O|ANS)\\d*")) {
-                 placeholder = "?" + key;
+                 placeholder = "\\?" + key; // Adiciona '?' e escapa para regex
             }
 
-            result = result.replace(placeholder, value);
+            // Usa \\b para delimitar a "palavra" inteira do placeholder
+            // Isso garante que P1 não seja substituído dentro de P18.
+            // Matcher.quoteReplacement escapa caracteres especiais no valor de substituição.
+            result = result.replaceAll("\\b" + placeholder + "\\b", Matcher.quoteReplacement(value));
         }
         return result;
     }
