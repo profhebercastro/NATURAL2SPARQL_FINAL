@@ -29,6 +29,11 @@ public class OntologyProfile {
         }
     }
 
+    /**
+     * Obtém um valor do perfil. Se não encontrar, retorna a própria chave para depuração.
+     * @param key A chave a ser buscada no perfil.
+     * @return O valor correspondente ou a própria chave se não for encontrada.
+     */
     public String get(String key) {
         String value = profile.getProperty(key);
         if (value == null) {
@@ -36,5 +41,33 @@ public class OntologyProfile {
             return key;
         }
         return value;
+    }
+
+    /**
+     * Substitui todos os placeholders genéricos (S, P, C, O, ANS) na string da query
+     * pelos seus valores correspondentes do perfil.
+     * @param query A string da query com placeholders genéricos.
+     * @return A query com os placeholders substituídos.
+     */
+    public String replacePlaceholders(String query) {
+        String result = query;
+        // Itera sobre todas as chaves do arquivo de propriedades (S1, P1, C1, etc.)
+        for (String key : profile.stringPropertyNames()) {
+            // Ignora chaves de configuração como "prefix.b3" e "resposta.*"
+            if (key.startsWith("prefix.") || key.startsWith("resposta.")) {
+                continue;
+            }
+
+            String placeholder = key;
+            String value = profile.getProperty(key);
+
+            // Se a chave for de uma variável (S, O, ANS), adiciona o '?' para a busca
+            if (key.matches("^(S|O|ANS)\\d*")) {
+                 placeholder = "?" + key;
+            }
+
+            result = result.replace(placeholder, value);
+        }
+        return result;
     }
 }
