@@ -1,4 +1,4 @@
-// Copie este código completo para o seu Ontology.java
+
 package com.example.Programa_heber.ontology;
 
 import jakarta.annotation.PostConstruct;

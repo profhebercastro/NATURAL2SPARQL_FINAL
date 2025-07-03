@@ -1,4 +1,4 @@
-# Arquivo: Dockerfile - Versão 13 (Baseada na sua excelente alternativa)
+# Arquivo: Dockerfile 
 
 # --- ESTÁGIO 1: BUILD DA APLICAÇÃO JAVA COM MAVEN ---
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
