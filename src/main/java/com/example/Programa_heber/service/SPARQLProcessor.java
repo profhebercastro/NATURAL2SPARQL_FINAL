@@ -44,6 +44,7 @@ public class SPARQLProcessor {
 
     @PostConstruct
     public void initialize() throws IOException {
+        // ... (código sem alterações) ...
         logger.info("Iniciando SPARQLProcessor: Configurando ambiente Python...");
         try {
             Path tempDir = Files.createTempDirectory("pyscripts_temp_");
@@ -71,6 +72,7 @@ public class SPARQLProcessor {
     }
 
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String question) {
+        // ... (código sem alterações) ...
         logger.info("Serviço SPARQLProcessor: Iniciando GERAÇÃO de query para: '{}'", question);
         ProcessamentoDetalhadoResposta respostaDetalhada = new ProcessamentoDetalhadoResposta();
         try {
@@ -102,6 +104,7 @@ public class SPARQLProcessor {
     }
 
     public String executeAndFormat(String sparqlQuery, String templateId) {
+        // ... (código sem alterações) ...
         logger.info("Serviço SPARQLProcessor: Iniciando EXECUÇÃO de query com template {}.", templateId);
         try {
             List<Map<String, String>> resultados = ontology.executeQuery(sparqlQuery);
@@ -112,32 +115,41 @@ public class SPARQLProcessor {
         }
     }
 
+    // A CORREÇÃO ESTÁ AQUI
     private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
         String query = templateContent;
 
-        // ETAPA 1: Substituir placeholders dinâmicos vindos do Python
-        if (placeholders.containsKey("#DATA#")) {
-            query = query.replace("#O2#", "\"" + placeholders.get("#DATA#") + "\"^^xsd:date");
-        }
+        // ETAPA 1: Substituir os placeholders genéricos de perfil (S, P, C, etc.) PRIMEIRO.
+        // Isso transforma "?S1 P18 #ENTIDADE_NOME#" em "?empresa rdfs:label #ENTIDADE_NOME#".
+        // A query agora contém apenas placeholders do Python.
+        query = ontologyProfile.replacePlaceholders(query);
+
+        // ETAPA 2: Agora, substitua os placeholders do Python (#ENTIDADE_NOME#, #DATA#, etc.).
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
             String entidade = placeholders.get("#ENTIDADE_NOME#");
             String valorFormatado = formatarEntidade(entidade);
+            // O placeholder agora é #ENTIDADE_NOME#
             query = query.replace("#ENTIDADE_NOME#", valorFormatado);
         }
         if (placeholders.containsKey("#SETOR#")) {
-            query = query.replace("#SETOR#", "\"" + placeholders.get("#SETOR#").replace("\"", "\\\"") + "\"@pt");
+            String setor = placeholders.get("#SETOR#");
+            String valorFormatado = "\"" + setor.replace("\"", "\\\"") + "\"@pt";
+             query = query.replace("#SETOR#", valorFormatado);
+        }
+        if (placeholders.containsKey("#DATA#")) {
+            String data = placeholders.get("#DATA#");
+            String valorFormatado = "\"" + data + "\"^^xsd:date";
+             query = query.replace("#O2#", valorFormatado);
         }
 
-        // ETAPA 2: Resolver o placeholder semântico #VALOR_DESEJADO#
+        // ETAPA 3: Resolver o placeholder semântico #VALOR_DESEJADO#
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             String valorDesejadoKey = "resposta." + placeholders.get("#VALOR_DESEJADO#");
-            String predicadoGenerico = ontologyProfile.get(valorDesejadoKey); 
-            query = query.replace("#VALOR_DESEJADO#", predicadoGenerico);
+            // O valor do perfil (ex: b3:precoFechamento) é o que precisamos.
+            String predicadoFinal = ontologyProfile.get(valorDesejadoKey);
+            query = query.replace("#VALOR_DESEJADO#", predicadoFinal);
         }
         
-        // ETAPA 3: Substituir TODOS os placeholders de perfil (S, P, C, O, ANS)
-        query = ontologyProfile.replacePlaceholders(query);
-
         // ETAPA 4: Adicionar prefixos
         String prefixes = "PREFIX b3: <" + ontologyProfile.get("prefix.b3") + ">\n" +
                           "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
@@ -148,7 +160,8 @@ public class SPARQLProcessor {
         logger.info("Query SPARQL Final Gerada:\n{}", finalQuery);
         return finalQuery;
     }
-
+    
+    // ... (resto da classe sem alterações) ...
     private String formatarEntidade(String entidade) {
         String entidadeEscapada = entidade.replace("\"", "\\\"");
         return TICKER_PATTERN.matcher(entidade).matches()
@@ -197,9 +210,8 @@ public class SPARQLProcessor {
             joiner.add(String.format("%-10s | %s", "Ticker", "Volume Negociado"));
             joiner.add("------------------------------------");
 
-            // Nomes das variáveis de resultado como aparecem na cláusula SELECT final
-            String tickerVarName = ontologyProfile.get("O1").substring(1); // Remove '?' de '?ticker'
-            String volumeVarName = "volume"; // Nome fixo do 'AS ?volume' na query
+            String tickerVarName = ontologyProfile.get("O1").substring(1);
+            String volumeVarName = "volume";
 
             for (Map<String, String> row : resultados) {
                 String ticker = limparValor(row.getOrDefault(tickerVarName, "N/A"));
@@ -216,7 +228,6 @@ public class SPARQLProcessor {
 
         StringJoiner joiner = new StringJoiner(", ");
         if (!resultados.get(0).isEmpty()) {
-            // Lógica genérica para pegar o valor da primeira coluna do resultado
             String varName = resultados.get(0).keySet().stream().findFirst().orElse("valor");
             for (Map<String, String> row : resultados) {
                 String valor = row.getOrDefault(varName, "");
