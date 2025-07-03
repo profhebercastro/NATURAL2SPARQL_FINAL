@@ -1,72 +1,85 @@
-# Natural2SPARQL
+# Natural2SPARQL_2025 💬 ➡️  SPARQL
 
-Natural2SPARQL é um sistema que traduz perguntas em linguagem natural (português) para gerar consultas SPARQL. Essas consultas são executadas contra uma base de conhecimento em RDF para fornecer respostas aos usuários através de uma interface web.
+[![Java](https://img.shields.io/badge/Java-17-blue.svg?style=for-the-badge&logo=openjdk)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+[![Python](https://img.shields.io/badge/Python-3.9-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/downloads/release/python-390/)
+[![Spring](https://img.shields.io/badge/Spring_Boot-3-green.svg?style=for-the-badge&logo=spring)](https://spring.io/projects/spring-boot)
+[![Apache Jena](https://img.shields.io/badge/Apache-Jena-orange.svg?style=for-the-badge&logo=apache)](https://jena.apache.org/)
+[![Docker](https://img.shields.io/badge/Docker-gray.svg?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-## Funcionalidades Principais
+Um sistema que traduz perguntas em linguagem natural (Português) sobre o mercado de ações em consultas **SPARQL**, executando-as contra uma base de conhecimento RDF para obter respostas precisas.
 
-*   **Tradução de Linguagem Natural para SPARQL**: Converte perguntas como em consultas SPARQL formais.
-*   **Processamento de Linguagem Natural (PLN)**: Utiliza spaCy e FuzzyWuzzy para identificar a intenção do usuário, extrair entidades relevantes e normalizá-las.
-*   **Base de Conhecimento Ontológica**: Utiliza uma ontologia (RDF/TTL) que neste estudo de caso é populada com dados da B3, que é uma das principais empresas de infraestrutura de mercado financeiro no mundo, com atuação em ambiente de bolsa e de balcão (informações de empresas, setores, dados históricos de pregões).
-*   **Consultas Baseadas em Templates**: Emprega um sistema de templates SPARQL que são preenchidos dinamicamente com as entidades extraídas.
-*   **Interface Web**: Fornece uma interface de usuário simples baseada em Flask para interação.
-*   **Deploy em Nuvem**: Configurado para deploy na plataforma Render usando Docker.
+---
 
-## Tecnologias Utilizadas
+### ✨ **[Acesse a Demonstração Online](https://natural2sparql-2025.onrender.com)** ✨
 
-*   **Backend**:
-    *   Java 17
-    *   Apache Jena (para manipulação da ontologia e execução de SPARQL)
-    *   Spring Boot (para empacotamento da aplicação Java)
-*   **Processamento de Linguagem Natural**:
-    *   Python 3.9
-    *   spaCy (tokenização, NER, modelos de linguagem)
-    *   FuzzyWuzzy (correspondência de strings por similaridade)
-*   **Frontend/Gateway**:
-    *   Python 3.9
-    *   Flask (framework web)
-*   **Base de Dados**:
-    *   RDF/TTL (para a base de conhecimento)
-    *   Arquivos Excel (`.xlsx`) como fonte primária dos dados.
-*   **DevOps**:
-    *   Docker
-    *   Render (para deploy)
-*   **Outros**:
-    *   Pandas (para manipulação de dados em scripts Python)
 
-## Arquitetura do Sistema
 
-O sistema opera com os seguintes componentes principais:
+---
 
-1.  **Interface do Usuário (Web App - Flask)**: Recebe a pergunta do usuário.
-2.  **Orquestrador Java (Spring Boot App)**:
-    *   Recebe a pergunta do Web App.
-    *   Invoca o **Processador de PLN Python**.
-3.  **Processador de PLN (Script Python)**:
-    *   Analisa a pergunta usando spaCy e `perguntas_de_interesse.txt`.
-    *   Identifica o template SPARQL e extrai entidades (empresas, datas, etc.).
-    *   Normaliza entidades usando `empresa_nome_map.json`.
-    *   Retorna o ID do template e as entidades para o Orquestrador Java.
-4.  **Construtor de Consultas (Java - parte do Orquestrador)**:
-    *   Seleciona o template SPARQL correspondente.
-    *   Preenche o template com as entidades extraídas.
-5.  **Motor de Consulta (Java - Apache Jena)**:
-    *   Executa a consulta SPARQL contra a ontologia (`ontologiaB3_com_inferencia.ttl`).
-6.  **Ontologia (RDF/TTL)**: Base de conhecimento com dados da B3.
-7.  O resultado é retornado pela cadeia até a Interface do Usuário.
+## 📜 Índice
 
-*(Veja o Diagrama de Arquitetura abaixo para uma representação visual)*
+*   [Funcionalidades Principais](#-funcionalidades-principais)
+*   [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+*   [Arquitetura e Fluxo de Dados](#-arquitetura-e-fluxo-de-dados)
+*   [Como Executar o Projeto](#-como-executar-o-projeto)
+*   [Como Usar a Aplicação](#-como-usar-a-aplicação)
+*   [Atualizando os Dados](#-atualizando-os-dados)
 
-## Configuração e Instalação
+## ✨ Funcionalidades Principais
+
+*   **🗣️ Interface em Linguagem Natural**: Permite que usuários façam perguntas complexas sobre uma determinada ontologia de domínio sem saber SPARQL.
+*   **⚙️ Orquestração Híbrida**: Combina o poder do **Java/Spring** para robustez e gerenciamento de ontologias com a simplicidade do **Python** para processamento de linguagem.
+*   **🏗️ Construção Automática da Ontologia**: Na primeira inicialização, o sistema lê arquivos `.xlsx` e constrói a base de conhecimento RDF, incluindo um cache com inferências para startups futuras ultrarrápidas.
+*   **🧩 Motor Baseado em Templates**: Arquitetura extensível que permite adicionar suporte a novos tipos de perguntas apenas criando um novo arquivo de template, sem alterar o código Java principal.
+*   **☁️ Pronto para a Nuvem**: Containerizado com **Docker** e configurado para deploy contínuo na plataforma **Render**.
+
+## ⚙️ Tecnologias Utilizadas
+
+| Categoria                      | Tecnologia                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| **Backend & Orquestração**     | `Java 17`, `Spring Boot 3`, `Apache Jena`, `Apache POI`                                                  |
+| **Processamento de Linguagem** | `Python 3.9` (com bibliotecas padrão `difflib`, `re`, `json`)                                          |
+| **Frontend**                   | `HTML5`, `CSS3`, `JavaScript` (vanilla)                                                                |
+| **Base de Dados**              | `RDF/TTL` (para a ontologia), `.xlsx` (como fonte de dados primária)                                     |
+| **DevOps & Build**             | `Docker` (build multi-stage), `Maven`                                                                  |
+
+## 🏗️ Arquitetura e Fluxo de Dados
+
+<details>
+<summary><strong>Clique para expandir e ver o fluxo detalhado de uma requisição</strong></summary>
+
+1.  **Frontend**: O usuário digita "Qual o preço de fechamento da CSN em 08/05/2023?" e clica em `GERAR CONSULTA`.
+2.  **API Call 1 (`/gerar_consulta`)**: A pergunta é enviada para o backend Java.
+3.  **Java (`QuestionProcessor`)**: Invoca o script `pln_processor.py`.
+4.  **Python (`pln_processor.py`)**:
+    *   **Classifica a Intenção**: Compara a pergunta com os padrões em `perguntas_de_interesse.txt` e seleciona `Template_1A`.
+    *   **Extrai Entidades**: Identifica "preço de fechamento", "CSN" e "08/05/2023".
+    *   **Normaliza Dados**: Usa `empresa_nome_map.json` para converter "CSN" no nome canônico "CSN MINERAÇÃO S.A.".
+    *   **Retorna JSON**: Devolve `{"template_nome": "Template_1A", "mapeamentos": {...}}` para o Java.
+5.  **Java (`QuestionProcessor`)**:
+    *   Lê o conteúdo de `Template_1A.txt`.
+    *   Substitui os placeholders (`#ENTIDADE_NOME#`, `#DATA#`, etc.) com os valores recebidos, montando a consulta SPARQL.
+    *   Envia a consulta gerada de volta ao Frontend.
+6.  **Frontend**: Exibe a consulta SPARQL e habilita o botão `Executar`.
+7.  **API Call 2 (`/executar_query`)**: O usuário clica em `Executar`, e a consulta SPARQL é enviada para o backend.
+8.  **Java (`Ontology`)**: O componente de ontologia executa a consulta SPARQL contra o modelo RDF em memória usando **Apache Jena**.
+9.  **Resposta Final**: O resultado é formatado de forma amigável e enviado ao Frontend para exibição.
+
+</details>
+
+## 🚀 Como Executar o Projeto
 
 ### Pré-requisitos
 
-*   Java JDK 17 ou superior
-*   Apache Maven (para construir o projeto Java)
-*   Python 3.9 ou superior
-*   `pip` (gerenciador de pacotes Python)
-*   Docker (opcional, para rodar em container ou para deploy)
+*   `Java JDK 17+`
+*   `Apache Maven 3.6+`
+*   `Python 3.9+`
+*   `Docker` (opcional, para execução em container)
 
-### Passos de Instalação Local
+---
+
+<details>
+<summary><strong>Opção 1: Execução Local (Recomendado para desenvolvimento)</strong></summary>
 
 1.  **Clone o repositório:**
     ```bash
@@ -74,62 +87,66 @@ O sistema opera com os seguintes componentes principais:
     cd Natural2SPARQL_2025
     ```
 
-2.  **Prepare os dados e mapeamentos (se necessário):**
-    *   O arquivo `empresa_nome_map.json` é crucial e é gerado a partir de `src/main/resources/Templates/Informacoes_Empresas.xlsx`. Se este Excel for atualizado, regenere o mapa:
-        ```bash
-        python src/main/resources/generate_map.py
-        ```
-    *   **Importante**: Os arquivos de ontologia (`.ttl`) são populados a partir dos arquivos Excel em `src/main/resources/Datasets/` e `src/main/resources/Templates/Informacoes_Empresas.xlsx`. **Este projeto não inclui os scripts para converter Excel em TTL.** Se os dados nos Excels mudarem, os arquivos TTL precisam ser regenerados manualmente ou com ferramentas externas (não fornecidas aqui) e substituídos na pasta `src/main/resources/`.
-
-3.  **Construa a aplicação Java:**
-    ```bash
-    ./mvnw clean package
-    # ou mvn clean package se você tem Maven instalado globalmente
-    ```
-    Isso gerará o arquivo `target/Natural2SPARQL-0.0.1-SNAPSHOT.jar`.
-
-4.  **Instale as dependências Python e baixe o modelo spaCy:**
+2.  **Instale as dependências Python:**
     ```bash
     pip install -r requirements.txt
-    python -m spacy download pt_core_news_lg
     ```
 
-5.  **Execute a aplicação web:**
+3.  **Execute a aplicação com Maven:**
     ```bash
-    python web_app.py
+    ./mvnw spring-boot:run
     ```
-    A aplicação estará acessível em `http://127.0.0.1:8080`.
+    > **Nota:** Na primeira execução, o sistema irá construir a base de conhecimento a partir dos arquivos Excel, o que pode levar alguns segundos. As inicializações seguintes serão quase instantâneas.
 
-### Executando com Docker
+4.  Acesse a aplicação em [**http://localhost:8080**](http://localhost:8080).
 
-1.  **Construa a imagem Docker:**
-    (Certifique-se que o passo 2 e 3 da instalação local foram executados para ter o `.jar` e `empresa_nome_map.json` atualizados antes de construir a imagem, ou adapte o Dockerfile para incluir esses passos).
+</details>
+
+<details>
+<summary><strong>Opção 2: Execução com Docker</strong></summary>
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/hebercastro79/Natural2SPARQL_2025.git
+    cd Natural2SPARQL_2025
+    ```
+
+2.  **Construa a imagem Docker:**
+    O `Dockerfile` multi-stage cuida de todo o processo de build do Java e da configuração do Python.
     ```bash
     docker build -t natural2sparql .
     ```
 
-2.  **Execute o container Docker:**
+3.  **Execute o container:**
     ```bash
-    docker run -p 8080:8080 natural2sparql
+    docker run -e PORT=8080 -p 8080:8080 -it natural2sparql
     ```
-    A aplicação estará acessível em `http://127.0.0.1:8080`.
 
-## Como Usar
+4.  Acesse a aplicação em [**http://localhost:8080**](http://localhost:8080).
 
-1.  Acesse a interface web (localmente em `http://127.0.0.1:8080` ou no link de deploy do Render: [https://natural2sparql-master-1.onrender.com](https://natural2sparql-master-1.onrender.com)).
-2.  Digite sua pergunta no campo de texto. O sistema suporta perguntas como:
-    *   Preço de fechamento de uma empresa em uma data:
-        *   `Qual foi o preço de fechamento da ação da CSN em 08/05/2023?`
-    *   Preço de abertura de um código de ação em uma data:
-        *   `Qual foi o preço de abertura da CBAV3 em 08/05/2023?`
-    *   Código de negociação de uma empresa:
-        *   `Qual o código de negociação da ação da Gerdau?`
-    *   Ações de um setor específico:
-        *   `Quais são as ações do setor eletrico?`
-3.  Clique em "Perguntar".
-4.  A resposta será exibida abaixo do campo de pergunta.
+</details>
 
-## Manutenção de Dados
+## 🕹️ Como Usar a Aplicação
 
-*   **Mapeamento Empresa-Nome (`empresa_nome_map.json`)**: Se `src/main/resources/Templates/Informacoes_Empresas.xlsx` for modificado, execute `python src/main/resources/generate_map.py` para atualizar `empresa_nome_map.json`.
-*   **Ontologia (`.ttl`)**: Se os dados em `src/main/resources/Datasets/dados_novos_*.xlsx` ou `src/main/resources/Templates/Informacoes_Empresas.xlsx` forem atualizados, os arquivos `.ttl` (especialmente `ontologiaB3.ttl` e, por consequência, `ontologiaB3_com_inferencia.ttl`) **DEVEM** ser regenerados. O processo para esta conversão Excel-para-RDF não está incluído neste repositório e deve ser realizado externamente. Após a regeneração, substitua os arquivos antigos em `src/main/resources/`. Se estiver usando Docker, reconstrua a imagem.
+1.  Acesse a interface web: [**Demo Online**](https://natural2sparql-2025.onrender.com) ou `http://localhost:8080`.
+2.  Digite sua pergunta no campo de texto.
+
+    > **Exemplos de perguntas que você pode fazer:**
+    > *   `Qual foi o preço de fechamento da ação da CSN em 08/05/2023?`
+    > *   `Qual o código de negociação da ação da Gerdau?`
+    > *   `Quais são as ações do setor eletrico?`
+    > *   `Qual foi o volume negociado nas ações do setor bancário em 05/05/2023?`
+
+3.  Clique em **GERAR CONSULTA**. A consulta SPARQL correspondente aparecerá.
+4.  Clique em **Executar** para ver o resultado final.
+
+## 🔄 Atualizando os Dados
+
+O sistema é projetado para ser facilmente atualizável com novos dados.
+
+1.  **Adicione/Substitua Planilhas**: Coloque os novos arquivos `.xlsx` nas pastas `src/main/resources/Datasets/` (dados de pregões) ou `src/main/resources/Templates/` (informações de empresas).
+2.  **Limpe o Cache Antigo**: A forma mais segura de forçar a reconstrução da base de conhecimento é executar o comando `clean` do Maven, que apaga a pasta `target/`.
+    ```bash
+    ./mvnw clean
+    ```
+3.  **Reinicie a Aplicação**: Execute o projeto novamente (com `mvn spring-boot:run` ou reconstruindo a imagem Docker). O sistema detectará a ausência do cache e irá gerar um novo a partir dos dados atualizados.
