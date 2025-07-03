@@ -41,8 +41,7 @@ public class OntologyProfile {
 
     /**
      * Substitui todos os placeholders genéricos (S, P, C, O, ANS) na string da query
-     * pelos seus valores correspondentes do perfil, usando word boundaries para evitar
-     * substituições parciais (ex: P1 em P18).
+     * pelos seus valores correspondentes do perfil.
      * @param query A string da query com placeholders genéricos.
      * @return A query com os placeholders substituídos.
      */
@@ -55,18 +54,20 @@ public class OntologyProfile {
                 continue;
             }
 
-            String placeholder = key;
+            String placeholderRegex;
             String value = profile.getProperty(key);
 
-            // Se a chave for de uma variável (S, O, ANS), adiciona o '?' para a busca
+            // CORREÇÃO: Constrói a expressão regular correta para cada tipo de placeholder
             if (key.matches("^(S|O|ANS)\\d*")) {
-                 placeholder = "\\?" + key; // Adiciona '?' e escapa para regex
+                 // Para variáveis como S1, O1, ANS, o placeholder no template é "?S1"
+                 placeholderRegex = "\\?" + key; // Busca por "?S1", "?O1", etc.
+            } else {
+                 // Para classes e predicados como C1, P1, o placeholder é "C1"
+                 placeholderRegex = key;
             }
 
             // Usa \\b para delimitar a "palavra" inteira do placeholder
-            // Isso garante que P1 não seja substituído dentro de P18.
-            // Matcher.quoteReplacement escapa caracteres especiais no valor de substituição.
-            result = result.replaceAll("\\b" + placeholder + "\\b", Matcher.quoteReplacement(value));
+            result = result.replaceAll("\\b" + placeholderRegex + "\\b", Matcher.quoteReplacement(value));
         }
         return result;
     }
