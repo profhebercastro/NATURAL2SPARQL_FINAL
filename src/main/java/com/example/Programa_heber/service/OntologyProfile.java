@@ -20,13 +20,12 @@ public class OntologyProfile {
     private static final String PROFILE_PATH = "profiles/ontology_profile_b3.properties";
 
     private Properties profile = new Properties();
-    private List<String> sortedKeys; // Cache para as chaves ordenadas
+    private List<String> sortedKeys;
 
     @PostConstruct
     public void loadProfile() {
         try (InputStream input = new ClassPathResource(PROFILE_PATH).getInputStream()) {
             profile.load(input);
-            // Ordena as chaves do maior para o menor comprimento e guarda em cache
             this.sortedKeys = profile.stringPropertyNames().stream()
                     .sorted(Comparator.comparingInt(String::length).reversed())
                     .collect(Collectors.toList());
@@ -46,15 +45,9 @@ public class OntologyProfile {
         return value;
     }
 
-    /**
-     * Substitui todos os placeholders genéricos (S, P, C, O, ANS) na string da query
-     * pelos seus valores correspondentes do perfil.
-     */
     public String replacePlaceholders(String query) {
         String result = query;
-        
         for (String key : this.sortedKeys) {
-            // Ignora chaves de configuração que não são placeholders de query
             if (key.startsWith("prefix.") || key.startsWith("resposta.")) {
                 continue;
             }
@@ -62,15 +55,12 @@ public class OntologyProfile {
             String placeholder;
             String value = profile.getProperty(key);
 
-            // Constrói o placeholder a ser buscado no template
             if (key.matches("^(S|O|ANS)\\d*")) {
-                 placeholder = "?" + key; // Variáveis começam com '?'
+                 placeholder = "?" + key;
             } else {
-                 placeholder = key; // Classes e Predicados não
+                 placeholder = key;
             }
-
-            // Usa String.replace(), que é seguro porque as chaves estão ordenadas por tamanho.
-            // Isso evita que "P1" seja substituído dentro de "P18".
+            
             result = result.replace(placeholder, value);
         }
         return result;

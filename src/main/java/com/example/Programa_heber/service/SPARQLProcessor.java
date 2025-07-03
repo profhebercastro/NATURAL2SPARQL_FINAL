@@ -42,7 +42,6 @@ public class SPARQLProcessor {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Pattern TICKER_PATTERN = Pattern.compile("^[A-Z]{4}\\d{1,2}$");
 
-    // ... (initialize permanece o mesmo) ...
     @PostConstruct
     public void initialize() throws IOException {
         logger.info("Iniciando SPARQLProcessor: Configurando ambiente Python...");
@@ -70,7 +69,6 @@ public class SPARQLProcessor {
             throw e;
         }
     }
-
 
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String question) {
         logger.info("Serviço SPARQLProcessor: Iniciando GERAÇÃO de query para: '{}'", question);
@@ -117,7 +115,7 @@ public class SPARQLProcessor {
     private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
         String query = templateContent;
 
-        // ETAPA 1: Substituir placeholders do Python PRIMEIRO, exceto #VALOR_DESEJADO#
+        // ETAPA 1: Substituir placeholders do Python PRIMEIRO
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
             String entidade = placeholders.get("#ENTIDADE_NOME#");
             String valorFormatado = formatarEntidade(entidade);
@@ -138,7 +136,6 @@ public class SPARQLProcessor {
         query = ontologyProfile.replacePlaceholders(query);
         
         // ETAPA 3: Resolver o placeholder semântico #VALOR_DESEJADO# no final.
-        // O valor do perfil (ex: b3:precoFechamento) é o que precisamos.
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             String valorDesejadoKey = "resposta." + placeholders.get("#VALOR_DESEJADO#");
             String predicadoFinal = ontologyProfile.get(valorDesejadoKey);
@@ -156,7 +153,6 @@ public class SPARQLProcessor {
         return finalQuery;
     }
 
-    // ... (resto da classe sem alterações) ...
     private String formatarEntidade(String entidade) {
         String entidadeEscapada = entidade.replace("\"", "\\\"");
         return TICKER_PATTERN.matcher(entidade).matches()
