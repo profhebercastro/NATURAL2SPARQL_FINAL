@@ -27,7 +27,7 @@ Um sistema que traduz perguntas em linguagem natural (Português) sobre o mercad
 
 ## ✨ Funcionalidades Principais
 
-*   **🗣️ Interface em Linguagem Natural**: Permite que usuários façam perguntas complexas sobre dados financeiros sem saber SPARQL.
+*   **🗣️ Interface em Linguagem Natural**: Permite que usuários façam perguntas complexas sobre uma determinada ontologia de domínio sem saber SPARQL.
 *   **⚙️ Orquestração Híbrida**: Combina o poder do **Java/Spring** para robustez e gerenciamento de ontologias com a simplicidade do **Python** para processamento de linguagem.
 *   **🏗️ Construção Automática da Ontologia**: Na primeira inicialização, o sistema lê arquivos `.xlsx` e constrói a base de conhecimento RDF, incluindo um cache com inferências para startups futuras ultrarrápidas.
 *   **🧩 Motor Baseado em Templates**: Arquitetura extensível que permite adicionar suporte a novos tipos de perguntas apenas criando um novo arquivo de template, sem alterar o código Java principal.
