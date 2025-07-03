@@ -1,5 +1,3 @@
-# Framework Web não é necessário aqui, pois o Java/Spring é o servidor
-# rdflib não é necessário aqui, pois o Java/Jena manipula o RDF
 
 # Dependências apenas para o script de PLN
 spacy==3.5.0
