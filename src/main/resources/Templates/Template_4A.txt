@@ -1,23 +1,3 @@
-#Template 4A;
-#Qual foi o volume negociado nas ações do setor bancário em 05/05/2023?
-
-#PlaceHolders Utilizados: 
-#S1 = ?empresa, 
-#S5 = ?setor,
-#S2 = ?valorMobiliarioNode,
-#S4 = ?pregao, 
-#S6 = ?negociadoEmPregao,
-#O2 = #DATA#, 
-#O1 = ?ticker,
-#P1 = b3:temValorMobiliarioNegociado, 
-#P3 = b3:negociado,
-#P4 = b3:negociadoDurante,
-#P6 = b3:ocorreEmData,
-#P9 = b3:atuaEm,
-#P18 = rdfs:label,
-#P19 = b3:ticker,
-#ANS = ?valor
-
 SELECT ?O1 (SUM(?ANS) AS ?volume)
 WHERE {
   ?S5 P18 #SETOR# .
