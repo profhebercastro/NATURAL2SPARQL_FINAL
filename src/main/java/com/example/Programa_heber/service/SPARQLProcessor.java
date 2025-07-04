@@ -31,9 +31,6 @@ public class SPARQLProcessor {
 
     @Autowired
     private Ontology ontology;
-    
-    @Autowired
-    private OntologyProfile ontologyProfile;
 
     private Path pythonScriptPath;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -86,37 +83,31 @@ public class SPARQLProcessor {
         }
         return respostaDetalhada;
     }
-
+    
+    // VERSÃO SIMPLIFICADA E FINAL DO buildSparqlQuery
     private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
         String query = templateContent;
 
-        // ETAPA 1: Substituir placeholders do Python PRIMEIRO
+        // Substitui os placeholders do Python
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
             query = query.replace("#ENTIDADE_NOME#", formatarEntidade(placeholders.get("#ENTIDADE_NOME#")));
         }
         if (placeholders.containsKey("#SETOR#")) {
-            query = query.replace("#SETOR#", "\"" + placeholders.get("#SETOR#").replace("\"", "\\\"") + "\"@pt");
+            String setor = placeholders.get("#SETOR#");
+            query = query.replace("#SETOR#", "\"" + setor.replace("\"", "\\\"") + "\"@pt");
         }
         if (placeholders.containsKey("#DATA#")) {
-            query = query.replace("#O2#", "\"" + placeholders.get("#DATA#") + "\"^^xsd:date");
+            query = query.replace("#DATA#", "\"" + placeholders.get("#DATA#") + "\"^^xsd:date");
         }
-
-        // ETAPA 2: Substituir os placeholders genéricos de perfil (S, P, C, etc.)
-        query = ontologyProfile.replacePlaceholders(query);
-        
-        // ETAPA 3: Resolver o placeholder semântico #VALOR_DESEJADO#
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
-            String valorDesejadoKey = "resposta." + placeholders.get("#VALOR_DESEJADO#");
-            String predicadoFinal = ontologyProfile.get(valorDesejadoKey);
-            query = query.replace("#VALOR_DESEJADO#", predicadoFinal);
+            query = query.replace("#VALOR_DESEJADO#", "b3:" + placeholders.get("#VALOR_DESEJADO#"));
         }
-
-        // ETAPA 4: Adicionar prefixos
-        String prefixes = "PREFIX b3: <" + ontologyProfile.get("prefix.b3") + ">\n" +
-                          "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
-                          "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-                          "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\n";
         
+        // Adiciona os prefixos no início
+        String prefixes = "PREFIX b3: <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#>\n" +
+                          "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                          "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\n";
+
         String finalQuery = prefixes + query;
         logger.info("Query SPARQL Final Gerada:\n{}", finalQuery);
         return finalQuery;
@@ -141,16 +132,14 @@ public class SPARQLProcessor {
             StringJoiner joiner = new StringJoiner("\n");
             joiner.add(String.format("%-10s | %s", "Ticker", "Volume Negociado"));
             joiner.add("------------------------------------");
-            String tickerVarName = ontologyProfile.get("O1").substring(1);
-            String volumeVarName = "volume";
             for (Map<String, String> row : resultados) {
-                String ticker = limparValor(row.getOrDefault(tickerVarName, "N/A"));
+                String ticker = limparValor(row.getOrDefault("ticker", "N/A"));
                 try {
-                    double volumeValue = Double.parseDouble(row.getOrDefault(volumeVarName, "0"));
+                    double volumeValue = Double.parseDouble(row.getOrDefault("volume", "0"));
                     String volumeFormatado = String.format("%,.2f", volumeValue);
                     joiner.add(String.format("%-10s | %s", ticker, volumeFormatado));
                 } catch (NumberFormatException e) {
-                     joiner.add(String.format("%-10s | %s", ticker, row.getOrDefault(volumeVarName, "N/A")));
+                     joiner.add(String.format("%-10s | %s", ticker, row.getOrDefault("volume", "N/A")));
                 }
             }
             return joiner.toString();
@@ -199,11 +188,6 @@ public class SPARQLProcessor {
     
     private String limparValor(String item) {
         if (item == null) return "";
-        String limpo = item.replaceAll("\\^\\^<http://www.w3.org/2001/XMLSchema#.*?>", "");
-        String baseUri = ontologyProfile.get("prefix.b3");
-        if (limpo.startsWith(baseUri)) {
-            limpo = limpo.substring(baseUri.length());
-        }
-        return limpo.trim();
+        return item.replaceAll("\\^\\^<http://www.w3.org/2001/XMLSchema#.*?>", "").trim();
     }
 }
