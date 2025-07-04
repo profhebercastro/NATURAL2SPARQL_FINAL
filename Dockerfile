@@ -1,39 +1,51 @@
-# Arquivo: Dockerfile 
+# ESTÁGIO 1: Build da Aplicação Java com Maven
+# Usamos uma imagem que já tem Maven e JDK 17
+FROM maven:3.8.5-openjdk-17 AS builder
 
-# --- ESTÁGIO 1: BUILD DA APLICAÇÃO JAVA COM MAVEN ---
-FROM maven:3.9.6-eclipse-temurin-17 AS builder
+# Define o diretório de trabalho dentro do contêiner
+WORKDIR /app
 
-WORKDIR /build
+# Copia o arquivo de definição do projeto primeiro para aproveitar o cache do Docker
 COPY pom.xml .
-# Otimização: baixa as dependências antes para cachear esta camada
-RUN mvn dependency:go-offline
+
+# Copia o resto do código fonte do projeto
 COPY src ./src
+
+# Executa o build do Maven para gerar o arquivo .jar, pulando os testes para acelerar o build
 RUN mvn clean package -DskipTests
 
 
-# --- ESTÁGIO 2: IMAGEM FINAL DE EXECUÇÃO ---
-# Começa com uma imagem Python leve e oficial
-FROM python:3.9-slim
+# ESTÁGIO 2: Imagem Final de Produção
+# Usamos uma imagem base leve que contém apenas o Java Runtime
+FROM openjdk:17-jdk-slim
 
+# Instala o Python e o gerenciador de pacotes pip
+RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
+
+# Define o diretório de trabalho na imagem final
 WORKDIR /app
 
-# Instala o Java Runtime Environment (JRE) e as ferramentas de build para o Python
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends openjdk-17-jre-headless build-essential gcc && \
-    rm -rf /var/lib/apt/lists/*
+# Copia os artefatos necessários do estágio de build (o JAR e os recursos)
+COPY --from=builder /app/target/*.jar app.jar
+COPY --from=builder /app/src/main/resources ./src/main/resources
 
-# Copia o arquivo de requisitos
+# Copia o arquivo de dependências Python
 COPY requirements.txt .
 
-# Instala as dependências Python (modelo incluído) de forma robusta
-RUN pip install --no-cache-dir -r requirements.txt
+# Instala as dependências Python
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Copia o JAR executável criado no estágio anterior
-COPY --from=builder /build/target/*.jar app.jar
+# Copia o script de inicialização
+COPY start.sh .
 
-# Expõe a porta que o Render vai usar. O valor real virá da variável $PORT
-EXPOSE 10000
+# Torna o script de inicialização executável
+RUN chmod +x start.sh
 
-# Comando para iniciar a aplicação Java, compatível com a injeção de porta do Render
-# Usamos a forma "exec" para que o Java seja o processo principal (PID 1)
-CMD ["java", "-Dserver.port=${PORT}", "-jar", "/app/app.jar"]
+# Expõe a porta do serviço Java (8080), que o Render usará como porta principal
+EXPOSE 8080
+
+# Expõe a porta do serviço Python (5000) para comunicação interna entre os serviços
+EXPOSE 5000
+
+# Comando final para iniciar a aplicação usando o script
+CMD ["./start.sh"]

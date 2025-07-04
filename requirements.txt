@@ -1,4 +1,10 @@
+# Dependências para o serviço de NLP
 
-# Dependências apenas para o script de PLN
-spacy==3.5.0
-https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.5.0/pt_core_news_sm-3.5.0.tar.gz
+# Framework para criar o servidor web/API
+Flask
+
+# Ferramentas de NLP para vetorização e cálculo de similaridade
+scikit-learn
+
+# Servidor de produção WSGI para Flask (mais robusto que o padrão)
+gunicorn
