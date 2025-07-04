@@ -7,7 +7,7 @@
 [![Apache Jena](https://img.shields.io/badge/Apache-Jena-orange.svg?style=for-the-badge&logo=apache)](https://jena.apache.org/)
 [![Docker](https://img.shields.io/badge/Docker-gray.svg?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-Um sistema poliglota que traduz perguntas em linguagem natural (Português) sobre o mercado de ações da B3 em consultas **SPARQL**, executando-as contra uma base de conhecimento RDF para obter respostas precisas.
+Um sistema poliglota que traduz perguntas em linguagem natural (Português) em consultas **SPARQL**, executando-as contra uma base de conhecimento RDF para obter respostas precisas.
 
 ---
 
