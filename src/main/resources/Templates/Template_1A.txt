@@ -1,10 +1,30 @@
+#Templates
+
+#Template_1A
+#Qual foi o preço de fechamento da ação da CSN em 08/05/2023?
+#Template 1B
+#Qual foi o preço de abertura da CBAV3 em 08/05/2023?
+
+#PlaceHolders Utilizados: 
+#S1 = ?empresa, 
+#S2 = ?valorMobiliarioNode,
+#S3 = ?negociadoNode, 
+#S4 = ?pregao, 
+#S6 = ?negociadoEmPregao,
+#O2 = #DATA#, 
+#P1 = b3:temValorMobiliarioNegociado, 
+#P3 = b3:negociado, 
+#P4 = b3:negociadoDurante, 
+#P18 = rdfs:label,
+#ANS = ?valor
+
 SELECT ?ANS WHERE {
     ?S1 P18 #ENTIDADE_NOME# .
-    ?S1 P1 ?S2 .           
+    ?S1 P1 ?S2 .          
     ?S2 P1 ?S3 .          
     ?S3 P3 ?S6 .           
     ?S6 P4 ?S4 .           
-    ?S4 P6 #O2# .          
+    ?S4 P6 #O2# .         
     ?S6 #VALOR_DESEJADO# ?ANS . 
 }
 LIMIT 1
