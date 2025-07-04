@@ -1,7 +1,7 @@
 SELECT ?ANS WHERE {
     ?S1 P18 #ENTIDADE_NOME# .
     ?S1 P1 ?S2 .
-    ?S2 P1 ?S3 .  
+    ?S2 P1 ?S3 .  # <<<< CORREÇÃO: Usando P1 novamente para o segundo passo
     ?S3 P3 ?S6 .
     ?S6 P4 ?S4 .
     ?S4 P6 #O2# .

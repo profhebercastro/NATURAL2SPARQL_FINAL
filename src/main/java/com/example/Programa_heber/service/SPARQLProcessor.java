@@ -129,19 +129,15 @@ public class SPARQLProcessor {
             query = query.replace("#SETOR#", "\"" + placeholders.get("#SETOR#").replace("\"", "\\\"") + "\"@pt");
         }
 
-        // ETAPA 2: Resolver o placeholder semântico #VALOR_DESEJADO#
+        // ETAPA 2: Resolver o placeholder semântico #VALOR_DESEJADO# para um placeholder de predicado genérico
         if (placeholders.containsKey("#VALOR_DESEJADO#")) {
             String valorDesejadoKey = "resposta." + placeholders.get("#VALOR_DESEJADO#");
-            String predicadoGenerico = ontologyProfile.get(valorDesejadoKey); 
+            String predicadoGenerico = ontologyProfile.get(valorDesejadoKey);
             query = query.replace("#VALOR_DESEJADO#", predicadoGenerico);
         }
-        
-        // ETAPA 3: Substituir todos os placeholders de MAPEAMENTO DE ONTOLOGIA
-        query = substituirPlaceholdersDePerfil(query, "[?]*C\\d+");
-        query = substituirPlaceholdersDePerfil(query, "[?]*P\\d+");
-        query = substituirPlaceholdersDePerfil(query, "\\?S\\d+");
-        query = substituirPlaceholdersDePerfil(query, "\\?O\\d+");
-        query = substituirPlaceholdersDePerfil(query, "\\?ANS");
+
+        // ETAPA 3: Substituir TODOS os placeholders de perfil (S, P, C, O, ANS)
+        query = ontologyProfile.replacePlaceholders(query);
 
         // ETAPA 4: Adicionar prefixos
         String prefixes = "PREFIX b3: <" + ontologyProfile.get("prefix.b3") + ">\n" +
@@ -153,21 +149,7 @@ public class SPARQLProcessor {
         logger.info("Query SPARQL Final Gerada:\n{}", finalQuery);
         return finalQuery;
     }
-
-    private String substituirPlaceholdersDePerfil(String query, String regex) {
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(query);
-        StringBuffer sb = new StringBuffer();
-        while (matcher.find()) {
-            String placeholder = matcher.group(0).replace("?", "");
-            String valorDoPerfil = ontologyProfile.get(placeholder);
-            String valorFinal = valorDoPerfil.startsWith("?") ? valorDoPerfil : Matcher.quoteReplacement(valorDoPerfil);
-            matcher.appendReplacement(sb, valorFinal);
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
-    }
-
+    
     private String formatarEntidade(String entidade) {
         String entidadeEscapada = entidade.replace("\"", "\\\"");
         return TICKER_PATTERN.matcher(entidade).matches()
@@ -196,8 +178,7 @@ public class SPARQLProcessor {
 
     private String readTemplateContent(String templateId) throws IOException {
         String templateFileName = templateId + ".txt";
-        // CORREÇÃO: Usando "Templates" com 'T' maiúsculo para corresponder ao nome da pasta no Git.
-        String templateResourcePath = "Templates/" + templateFileName; 
+        String templateResourcePath = "Templates/" + templateFileName;
         Resource resource = new ClassPathResource(templateResourcePath);
         if (!resource.exists()) {
             throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
