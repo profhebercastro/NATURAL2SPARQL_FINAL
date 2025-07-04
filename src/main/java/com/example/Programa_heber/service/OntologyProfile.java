@@ -51,16 +51,13 @@ public class OntologyProfile {
             if (key.startsWith("prefix.") || key.startsWith("resposta.")) {
                 continue;
             }
-
             String placeholder;
             String value = profile.getProperty(key);
-
             if (key.matches("^(S|O|ANS)\\d*")) {
                  placeholder = "?" + key;
             } else {
                  placeholder = key;
             }
-            
             result = result.replace(placeholder, value);
         }
         return result;
