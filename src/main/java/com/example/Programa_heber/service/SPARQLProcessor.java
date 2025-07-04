@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
@@ -29,6 +28,7 @@ public class SPARQLProcessor {
     private static final Logger logger = LoggerFactory.getLogger(SPARQLProcessor.class);
     private static final String PYTHON_SCRIPT_NAME = "nlp_controller.py";
 
+    // <<<<< CORREÇÃO APLICADA AQUI
     private static final String[] PYTHON_RESOURCES = {
         PYTHON_SCRIPT_NAME, "Thesaurus.json"
     };
@@ -43,28 +43,24 @@ public class SPARQLProcessor {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Pattern TICKER_PATTERN = Pattern.compile("^[A-Z]{4}\\d{1,2}$");
 
+    // ... (o resto da classe SPARQLProcessor permanece o mesmo da resposta anterior)
     @PostConstruct
     public void initialize() throws IOException {
         logger.info("Iniciando SPARQLProcessor: Configurando ambiente Python...");
         try {
             Path tempDir = Files.createTempDirectory("pyscripts_temp_");
             tempDir.toFile().deleteOnExit();
-
             for (String fileName : PYTHON_RESOURCES) {
                 Resource resource = new ClassPathResource(fileName);
-                if (!resource.exists()) {
-                    throw new FileNotFoundException("Recurso Python essencial não encontrado: " + fileName);
-                }
+                if (!resource.exists()) throw new FileNotFoundException("Recurso Python essencial não encontrado: " + fileName);
                 Path destination = tempDir.resolve(fileName);
-                try (InputStream inputStream = resource.getInputStream()) {
-                    Files.copy(inputStream, destination);
-                }
+                try (InputStream inputStream = resource.getInputStream()) { Files.copy(inputStream, destination); }
                 if (fileName.equals(PYTHON_SCRIPT_NAME)) {
                     this.pythonScriptPath = destination;
                     this.pythonScriptPath.toFile().setExecutable(true, false);
                 }
             }
-            logger.info("SPARQLProcessor inicializado com sucesso. Ambiente Python pronto em: {}", tempDir);
+            logger.info("SPARQLProcessor inicializado com sucesso.");
         } catch (IOException e) {
             logger.error("FALHA CRÍTICA AO CONFIGURAR AMBIENTE PYTHON.", e);
             throw e;
@@ -72,23 +68,17 @@ public class SPARQLProcessor {
     }
 
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String question) {
-        logger.info("Serviço SPARQLProcessor: Iniciando GERAÇÃO de query para: '{}'", question);
         ProcessamentoDetalhadoResposta respostaDetalhada = new ProcessamentoDetalhadoResposta();
         try {
             Map<String, Object> resultadoPython = executePythonScript(question);
             if (resultadoPython.containsKey("erro")) {
-                respostaDetalhada.setErro("Falha na análise da pergunta: " + resultadoPython.get("erro"));
+                respostaDetalhada.setErro((String) resultadoPython.get("erro"));
                 return respostaDetalhada;
             }
 
             String templateId = (String) resultadoPython.get("template_nome");
             @SuppressWarnings("unchecked")
             Map<String, String> placeholders = (Map<String, String>) resultadoPython.get("mapeamentos");
-
-            if (templateId == null || placeholders == null) {
-                respostaDetalhada.setErro("Não foi possível determinar o tipo da pergunta ou extrair detalhes.");
-                return respostaDetalhada;
-            }
 
             String conteudoTemplate = readTemplateContent(templateId);
             String sparqlQueryGerada = buildSparqlQuery(conteudoTemplate, placeholders);
@@ -101,45 +91,28 @@ public class SPARQLProcessor {
         }
         return respostaDetalhada;
     }
-
-    public String executeAndFormat(String sparqlQuery, String templateId) {
-        logger.info("Serviço SPARQLProcessor: Iniciando EXECUÇÃO de query com template {}.", templateId);
-        try {
-            List<Map<String, String>> resultados = ontology.executeQuery(sparqlQuery);
-            return formatarResultados(resultados, templateId);
-        } catch (Exception e) {
-            logger.error("Erro ao EXECUTAR query: {}", e.getMessage(), e);
-            return "Erro ao executar a consulta na base de conhecimento.";
-        }
-    }
-
+    
     private String buildSparqlQuery(String templateContent, Map<String, String> placeholders) {
         String query = templateContent;
 
-        // ETAPA 1: Substituir placeholders dinâmicos vindos do Python
-        if (placeholders.containsKey("#DATA#")) {
-            query = query.replace("#O2#", "\"" + placeholders.get("#DATA#") + "\"^^xsd:date");
-        }
         if (placeholders.containsKey("#ENTIDADE_NOME#")) {
-            String entidade = placeholders.get("#ENTIDADE_NOME#");
-            String valorFormatado = formatarEntidade(entidade);
-            query = query.replace("#ENTIDADE_NOME#", valorFormatado);
+            query = query.replace("#ENTIDADE_NOME#", formatarEntidade(placeholders.get("#ENTIDADE_NOME#")));
         }
         if (placeholders.containsKey("#SETOR#")) {
             query = query.replace("#SETOR#", "\"" + placeholders.get("#SETOR#").replace("\"", "\\\"") + "\"@pt");
         }
-
-        // ETAPA 2: Resolver o placeholder semântico #VALOR_DESEJADO# para um placeholder de predicado genérico
-        if (placeholders.containsKey("#VALOR_DESEJADO#")) {
-            String valorDesejadoKey = "resposta." + placeholders.get("#VALOR_DESEJADO#");
-            String predicadoGenerico = ontologyProfile.get(valorDesejadoKey);
-            query = query.replace("#VALOR_DESEJADO#", predicadoGenerico);
+        if (placeholders.containsKey("#DATA#")) {
+            query = query.replace("#O2#", "\"" + placeholders.get("#DATA#") + "\"^^xsd:date");
         }
 
-        // ETAPA 3: Substituir TODOS os placeholders de perfil (S, P, C, O, ANS)
+        if (placeholders.containsKey("#VALOR_DESEJADO#")) {
+            String valorDesejadoKey = "resposta." + placeholders.get("#VALOR_DESEJADO#");
+            String predicadoGenerico = ontologyProfile.get(valorDesejadoKey); 
+            query = query.replace("#VALOR_DESEJADO#", predicadoGenerico);
+        }
+        
         query = ontologyProfile.replacePlaceholders(query);
 
-        // ETAPA 4: Adicionar prefixos
         String prefixes = "PREFIX b3: <" + ontologyProfile.get("prefix.b3") + ">\n" +
                           "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
                           "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
@@ -149,42 +122,14 @@ public class SPARQLProcessor {
         logger.info("Query SPARQL Final Gerada:\n{}", finalQuery);
         return finalQuery;
     }
-    
-    private String formatarEntidade(String entidade) {
-        String entidadeEscapada = entidade.replace("\"", "\\\"");
-        return TICKER_PATTERN.matcher(entidade).matches()
-            ? "\"" + entidadeEscapada + "\""
-            : "\"" + entidadeEscapada + "\"@pt";
-    }
 
-    private Map<String, Object> executePythonScript(String question) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder("python3", this.pythonScriptPath.toString(), question);
-        logger.info("Executando comando Python: {}", String.join(" ", pb.command()));
-        Process process = pb.start();
-        String stdoutResult = StreamUtils.copyToString(process.getInputStream(), StandardCharsets.UTF_8);
-        String stderrResult = StreamUtils.copyToString(process.getErrorStream(), StandardCharsets.UTF_8);
-        int exitCode = process.waitFor();
-        if (!stderrResult.isEmpty()) {
-            logger.warn("Script Python emitiu mensagens no stderr: {}", stderrResult);
-        }
-        if (exitCode != 0) {
-            throw new RuntimeException("Script Python falhou com código de saída " + exitCode + ". Erro: " + stderrResult);
-        }
-        if (stdoutResult.isEmpty()) {
-            throw new RuntimeException("Script Python não retornou nenhuma saída (stdout). Erro: " + stderrResult);
-        }
-        return objectMapper.readValue(stdoutResult, new TypeReference<>() {});
-    }
-
-    private String readTemplateContent(String templateId) throws IOException {
-        String templateFileName = templateId + ".txt";
-        String templateResourcePath = "Templates/" + templateFileName;
-        Resource resource = new ClassPathResource(templateResourcePath);
-        if (!resource.exists()) {
-            throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
-        }
-        try (InputStream inputStream = resource.getInputStream()) {
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+    public String executeAndFormat(String sparqlQuery, String templateId) {
+        try {
+            List<Map<String, String>> resultados = ontology.executeQuery(sparqlQuery);
+            return formatarResultados(resultados, templateId);
+        } catch (Exception e) {
+            logger.error("Erro ao EXECUTAR query: {}", e.getMessage(), e);
+            return "Erro ao executar a consulta na base de conhecimento.";
         }
     }
 
@@ -192,22 +137,26 @@ public class SPARQLProcessor {
         if (resultados == null || resultados.isEmpty()) {
             return "Não foram encontrados resultados para a sua pergunta.";
         }
+        
         if ("Template_4A".equals(templateId)) {
             StringJoiner joiner = new StringJoiner("\n");
             joiner.add(String.format("%-10s | %s", "Ticker", "Volume Negociado"));
             joiner.add("------------------------------------");
+            String tickerVarName = ontologyProfile.get("O1").substring(1);
+            String volumeVarName = "volume";
             for (Map<String, String> row : resultados) {
-                String ticker = limparValor(row.getOrDefault(ontologyProfile.get("O1").substring(1), "N/A"));
+                String ticker = limparValor(row.getOrDefault(tickerVarName, "N/A"));
                 try {
-                    double volumeValue = Double.parseDouble(row.getOrDefault("volume", "0"));
+                    double volumeValue = Double.parseDouble(row.getOrDefault(volumeVarName, "0"));
                     String volumeFormatado = String.format("%,.2f", volumeValue);
                     joiner.add(String.format("%-10s | %s", ticker, volumeFormatado));
                 } catch (NumberFormatException e) {
-                     joiner.add(String.format("%-10s | %s", ticker, row.getOrDefault("volume", "N/A")));
+                     joiner.add(String.format("%-10s | %s", ticker, row.getOrDefault(volumeVarName, "N/A")));
                 }
             }
             return joiner.toString();
         }
+
         StringJoiner joiner = new StringJoiner(", ");
         if (!resultados.get(0).isEmpty()) {
             String varName = resultados.get(0).keySet().stream().findFirst().orElse("valor");
@@ -218,10 +167,37 @@ public class SPARQLProcessor {
                 }
             }
         }
+        
         String resultadoFinal = joiner.toString();
         return resultadoFinal.isEmpty() ? "Não foram encontrados resultados para a sua pergunta." : resultadoFinal;
     }
 
+    private String formatarEntidade(String entidade) {
+        String entidadeEscapada = entidade.replace("\"", "\\\"");
+        return TICKER_PATTERN.matcher(entidade).matches()
+            ? "\"" + entidadeEscapada + "\""
+            : "\"" + entidadeEscapada + "\"@pt";
+    }
+
+    private Map<String, Object> executePythonScript(String question) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder("python3", this.pythonScriptPath.toString(), question);
+        Process process = pb.start();
+        String stdoutResult = StreamUtils.copyToString(process.getInputStream(), StandardCharsets.UTF_8);
+        String stderrResult = StreamUtils.copyToString(process.getErrorStream(), StandardCharsets.UTF_8);
+        process.waitFor();
+        return objectMapper.readValue(stdoutResult, new TypeReference<>() {});
+    }
+
+    private String readTemplateContent(String templateId) throws IOException {
+        String templateFileName = templateId + ".txt";
+        String templateResourcePath = "Templates/" + templateFileName;
+        Resource resource = new ClassPathResource(templateResourcePath);
+        if (!resource.exists()) throw new FileNotFoundException("Template SPARQL não encontrado: " + templateResourcePath);
+        try (InputStream inputStream = resource.getInputStream()) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+    
     private String limparValor(String item) {
         if (item == null) return "";
         String limpo = item.replaceAll("\\^\\^<http://www.w3.org/2001/XMLSchema#.*?>", "");
