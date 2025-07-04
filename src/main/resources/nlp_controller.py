@@ -1,105 +1,138 @@
-import sys, json, os, logging, re
-from datetime import datetime
+import json
+from flask import Flask, request, jsonify
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import re
 
-# Configuração de logging
-logging.basicConfig(level=logging.INFO, format='NLP_PY - %(levelname)s - %(message)s', stream=sys.stderr)
+# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS (feito uma vez na inicialização) ---
 
-def exit_with_error(message):
-    print(json.dumps({"erro": message}))
-    sys.exit(0)
-
-def carregar_thesaurus(caminho_arquivo):
-    """ Carrega o arquivo Thesaurus.json unificado. """
-    try:
-        with open(caminho_arquivo, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            # Normaliza todas as chaves para minúsculas
-            sinonimos = {k.lower(): v for k, v in data.get('sinonimos', {}).items()}
-            empresas = {k.lower(): v for k, v in data.get('empresas', {}).items()}
-            setores = {k.lower(): v for k, v in data.get('setores', {}).items()}
-            return sinonimos, empresas, setores
-    except Exception as e:
-        exit_with_error(f"Erro ao carregar Thesaurus.json de {caminho_arquivo}: {str(e)}")
-
-# Carregamento dos recursos
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-THESAURUS_PATH = os.path.join(SCRIPT_DIR, "Thesaurus.json")
-SINONIMOS_MAP, EMPRESA_MAP, SETOR_MAP = carregar_thesaurus(THESAURUS_PATH)
-
-# Ordenar mapas por tamanho da chave (do maior para o menor)
-SORTED_SINONIMOS_KEYS = sorted(SINONIMOS_MAP.keys(), key=len, reverse=True)
-SORTED_EMPRESA_KEYS = sorted(EMPRESA_MAP.keys(), key=len, reverse=True)
-SORTED_SETOR_KEYS = sorted(SETOR_MAP.keys(), key=len, reverse=True)
+# 1. Carregar o Thesaurus unificado
+try:
+    with open('src/main/resources/Thesaurus.json', 'r', encoding='utf-8') as f:
+        thesaurus = json.load(f)
+except FileNotFoundError:
+    # Fallback para caso o script seja executado de um diretório diferente
+    with open('Thesaurus.json', 'r', encoding='utf-8') as f:
+        thesaurus = json.load(f)
 
 
-def processar_pergunta(pergunta_usuario):
-    """ Analisa a pergunta, extrai conceitos e seleciona o template apropriado. """
-    texto_lower = pergunta_usuario.lower()
-    placeholders = {}
-    conceitos_encontrados = set()
+# 2. Carregar as perguntas de interesse (que definem as intenções gerais)
+try:
+    with open('src/main/resources/perguntas_de_interesse.txt', 'r', encoding='utf-8') as f:
+        perguntas_interesse = [line.strip() for line in f.readlines()]
+except FileNotFoundError:
+    with open('perguntas_de_interesse.txt', 'r', encoding='utf-8') as f:
+        perguntas_interesse = [line.strip() for line in f.readlines()]
 
-    # ETAPA 1: Extração de Entidades e Conceitos
-    # 1.1 Data
-    match_data = re.search(r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})', texto_lower)
-    if match_data:
-        try:
-            data_str = match_data.group(1).replace('-', '/')
-            dt_format = '%d/%m/%Y' if len(data_str.split('/')[-1]) == 4 else '%d/%m/%y'
-            placeholders["#DATA#"] = datetime.strptime(data_str, dt_format).strftime('%Y-%m-%d')
-            conceitos_encontrados.add('DATA')
-        except ValueError:
-            pass
+# 3. Preparar o modelo de similaridade (TF-IDF)
+vectorizer = TfidfVectorizer()
+tfidf_matrix_interesse = vectorizer.fit_transform(perguntas_interesse)
 
-    # 1.2 Empresa/Ticker
-    for chave in SORTED_EMPRESA_KEYS:
-        if re.search(r'\b' + re.escape(chave) + r'\b', texto_lower):
-            placeholders["#ENTIDADE_NOME#"] = EMPRESA_MAP[chave]
-            conceitos_encontrados.add('ENTIDADE')
-            break
 
-    # 1.3 Setor
-    for chave in SORTED_SETOR_KEYS:
-        if re.search(r'\b' + re.escape(chave) + r'\b', texto_lower):
-            placeholders["#SETOR#"] = SETOR_MAP[chave]
-            conceitos_encontrados.add('SETOR')
-            break
+# --- FUNÇÕES AUXILIARES ---
 
-    # 1.4 Métricas e outros conceitos do mapa de sinônimos
-    for chave in SORTED_SINONIMOS_KEYS:
-        if re.search(r'\b' + re.escape(chave) + r'\b', texto_lower):
-            valor_mapeado = SINONIMOS_MAP[chave]
-            if valor_mapeado.startswith('conceito_'):
-                conceitos_encontrados.add(valor_mapeado.upper())
-            else:
-                placeholders["#VALOR_DESEJADO#"] = valor_mapeado
-                conceitos_encontrados.add('VALOR_DESEJADO')
-
-    logging.info(f"Placeholders extraídos: {placeholders}")
-    logging.info(f"Conceitos encontrados: {conceitos_encontrados}")
-
-    # ETAPA 2: Lógica de Seleção de Template
-    template_id = None
-    if all(c in conceitos_encontrados for c in ['VALOR_DESEJADO', 'ENTIDADE', 'DATA']):
-        template_id = "Template_1A"
-    elif all(c in conceitos_encontrados for c in ['CONCEITO_TICKER', 'ENTIDADE']):
-        template_id = "Template_2A"
-    elif all(c in conceitos_encontrados for c in ['CONCEITO_ACAO', 'SETOR']) and 'DATA' not in conceitos_encontrados:
-        template_id = "Template_3A"
-    elif all(c in conceitos_encontrados for c in ['VALOR_DESEJADO', 'SETOR', 'DATA']):
-        template_id = "Template_4A"
+def extrair_entidades(pergunta_usuario):
+    """
+    Extrai todas as entidades que encontra: empresa, código, setor, data.
+    """
+    entidades = {}
+    pergunta_lower = pergunta_usuario.lower()
     
-    if not template_id:
-        exit_with_error("Não consegui entender a sua pergunta. Tente ser mais específico.")
+    # Itera sobre os tipos de entidade no thesaurus (Empresa, Ticker, Setor)
+    for tipo_entidade, mapeamentos in thesaurus['entidades'].items():
+        for nome_canonico, sinonimos in mapeamentos.items():
+            for s in sinonimos:
+                # Usamos limites de palavra (\b) para evitar correspondências parciais (ex: 'vale' em 'equivalente')
+                if re.search(r'\b' + re.escape(s.lower()) + r'\b', pergunta_lower):
+                    chave_template = tipo_entidade.lower() # 'empresa', 'ticker', 'setor'
+                    entidades[chave_template] = nome_canonico
+                    break # Para de procurar sinônimos para esta entidade canônica
+            if nome_canonico in entidades.values():
+                break # Para de procurar outras entidades do mesmo tipo se já achou uma
 
-    logging.info(f"Template selecionado: {template_id}")
-    return {"template_nome": template_id, "mapeamentos": placeholders}
+    # Extração de Data
+    match_data = re.search(r'(\d{2}/\d{2}/\d{4})', pergunta_usuario)
+    if match_data:
+        data_str = match_data.group(1)
+        dia, mes, ano = data_str.split('/')
+        entidades['data'] = f"{ano}-{mes}-{dia}"
+        
+    return entidades
+
+def identificar_metrica(pergunta_usuario):
+    """
+    Encontra a métrica solicitada na pergunta (ex: preço mínimo, volume).
+    """
+    pergunta_lower = pergunta_usuario.lower()
+    
+    # Itera sobre os conceitos do thesaurus
+    for conceito_info in thesaurus['conceitos']:
+        # Foca apenas nos conceitos que definimos como métricas
+        if conceito_info['canonico'].startswith('metrica_'):
+            for sinonimo_info in conceito_info['sinonimos']:
+                if re.search(r'\b' + re.escape(sinonimo_info['termo'].lower()) + r'\b', pergunta_lower):
+                    return conceito_info['canonico'] # Retorna a chave, ex: "metrica_preco_minimo"
+    return None
 
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        pergunta = " ".join(sys.argv[1:])
-        resultado = processar_pergunta(pergunta)
-        print(json.dumps(resultado, ensure_ascii=False))
-        logging.info(f"Processamento NLP concluído. Enviando para o Java: {resultado}")
+# --- CONFIGURAÇÃO DA API FLASK E LÓGICA PRINCIPAL ---
+
+app = Flask(__name__)
+
+@app.route('/process_question', methods=['POST'])
+def process_question():
+    data = request.get_json()
+    if not data or 'question' not in data:
+        return jsonify({"error": "Pergunta não encontrada"}), 400
+        
+    pergunta_usuario = data['question']
+
+    # ETAPA 1: Extrair todas as entidades da pergunta original
+    entidades = extrair_entidades(pergunta_usuario)
+
+    # ETAPA 2: Identificar a intenção GERAL da pergunta
+    tfidf_usuario = vectorizer.transform([pergunta_usuario.lower()])
+    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_interesse)
+    indice_intencao = similaridades.argmax()
+
+    nome_template = 'template_desconhecido'
+
+    # ETAPA 3: LÓGICA DE DECISÃO INTELIGENTE PARA ESCOLHER O TEMPLATE
+    
+    # INTENÇÃO 0: Buscar uma métrica de uma ação específica
+    if indice_intencao == 0:
+        metrica_identificada = identificar_metrica(pergunta_usuario)
+        
+        if metrica_identificada:
+            # Mapeia a métrica para o nome do template estático correspondente
+            mapa_metricas_template = {
+                'metrica_preco_fechamento': 'Template_1A',
+                'metrica_preco_abertura':   'Template_1B',
+                'metrica_preco_maximo':     'Template_1C',
+                'metrica_preco_minimo':     'Template_1D',
+                'metrica_preco_medio':      'Template_1E',
+                'metrica_volume':           'Template_1F',
+                'metrica_quantidade':       'Template_1G'
+            }
+            nome_template = mapa_metricas_template.get(metrica_identificada)
+    
+    # OUTRAS INTENÇÕES
     else:
-        exit_with_error("Nenhuma pergunta foi fornecida ao script Python.")
+        # Mapeia os outros índices para os templates correspondentes
+        mapa_outras_intencoes = {
+            1: 'Template_2A', # "Qual o código..."
+            2: 'Template_3A', # "Quais são as ações..."
+            3: 'Template_4A'  # "Qual foi o volume do setor..."
+        }
+        nome_template = mapa_outras_intencoes.get(indice_intencao)
+
+    # MONTAGEM FINAL DA RESPOSTA PARA O JAVA
+    response = {
+        "template": nome_template,
+        "entities": entidades
+    }
+    
+    return jsonify(response)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
