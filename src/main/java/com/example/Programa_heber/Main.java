@@ -40,6 +40,7 @@ public class Main {
     
     @PostMapping("/gerar_consulta")
     public ResponseEntity<ProcessamentoDetalhadoResposta> gerarConsulta(@RequestBody PerguntaRequest request) {
+        // Esta parte já está correta e não precisa de alterações.
         String pergunta = request.getPergunta();
         ProcessamentoDetalhadoResposta resposta = new ProcessamentoDetalhadoResposta();
 
@@ -64,7 +65,7 @@ public class Main {
 
     /**
      * Endpoint para EXECUTAR uma consulta SPARQL.
-     * Contém a lógica de extração SIMPLIFICADA para depuração.
+     * AGORA COM LÓGICA DE FORMATAÇÃO ROBUSTA.
      */
     @PostMapping("/executar_query")
     public ResponseEntity<Map<String, String>> executarQuery(@RequestBody ExecuteQueryRequest request) {
@@ -76,34 +77,54 @@ public class Main {
 
         logger.info("Recebida requisição para EXECUTAR a consulta.");
         try {
+            // A classe Ontology já retorna uma lista de mapas, que é uma ótima estrutura.
             List<Map<String, String>> resultList = ontology.executeQuery(sparqlQuery);
 
-            String resultadoFinal;
-
-            // ---- LÓGICA DE EXTRAÇÃO SIMPLIFICADA PARA DEBUG ----
-            // Esta lógica tenta extrair apenas o primeiro valor da primeira linha,
-            // que é o caso comum para perguntas de "Qual o valor...".
-            if (resultList == null || resultList.isEmpty()) {
-                resultadoFinal = "A consulta foi executada com sucesso, mas não retornou resultados.";
-                logger.warn("A execução da consulta não produziu resultados.");
-            } else {
-                // Pega o primeiro mapa (a primeira linha de resultado)
-                Map<String, String> primeiraLinha = resultList.get(0);
-                if (primeiraLinha.isEmpty()) {
-                    resultadoFinal = "A consulta retornou uma linha, mas sem valores/colunas.";
-                    logger.warn("A execução da consulta retornou uma linha vazia.");
-                } else {
-                    // Pega o primeiro valor da primeira linha, não importa o nome da variável (?ANS, ?ticker, etc)
-                    resultadoFinal = primeiraLinha.values().iterator().next();
-                    logger.info("Resultado extraído da consulta: {}", resultadoFinal);
-                }
-            }
+            // Chamamos nosso novo método auxiliar para formatar essa lista em uma string
+            String formattedResult = formatResultSet(resultList);
             
-            return ResponseEntity.ok(Map.of("resultado", resultadoFinal));
+            // Retornamos a string formatada no campo "resultado" do JSON
+            return ResponseEntity.ok(Map.of("resultado", formattedResult));
 
         } catch (Exception e) {
             logger.error("Erro no endpoint /executar_query: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of("erro", "Erro interno ao executar a consulta."));
         }
+    }
+
+    /**
+     * NOVO MÉTODO AUXILIAR: Formata uma lista de resultados SPARQL em uma string de texto legível.
+     * Consegue lidar com resultados vazios, uma linha/uma coluna, ou múltiplas linhas/colunas.
+     * @param resultList A lista de resultados vinda da classe Ontology.
+     * @return Uma string formatada para ser exibida na <textarea> do frontend.
+     */
+    private String formatResultSet(List<Map<String, String>> resultList) {
+        if (resultList == null || resultList.isEmpty()) {
+            return "A consulta foi executada com sucesso, mas não retornou resultados.";
+        }
+
+        // Caso especial: uma única linha e uma única coluna (ex: "Qual o preço...")
+        // Extrai apenas o valor para uma resposta mais limpa.
+        if (resultList.size() == 1 && resultList.get(0).size() == 1) {
+            String singleValue = resultList.get(0).values().iterator().next();
+            logger.info("Resultado de valor único extraído da consulta: {}", singleValue);
+            return singleValue;
+        }
+
+        // Caso geral: múltiplas linhas ou colunas. Formata como uma tabela de texto.
+        StringBuilder sb = new StringBuilder();
+        
+        // Constrói o cabeçalho da tabela com os nomes das variáveis
+        String header = String.join("\t | \t", resultList.get(0).keySet());
+        sb.append(header).append("\n");
+        sb.append("=".repeat(header.length() + (resultList.get(0).size() * 5))).append("\n");
+
+        // Constrói as linhas de dados
+        for (Map<String, String> row : resultList) {
+            String line = row.values().stream().collect(Collectors.joining("\t | \t"));
+            sb.append(line).append("\n");
+        }
+        
+        return sb.toString();
     }
 }

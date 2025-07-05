@@ -13,6 +13,8 @@
         header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
         .logo img { height: 32px; width: auto; }
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .header-actions .icon-btn { background: none; border: 1px solid rgba(255,255,255,0.5); color: white; border-radius: 5px; padding: 5px 8px; cursor: pointer; font-size: 1rem; }
         main.container { width: 100%; max-width: 960px; margin: 40px auto; padding: 0 20px; flex-grow: 1; }
         .card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; position: relative; }
         .card-title-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
@@ -32,9 +34,6 @@
         footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; }
         .spinner { display: none; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .results-table { border-collapse: collapse; width: 100%; }
-        .results-table th, .results-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .results-table th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
@@ -42,6 +41,11 @@
         <div class="logo">
             <img src="https://cygri.github.io/rdf-logos/svg/sparql.svg" alt="SPARQL Logo">
             <span>Natural2SPARQL</span>
+        </div>
+        <div class="header-actions">
+            <!-- Ícones de download restaurados -->
+            <button id="downloadQueryBtn" class="icon-btn" title="Baixar Consulta SPARQL"><i class="fa-solid fa-cloud-arrow-down"></i></button>
+            <button id="downloadResultBtn" class="icon-btn" title="Baixar Resultado"><i class="fa-solid fa-download"></i></button>
         </div>
     </header>
 
@@ -56,7 +60,6 @@
                 <button id="clearBtn" class="btn btn-danger"><i class="fas fa-sync-alt"></i><span>LIMPAR</span></button>
             </div>
         </div>
-
         <div class="results-grid">
             <div class="card">
                 <div class="card-title-container">
@@ -69,7 +72,7 @@
             </div>
             <div class="card">
                 <h3 class="card-title">Resultado</h3>
-                <div id="resultOutput" class="form-control output" style="overflow: auto;">O resultado aparece aqui...</div>
+                <textarea id="resultOutput" class="form-control output" readonly>O resultado aparece aqui...</textarea>
             </div>
         </div>
     </main>
@@ -83,21 +86,24 @@
             const clearBtn = document.getElementById('clearBtn');
             const userQuestionInput = document.getElementById('userQuestion');
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
-            const resultOutputDiv = document.getElementById('resultOutput');
+            const resultOutput = document.getElementById('resultOutput');
+            const downloadQueryBtn = document.getElementById('downloadQueryBtn');
+            const downloadResultBtn = document.getElementById('downloadResultBtn');
             
-            let currentTemplateId = null; // Variável para guardar o ID do template entre as chamadas
+            let currentTemplateId = null;
 
             generateBtn.addEventListener('click', handleGenerateQuery);
             executeQueryBtn.addEventListener('click', handleExecuteQuery);
             clearBtn.addEventListener('click', clearAllFields);
+            downloadQueryBtn.addEventListener('click', () => downloadText('consulta.txt', sparqlQueryOutput.value));
+            downloadResultBtn.addEventListener('click', () => downloadText('resultado.txt', resultOutput.value));
             userQuestionInput.addEventListener('keypress', e => e.key === 'Enter' && (e.preventDefault(), handleGenerateQuery()));
 
             function clearAllFields() {
                 userQuestionInput.value = '';
                 sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
-                resultOutputDiv.innerHTML = 'O resultado aparece aqui...';
-                sparqlQueryOutput.classList.remove('error-text');
-                resultOutputDiv.classList.remove('error-text');
+                resultOutput.value = 'O resultado aparece aqui...';
+                resultOutput.classList.remove('error-text');
                 executeQueryBtn.style.display = 'none';
                 currentTemplateId = null;
             }
@@ -108,12 +114,12 @@
                 
                 toggleLoading(generateBtn, true);
                 sparqlQueryOutput.value = 'Gerando consulta...';
-                resultOutputDiv.innerHTML = 'Aguarde a geração da consulta...';
+                resultOutput.value = 'Aguarde a geração da consulta...';
                 executeQueryBtn.style.display = 'none';
                 sparqlQueryOutput.classList.remove('error-text');
 
                 try {
-                    const response = await fetch('/gerar_consulta', { // Chama o primeiro endpoint
+                    const response = await fetch('/gerar_consulta', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ pergunta: question })
@@ -123,10 +129,10 @@
                     if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
                     sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
-                    currentTemplateId = data.templateId; // Guarda o ID do template
+                    currentTemplateId = data.templateId;
 
                     if (data.sparqlQuery) {
-                        executeQueryBtn.style.display = 'inline-flex'; // Mostra o botão de executar
+                        executeQueryBtn.style.display = 'inline-flex';
                     }
                 } catch (error) {
                     sparqlQueryOutput.value = `Erro: ${error.message}`;
@@ -138,53 +144,58 @@
 
             async function handleExecuteQuery() {
                 const sparqlQuery = sparqlQueryOutput.value;
-                if (!sparqlQuery || sparqlQuery.startsWith("Erro:")) {
+                if (!sparqlQuery || !currentTemplateId || sparqlQuery.startsWith("Erro:")) {
                     alert("Não há uma consulta válida para executar."); return;
                 }
 
                 toggleLoading(executeQueryBtn, true);
-                resultOutputDiv.innerHTML = "Executando...";
-                resultOutputDiv.classList.remove('error-text');
+                resultOutput.value = "Executando...";
+                resultOutput.classList.remove('error-text');
 
                 try {
-                    const response = await fetch('/executar_query', { // Chama o segundo endpoint
+                    const response = await fetch('/executar_query', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sparqlQuery: sparqlQuery, templateId: currentTemplateId })
+                        body: JSON.stringify({ sparqlQuery, templateId: currentTemplateId })
                     });
                     
                     const data = await response.json();
                     if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
-                    formatResults(data.resultado);
+                    // *** CORREÇÃO PRINCIPAL AQUI ***
+                    // A resposta é uma string simples, então a colocamos diretamente no 'value' da textarea.
+                    resultOutput.value = data.resultado || "Nenhum resultado encontrado.";
+
                 } catch (error) {
-                    resultOutputDiv.innerHTML = `<p class="error-text">Erro: ${error.message}</p>`;
+                    resultOutput.value = `Erro: ${error.message}`;
+                    resultOutput.classList.add('error-text');
                 } finally {
                     toggleLoading(executeQueryBtn, false);
                 }
             }
             
-            function formatResults(results) { /* ... (função formatResults igual à anterior) ... */ 
-                if (!results || !Array.isArray(results)) {
-                    resultOutputDiv.innerHTML = '<p>Nenhum resultado retornado ou formato inesperado.</p>'; return;
-                }
-                if (results.length === 0) {
-                    resultOutputDiv.innerHTML = '<p>A consulta foi executada com sucesso, mas não retornou resultados.</p>'; return;
-                }
-                const table = document.createElement('table'); table.className = 'results-table';
-                const thead = table.createTHead(); const tbody = table.createTBody();
-                const headerRow = thead.insertRow(); const headers = Object.keys(results[0]);
-                headers.forEach(headerText => { const th = document.createElement('th'); th.textContent = headerText; headerRow.appendChild(th); });
-                results.forEach(row => { const tableRow = tbody.insertRow(); headers.forEach(header => { const cell = tableRow.insertCell(); cell.textContent = row[header]; }); });
-                resultOutputDiv.innerHTML = ''; resultOutputDiv.appendChild(table);
-            }
-
-            function toggleLoading(button, isLoading) { /* ... (função toggleLoading igual à anterior) ... */
-                const textSpan = button.querySelector('.btn-text'); const spinner = button.querySelector('.spinner');
-                const icon = button.querySelector('i'); button.disabled = isLoading;
+            function toggleLoading(button, isLoading) {
+                const textSpan = button.querySelector('.btn-text');
+                const spinner = button.querySelector('.spinner');
+                const icon = button.querySelector('i');
+                button.disabled = isLoading;
                 if (textSpan) textSpan.style.display = isLoading ? 'none' : 'inline';
                 if (icon) icon.style.display = isLoading ? 'none' : 'inline-block';
                 if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
+            }
+
+            function downloadText(filename, text) {
+                if (!text || text.startsWith("A consulta") || text.startsWith("O resultado")) {
+                    alert("Não há conteúdo para baixar.");
+                    return;
+                }
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                element.setAttribute('download', filename);
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
             }
         });
     </script>
