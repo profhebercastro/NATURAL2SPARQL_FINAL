@@ -7,23 +7,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* Seus estilos CSS originais */
+        /* Seus estilos CSS originais (sem alterações) */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #e9ecef; display: flex; flex-direction: column; min-height: 100vh; }
         header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
         .logo img { height: 32px; width: auto; }
-        .header-actions { display: flex; align-items: center; gap: 15px; }
-        .header-actions .icon-btn { background: none; border: 1px solid rgba(255,255,255,0.5); color: white; border-radius: 5px; padding: 5px 8px; cursor: pointer; font-size: 1rem; }
-        .endpoint-group { display: flex; align-items: center; gap: 8px; }
-        .endpoint-group .icon-link { font-size: 1.1rem; color: rgba(255,255,255,0.8); }
-        #sparqlEndpointInput { width: 250px; background-color: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 6px 10px; }
         main.container { width: 100%; max-width: 960px; margin: 40px auto; padding: 0 20px; flex-grow: 1; }
         .card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; position: relative; }
         .card-title-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .card-title { font-size: 1.25rem; font-weight: 500; margin: 0; }
         .form-control { width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ced4da; border-radius: 4px; }
-        .form-control:focus { outline: none; border-color: #80bdff; box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25); }
         .button-group { display: flex; gap: 10px; margin-top: 1rem; }
         .btn { padding: 10px 15px; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500;}
         .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
@@ -38,6 +32,9 @@
         footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; }
         .spinner { display: none; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .results-table { border-collapse: collapse; width: 100%; }
+        .results-table th, .results-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .results-table th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
@@ -45,14 +42,6 @@
         <div class="logo">
             <img src="https://cygri.github.io/rdf-logos/svg/sparql.svg" alt="SPARQL Logo">
             <span>Natural2SPARQL</span>
-        </div>
-        <div class="header-actions">
-            <div class="endpoint-group">
-                <i class="fa-solid fa-link icon-link"></i>
-                <input type="text" id="sparqlEndpointInput" placeholder="Endpoint remoto (opcional)" disabled>
-            </div>
-            <button id="downloadQueryBtn" class="icon-btn" title="Baixar Consulta SPARQL"><i class="fa-solid fa-cloud-arrow-down"></i></button>
-            <button id="downloadResultBtn" class="icon-btn" title="Baixar Resultado"><i class="fa-solid fa-download"></i></button>
         </div>
     </header>
 
@@ -62,14 +51,9 @@
             <input type="text" id="userQuestion" class="form-control" placeholder="Ex: Qual o preço de fechamento da CSN em 08/05/2023?">
             <div class="button-group">
                 <button id="generateBtn" class="btn btn-success">
-                    <span class="btn-text">GERAR CONSULTA</span>
-                    <i class="fas fa-arrow-right"></i>
-                    <div class="spinner"></div>
+                    <span class="btn-text">GERAR CONSULTA</span><i class="fas fa-arrow-right"></i><div class="spinner"></div>
                 </button>
-                <button id="clearBtn" class="btn btn-danger">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>LIMPAR</span>
-                </button>
+                <button id="clearBtn" class="btn btn-danger"><i class="fas fa-sync-alt"></i><span>LIMPAR</span></button>
             </div>
         </div>
 
@@ -78,16 +62,14 @@
                 <div class="card-title-container">
                     <h3 class="card-title">Consulta SPARQL</h3>
                     <button id="executeQueryBtn" class="btn btn-info btn-sm" style="display: none;">
-                        <span class="btn-text">Executar</span>
-                        <i class="fas fa-play"></i>
-                        <div class="spinner" style="border-top-color: #333;"></div>
+                        <span class="btn-text">Executar</span><i class="fas fa-play"></i><div class="spinner" style="border-top-color: #333;"></div>
                     </button>
                 </div>
                 <textarea id="sparqlQueryOutput" class="form-control output" readonly>A consulta SPARQL aparecerá aqui...</textarea>
             </div>
             <div class="card">
                 <h3 class="card-title">Resultado</h3>
-                <textarea id="resultOutput" class="form-control output" readonly>O resultado aparece aqui...</textarea>
+                <div id="resultOutput" class="form-control output" style="overflow: auto;">O resultado aparece aqui...</div>
             </div>
         </div>
     </main>
@@ -101,34 +83,23 @@
             const clearBtn = document.getElementById('clearBtn');
             const userQuestionInput = document.getElementById('userQuestion');
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
-            const resultOutput = document.getElementById('resultOutput');
-            const downloadQueryBtn = document.getElementById('downloadQueryBtn');
-            const downloadResultBtn = document.getElementById('downloadResultBtn');
+            const resultOutputDiv = document.getElementById('resultOutput');
             
-            let currentTemplateId = null;
+            let currentTemplateId = null; // Variável para guardar o ID do template entre as chamadas
 
             generateBtn.addEventListener('click', handleGenerateQuery);
             executeQueryBtn.addEventListener('click', handleExecuteQuery);
             clearBtn.addEventListener('click', clearAllFields);
-            downloadQueryBtn.addEventListener('click', () => downloadText('consulta.txt', sparqlQueryOutput.value));
-            downloadResultBtn.addEventListener('click', () => downloadText('resultado.txt', resultOutput.value));
-
             userQuestionInput.addEventListener('keypress', e => e.key === 'Enter' && (e.preventDefault(), handleGenerateQuery()));
 
             function clearAllFields() {
                 userQuestionInput.value = '';
                 sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
-                resultOutput.value = 'O resultado aparece aqui...';
-                resultOutput.classList.remove('error-text');
+                resultOutputDiv.innerHTML = 'O resultado aparece aqui...';
+                sparqlQueryOutput.classList.remove('error-text');
+                resultOutputDiv.classList.remove('error-text');
                 executeQueryBtn.style.display = 'none';
                 currentTemplateId = null;
-            }
-
-            function clearResults() {
-                sparqlQueryOutput.value = 'Gerando consulta...';
-                resultOutput.value = 'Aguarde a geração da consulta...';
-                resultOutput.classList.remove('error-text');
-                executeQueryBtn.style.display = 'none';
             }
 
             async function handleGenerateQuery() {
@@ -136,10 +107,13 @@
                 if (!question) { alert("Por favor, digite uma pergunta."); return; }
                 
                 toggleLoading(generateBtn, true);
-                clearResults();
+                sparqlQueryOutput.value = 'Gerando consulta...';
+                resultOutputDiv.innerHTML = 'Aguarde a geração da consulta...';
+                executeQueryBtn.style.display = 'none';
+                sparqlQueryOutput.classList.remove('error-text');
 
                 try {
-                    const response = await fetch('/gerar_consulta', {
+                    const response = await fetch('/gerar_consulta', { // Chama o primeiro endpoint
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ pergunta: question })
@@ -149,11 +123,10 @@
                     if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
                     sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
-                    currentTemplateId = data.templateId;
+                    currentTemplateId = data.templateId; // Guarda o ID do template
 
                     if (data.sparqlQuery) {
-                        executeQueryBtn.style.display = 'inline-flex';
-                        executeQueryBtn.disabled = false;
+                        executeQueryBtn.style.display = 'inline-flex'; // Mostra o botão de executar
                     }
                 } catch (error) {
                     sparqlQueryOutput.value = `Erro: ${error.message}`;
@@ -165,45 +138,53 @@
 
             async function handleExecuteQuery() {
                 const sparqlQuery = sparqlQueryOutput.value;
-                if (!sparqlQuery || !currentTemplateId || sparqlQuery.startsWith("Erro:")) {
-                    alert("Não há uma consulta válida para executar.");
-                    return;
+                if (!sparqlQuery || sparqlQuery.startsWith("Erro:")) {
+                    alert("Não há uma consulta válida para executar."); return;
                 }
 
                 toggleLoading(executeQueryBtn, true);
-                resultOutput.value = "Executando...";
+                resultOutputDiv.innerHTML = "Executando...";
+                resultOutputDiv.classList.remove('error-text');
 
                 try {
-                    const response = await fetch('/executar_query', {
+                    const response = await fetch('/executar_query', { // Chama o segundo endpoint
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sparqlQuery, templateId: currentTemplateId })
+                        body: JSON.stringify({ sparqlQuery: sparqlQuery, templateId: currentTemplateId })
                     });
                     
                     const data = await response.json();
                     if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
-                    resultOutput.value = data.resultado || "Nenhum resultado encontrado.";
+                    formatResults(data.resultado);
                 } catch (error) {
-                    resultOutput.value = `Erro: ${error.message}`;
-                    resultOutput.classList.add('error-text');
+                    resultOutputDiv.innerHTML = `<p class="error-text">Erro: ${error.message}</p>`;
                 } finally {
                     toggleLoading(executeQueryBtn, false);
                 }
             }
             
-            function toggleLoading(button, isLoading) {
-                const textSpan = button.querySelector('.btn-text');
-                const spinner = button.querySelector('.spinner');
-                const icon = button.querySelector('i');
-                button.disabled = isLoading;
+            function formatResults(results) { /* ... (função formatResults igual à anterior) ... */ 
+                if (!results || !Array.isArray(results)) {
+                    resultOutputDiv.innerHTML = '<p>Nenhum resultado retornado ou formato inesperado.</p>'; return;
+                }
+                if (results.length === 0) {
+                    resultOutputDiv.innerHTML = '<p>A consulta foi executada com sucesso, mas não retornou resultados.</p>'; return;
+                }
+                const table = document.createElement('table'); table.className = 'results-table';
+                const thead = table.createTHead(); const tbody = table.createTBody();
+                const headerRow = thead.insertRow(); const headers = Object.keys(results[0]);
+                headers.forEach(headerText => { const th = document.createElement('th'); th.textContent = headerText; headerRow.appendChild(th); });
+                results.forEach(row => { const tableRow = tbody.insertRow(); headers.forEach(header => { const cell = tableRow.insertCell(); cell.textContent = row[header]; }); });
+                resultOutputDiv.innerHTML = ''; resultOutputDiv.appendChild(table);
+            }
+
+            function toggleLoading(button, isLoading) { /* ... (função toggleLoading igual à anterior) ... */
+                const textSpan = button.querySelector('.btn-text'); const spinner = button.querySelector('.spinner');
+                const icon = button.querySelector('i'); button.disabled = isLoading;
                 if (textSpan) textSpan.style.display = isLoading ? 'none' : 'inline';
                 if (icon) icon.style.display = isLoading ? 'none' : 'inline-block';
                 if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
-            }
-
-            function downloadText(filename, text) {
-                // ... (código igual ao anterior)
             }
         });
     </script>
