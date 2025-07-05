@@ -4,21 +4,22 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
- * Controller responsável por servir as páginas web estáticas (frontend).
- * Separa a lógica de servir a interface do usuário da lógica da API.
+ * Controller simples, responsável apenas por servir as páginas web estáticas (frontend).
+ * Separa a lógica de servir a interface da lógica da API.
  */
 @Controller
 public class WebController {
 
     /**
-     * Mapeia a rota raiz ("/") para a página de entrada da aplicação.
-     * O Spring Boot procurará por um arquivo chamado 'index2.html'
-     * na pasta `src/main/resources/static/` e o retornará.
+     * Mapeia a rota raiz ("/") do site para a página de entrada da aplicação.
+     * Quando um usuário acessa "https://seu-site.com/", este método é chamado.
+     * O Spring Boot então procura por um arquivo com o nome retornado ('index2.html')
+     * na pasta `src/main/resources/static/` e o entrega ao navegador.
      *
-     * @return O nome do template HTML a ser renderizado.
+     * @return O nome do arquivo HTML a ser renderizado.
      */
     @GetMapping("/")
     public String index() {
-        return "index2.html"; // O nome do seu arquivo HTML
+        return "index2.html";
     }
 }
