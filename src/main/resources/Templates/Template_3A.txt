@@ -1,5 +1,6 @@
+# Template 3A: Busca ações de um setor
 SELECT DISTINCT ?O1 WHERE {
-  ?S5 P18 "#NOME_SETOR#" .
+  ?S5 P18 "#NOME_SETOR#"@pt .
   ?S1 P9 ?S5 .
   ?S1 P1 ?S2 .
   ?S2 (P19|(P2/P19)) ?O1 .

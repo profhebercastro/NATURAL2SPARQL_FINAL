@@ -1,5 +1,6 @@
+# Template 2A: Busca código por nome de empresa
 SELECT DISTINCT ?O1 WHERE {
-  ?S1 P18 "#ENTIDADE_NOME#" .
+  ?S1 P18 "#ENTIDADE_NOME#"@pt .
   ?S1 P1 ?S2 .
   ?S2 (P19|(P2/P19)) ?O1 .
 }
