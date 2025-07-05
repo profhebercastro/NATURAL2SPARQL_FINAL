@@ -1,4 +1,0 @@
-Qual o <metrica> da <entidade> em <data>?
-Qual o código de negociação da <empresa>?
-Quais são as ações do setor <setor>?
-Qual o volume negociado para o setor <setor> em <data>?

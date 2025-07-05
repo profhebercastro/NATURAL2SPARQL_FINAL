@@ -1,6 +1,5 @@
 package com.example.Programa_heber.service;
 
-import com.example.Programa_heber.ontology.Ontology;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -24,98 +23,85 @@ import java.util.Map;
 public class SPARQLProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(SPARQLProcessor.class);
-    private final Ontology ontology; // Supondo que a ontologia é injetada
+    
     private final HttpClient httpClient;
-    private final ObjectMapper objectMapper; // Para parsear JSON
+    private final ObjectMapper objectMapper;
+    private final PlaceholderService placeholderService; // Injetando o novo serviço
 
-    // URL do nosso serviço de NLP rodando no mesmo ambiente Docker
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
-    public SPARQLProcessor(Ontology ontology) {
-        this.ontology = ontology;
+    public SPARQLProcessor(PlaceholderService placeholderService) {
         this.httpClient = HttpClient.newHttpClient();
-        this.objectMapper = new ObjectMapper(); // Jackson's JSON mapper
+        this.objectMapper = new ObjectMapper();
+        this.placeholderService = placeholderService;
     }
 
     public String generateSparqlQuery(String naturalLanguageQuery) {
         logger.info("Iniciando geração de query para: '{}'", naturalLanguageQuery);
 
         try {
-            // ETAPA 1: Chamar o serviço NLP via API HTTP
+            // ETAPA 1: Chamar o serviço NLP para obter o template e as entidades
             String nlpResponseJson = callNlpService(naturalLanguageQuery);
-            logger.info("Resposta recebida do serviço NLP: {}", nlpResponseJson);
+            logger.info("Resposta do NLP: {}", nlpResponseJson);
 
-            // ETAPA 2: Parsear a resposta JSON do serviço Python
             JsonNode rootNode = objectMapper.readTree(nlpResponseJson);
-            String templateName = rootNode.path("template").asText();
+            String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
 
-            if (templateName == null || templateName.isEmpty() || templateName.equals("template_desconhecido")) {
-                throw new RuntimeException("Serviço NLP não conseguiu determinar um template válido.");
+            if (templateId.isEmpty() || templateId.equals("template_desconhecido")) {
+                throw new RuntimeException("NLP não conseguiu determinar um template válido.");
             }
 
-            // ETAPA 3: Carregar o template SPARQL correspondente
-            String templateContent = loadTemplate(templateName);
+            // ETAPA 2: Carregar o conteúdo do template genérico
+            String templateContent = loadTemplate(templateId);
 
-            // ETAPA 4: Substituir os placeholders no template com as entidades
-            String finalQuery = replacePlaceholders(templateContent, entitiesNode);
+            // ETAPA 3: Primeira substituição - Entidades específicas da pergunta (#ENTIDADE_NOME#, #DATA#, etc.)
+            String queryWithEntities = replaceEntityPlaceholders(templateContent, entitiesNode);
+            
+            // ETAPA 4: Segunda substituição - Placeholders genéricos (P1, S1, etc.)
+            String finalQuery = placeholderService.replaceGenericPlaceholders(queryWithEntities);
 
             logger.info("Consulta SPARQL final gerada:\n{}", finalQuery);
             return finalQuery;
 
         } catch (Exception e) {
             logger.error("Erro fatal ao gerar query para '{}': {}", naturalLanguageQuery, e.getMessage(), e);
-            // Retorna uma mensagem de erro amigável para a interface
-            return "Erro ao processar a pergunta. Verifique os logs do servidor para mais detalhes.";
+            return "Erro ao processar a pergunta: " + e.getMessage();
         }
     }
 
     private String callNlpService(String query) throws IOException, InterruptedException {
-        // Cria o corpo da requisição JSON: {"question": "..."}
-        String jsonBody = "{\"question\": \"" + escapeJson(query) + "\"}";
-
+        String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(NLP_SERVICE_URL))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
                 .build();
-
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
         if (response.statusCode() != 200) {
-            throw new IOException("Serviço NLP falhou com status " + response.statusCode() + ". Resposta: " + response.body());
+            throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body());
         }
-
         return response.body();
     }
 
     private String loadTemplate(String templateName) throws IOException {
-        // O caminho para os templates dentro da pasta de recursos
-        Path path = Paths.get("src/main/resources/Templates/" + templateName + ".txt");
-        if (!Files.exists(path)) {
-             throw new IOException("Arquivo de template não encontrado: " + path);
-        }
+        Path path = new ClassPathResource("Templates/" + templateName + ".txt").getFile().toPath();
         return Files.readString(path, StandardCharsets.UTF_8);
     }
 
-    private String replacePlaceholders(String template, JsonNode entities) {
+    private String replaceEntityPlaceholders(String template, JsonNode entities) {
         String finalQuery = template;
         
-        // Itera sobre todas as entidades encontradas (empresa, data, codigo, etc.)
+        // Itera sobre as entidades encontradas (ENTIDADE_NOME, DATA, TICKER, etc.)
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
-            String placeholder = "{" + field.getKey() + "}";
+            // O placeholder no template tem o formato #CHAVE#
+            String placeholder = "#" + field.getKey() + "#";
             String value = field.getValue().asText();
             finalQuery = finalQuery.replace(placeholder, value);
         }
-        
         return finalQuery;
-    }
-
-    // Função utilitária para escapar aspas em uma string para criar um JSON válido
-    private String escapeJson(String text) {
-        return text.replace("\"", "\\\"");
     }
 }

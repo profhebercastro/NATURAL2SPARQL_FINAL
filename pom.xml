@@ -14,8 +14,8 @@
     <groupId>com.example</groupId>
     <artifactId>Programa_heber</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Natural2SPARQL_2025</name>
-    <description>Projeto para traduzir linguagem natural para SPARQL</description>
+    <name>Natural2SPARQL_V4</name> <!-- Nome atualizado para a V4 -->
+    <description>Projeto para traduzir linguagem natural para SPARQL com arquitetura flexível</description>
 
     <properties>
         <java.version>17</java.version>
@@ -25,46 +25,44 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Starter para criar aplicações web. ESSENCIAL. -->
+        <!-- Spring Boot Starter para criar aplicações web. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- =================================================================== -->
-        <!-- DEPENDÊNCIAS DE BANCO DE DADOS REMOVIDAS -->
-        <!-- A dependência 'spring-boot-starter-data-jpa' e 'h2database' foram  -->
-        <!-- removidas pois o projeto usa Jena, não um banco de dados SQL.     -->
-        <!-- =================================================================== -->
-        
-        <!-- Apache Jena: Biblioteca principal para manipulação da ontologia. ESSENCIAL. -->
+        <!-- Jackson Databind: Essencial para parsear JSON no Java. -->
         <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>apache-jena-libs</artifactId>
-            <version>${jena.version}</version>
-            <type>pom</type>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- Apache POI: Biblioteca para ler arquivos Excel (.xlsx). ESSENCIAL. -->
+        <!-- =================================================================== -->
+        <!--        CORREÇÃO DA DEPENDÊNCIA DO APACHE JENA                       -->
+        <!-- A dependência 'jena-fuseki-main' é a forma mais robusta de        -->
+        <!-- incluir todas as bibliotecas necessárias do Jena (core, arq, etc) -->
+        <!-- sem usar <type>pom</type> como uma dependência direta.              -->
+        <!-- =================================================================== -->
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-fuseki-main</artifactId>
+            <version>${jena.version}</version>
+        </dependency>
+
+
+        <!-- Apache POI: Biblioteca para ler arquivos Excel (.xlsx). -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
         </dependency>
 
-        <!-- Spring Boot Test: Para testes unitários e de integração. Boa prática. -->
+        <!-- Spring Boot Test: Para testes unitários e de integração. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-		
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<!-- A versão será gerenciada pelo Spring Boot parent POM -->
-		</dependency>
-		
     </dependencies>
 
     <build>

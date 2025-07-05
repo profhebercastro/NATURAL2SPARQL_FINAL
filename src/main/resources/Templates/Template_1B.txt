@@ -1,6 +1,5 @@
 SELECT ?ANS WHERE {
-    ?S1 P18 "#ENTIDADE_NOME#" .
-    ?S1 P1 ?S2 .
+    ?S2 P18 "#TICKER#" .
     ?S2 P3 ?S3 .
     ?S3 P4 ?S4 .
     ?S4 P6 "#DATA#" .

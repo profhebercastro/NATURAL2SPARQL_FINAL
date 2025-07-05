@@ -1,0 +1,8 @@
+Template_1A;Qual foi a <métrica> da <empresa> em <data>?
+Template_1B;Qual foi a <métrica> do <código> em <data>?
+Template_2A;Qual o <código> de negociação da <empresa>?
+Template_3A;Quais são as <ações> do <setor>?
+Template_4A;Qual foi o <volume> das <ações> do <setor> em <data>?Qual o <metrica> da <entidade> em <data>?
+Qual o código de negociação da <empresa>?
+Quais são as ações do setor <setor>?
+Qual o volume negociado para o setor <setor> em <data>?

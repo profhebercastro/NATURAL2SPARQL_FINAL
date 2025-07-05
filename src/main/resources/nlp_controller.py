@@ -1,138 +1,172 @@
 import json
+import re
 from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import re
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS (feito uma vez na inicialização) ---
+# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
 
-# 1. Carregar o Thesaurus unificado
+def carregar_json(caminho):
+    """
+    Função auxiliar para carregar arquivos JSON, tentando o caminho relativo aos recursos
+    do Java e, em caso de falha, o caminho local para facilitar testes diretos.
+    """
+    try:
+        # Caminho padrão quando o script é chamado pelo ambiente Java/Spring
+        with open(f'src/main/resources/{caminho}', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Fallback para execução local (ex: `python nlp_controller.py`)
+        with open(caminho, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+# Carrega todos os arquivos de configuração necessários na inicialização
+thesaurus = carregar_json('Thesaurus.json')
+empresa_map = carregar_json('empresa_nome_map.json')
+setor_map = carregar_json('setor_map.json')
+
+# Carrega as perguntas de referência do novo arquivo e formato (ID;Texto)
+reference_templates = {}
 try:
-    with open('src/main/resources/Thesaurus.json', 'r', encoding='utf-8') as f:
-        thesaurus = json.load(f)
+    with open('src/main/resources/Reference_questions.txt', 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and ';' in line:
+                template_id, question_text = line.split(';', 1)
+                reference_templates[template_id.strip()] = question_text.strip()
 except FileNotFoundError:
-    # Fallback para caso o script seja executado de um diretório diferente
-    with open('Thesaurus.json', 'r', encoding='utf-8') as f:
-        thesaurus = json.load(f)
+     with open('Reference_questions.txt', 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and ';' in line:
+                template_id, question_text = line.split(';', 1)
+                reference_templates[template_id.strip()] = question_text.strip()
 
-
-# 2. Carregar as perguntas de interesse (que definem as intenções gerais)
-try:
-    with open('src/main/resources/perguntas_de_interesse.txt', 'r', encoding='utf-8') as f:
-        perguntas_interesse = [line.strip() for line in f.readlines()]
-except FileNotFoundError:
-    with open('perguntas_de_interesse.txt', 'r', encoding='utf-8') as f:
-        perguntas_interesse = [line.strip() for line in f.readlines()]
-
-# 3. Preparar o modelo de similaridade (TF-IDF)
+# Prepara o modelo de similaridade (TF-IDF) com os textos das perguntas de referência
+ref_ids = list(reference_templates.keys())
+ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
-tfidf_matrix_interesse = vectorizer.fit_transform(perguntas_interesse)
+tfidf_matrix_ref = vectorizer.fit_transform(ref_questions)
 
 
-# --- FUNÇÕES AUXILIARES ---
+# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 
-def extrair_entidades(pergunta_usuario):
+def normalizar_pergunta(pergunta_lower):
     """
-    Extrai todas as entidades que encontra: empresa, código, setor, data.
+    Substitui sinônimos na pergunta pelo seu termo canônico do Thesaurus.
+    Esta é a etapa crucial para reduzir a ambiguidade.
+    Exemplo: "cotas das companhias" -> "ação das empresa"
     """
-    entidades = {}
-    pergunta_lower = pergunta_usuario.lower()
+    pergunta_normalizada = pergunta_lower
     
-    # Itera sobre os tipos de entidade no thesaurus (Empresa, Ticker, Setor)
-    for tipo_entidade, mapeamentos in thesaurus['entidades'].items():
-        for nome_canonico, sinonimos in mapeamentos.items():
-            for s in sinonimos:
-                # Usamos limites de palavra (\b) para evitar correspondências parciais (ex: 'vale' em 'equivalente')
-                if re.search(r'\b' + re.escape(s.lower()) + r'\b', pergunta_lower):
-                    chave_template = tipo_entidade.lower() # 'empresa', 'ticker', 'setor'
-                    entidades[chave_template] = nome_canonico
-                    break # Para de procurar sinônimos para esta entidade canônica
-            if nome_canonico in entidades.values():
-                break # Para de procurar outras entidades do mesmo tipo se já achou uma
-
-    # Extração de Data
-    match_data = re.search(r'(\d{2}/\d{2}/\d{4})', pergunta_usuario)
-    if match_data:
-        data_str = match_data.group(1)
-        dia, mes, ano = data_str.split('/')
-        entidades['data'] = f"{ano}-{mes}-{dia}"
+    # Itera sobre os conceitos (acao, empresa, setor, etc.)
+    # Ordena os sinônimos pelo comprimento para evitar substituições parciais (ex: "ação" antes de "ação ordinária")
+    for conceito in thesaurus.get('conceitos', []):
+        termo_canonico = conceito['canonico'].replace('_', ' ') # Usa o termo canônico com espaço
         
+        # Ordena os sinônimos pelo tamanho, do maior para o menor
+        sorted_sinonimos = sorted(conceito.get('sinonimos', []), key=lambda x: len(x['termo']), reverse=True)
+        
+        for sinonimo_info in sorted_sinonimos:
+            termo_sinonimo = sinonimo_info['termo'].lower()
+            # Usa regex com limites de palavra (\b) para substituir apenas a palavra inteira
+            pergunta_normalizada = re.sub(r'\b' + re.escape(termo_sinonimo) + r'\b', termo_canonico, pergunta_normalizada)
+            
+    return pergunta_normalizada
+
+def extrair_entidades(pergunta_lower):
+    """Extrai entidades específicas (empresa, ticker, setor, data) da pergunta."""
+    entidades = {}
+    
+    # Extrair Empresa/Ticker: ordena as chaves do mapa pela mais longa primeiro para evitar correspondências parciais
+    sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
+    for key in sorted_empresa_keys:
+        if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
+            value = empresa_map[key]
+            # Verifica se o valor é um ticker (formato AAAA11) ou um nome de empresa
+            if re.match(r'^[A-Z]{4}\d{1,2}$', value):
+                entidades['TICKER'] = f'"{value}"' # Adiciona aspas para o literal SPARQL
+            else:
+                entidades['ENTIDADE_NOME'] = f'"{value}"@pt' # Adiciona aspas e tag de idioma
+            break # Pega a primeira e mais longa correspondência
+
+    # Extrair Setor
+    sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
+    for key in sorted_setor_keys:
+        if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
+            entidades['NOME_SETOR'] = f'"{setor_map[key]}"@pt'
+            break
+
+    # Extrair Data no formato YYYY-MM-DD
+    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
+    if match_data:
+        dia, mes, ano = match_data.groups()
+        entidades['DATA'] = f'"{ano}-{mes}-{dia}"^^xsd:date'
+
     return entidades
 
-def identificar_metrica(pergunta_usuario):
-    """
-    Encontra a métrica solicitada na pergunta (ex: preço mínimo, volume).
-    """
-    pergunta_lower = pergunta_usuario.lower()
+def identificar_metrica(pergunta_lower):
+    """Identifica a métrica principal (ex: preço máximo, volume) na pergunta."""
+    for conceito in thesaurus.get('conceitos', []):
+        # Foca apenas em conceitos que definimos como métricas
+        if conceito['canonico'].startswith('preco_') or conceito['canonico'] in ['volume', 'quantidade']:
+            # Ordena os sinônimos pelo tamanho para evitar correspondências parciais
+            sorted_sinonimos = sorted(conceito.get('sinonimos', []), key=lambda x: len(x['termo']), reverse=True)
+            for sinonimo in sorted_sinonimos:
+                if re.search(r'\b' + re.escape(sinonimo['termo'].lower()) + r'\b', pergunta_lower):
+                    return conceito['canonico'] # Retorna o nome canônico, ex: "preco_maximo"
     
-    # Itera sobre os conceitos do thesaurus
-    for conceito_info in thesaurus['conceitos']:
-        # Foca apenas nos conceitos que definimos como métricas
-        if conceito_info['canonico'].startswith('metrica_'):
-            for sinonimo_info in conceito_info['sinonimos']:
-                if re.search(r'\b' + re.escape(sinonimo_info['termo'].lower()) + r'\b', pergunta_lower):
-                    return conceito_info['canonico'] # Retorna a chave, ex: "metrica_preco_minimo"
+    # Fallback para o caso da pergunta do Template_4A, se nenhuma outra métrica for encontrada
+    if 'volume' in pergunta_lower:
+        return 'volume'
+        
     return None
 
-
-# --- CONFIGURAÇÃO DA API FLASK E LÓGICA PRINCIPAL ---
-
+# --- API FLASK ---
 app = Flask(__name__)
 
 @app.route('/process_question', methods=['POST'])
 def process_question():
     data = request.get_json()
-    if not data or 'question' not in data:
-        return jsonify({"error": "Pergunta não encontrada"}), 400
-        
-    pergunta_usuario = data['question']
+    pergunta_usuario = data.get('question', '').lower()
 
-    # ETAPA 1: Extrair todas as entidades da pergunta original
-    entidades = extrair_entidades(pergunta_usuario)
+    if not pergunta_usuario:
+        return jsonify({"error": "Pergunta não pode ser vazia"}), 400
 
-    # ETAPA 2: Identificar a intenção GERAL da pergunta
-    tfidf_usuario = vectorizer.transform([pergunta_usuario.lower()])
-    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_interesse)
-    indice_intencao = similaridades.argmax()
-
-    nome_template = 'template_desconhecido'
-
-    # ETAPA 3: LÓGICA DE DECISÃO INTELIGENTE PARA ESCOLHER O TEMPLATE
+    # ETAPA 0: NORMALIZAR A PERGUNTA para melhorar a seleção de template
+    pergunta_normalizada = normalizar_pergunta(pergunta_usuario)
     
-    # INTENÇÃO 0: Buscar uma métrica de uma ação específica
-    if indice_intencao == 0:
-        metrica_identificada = identificar_metrica(pergunta_usuario)
-        
-        if metrica_identificada:
-            # Mapeia a métrica para o nome do template estático correspondente
-            mapa_metricas_template = {
-                'metrica_preco_fechamento': 'Template_1A',
-                'metrica_preco_abertura':   'Template_1B',
-                'metrica_preco_maximo':     'Template_1C',
-                'metrica_preco_minimo':     'Template_1D',
-                'metrica_preco_medio':      'Template_1E',
-                'metrica_volume':           'Template_1F',
-                'metrica_quantidade':       'Template_1G'
-            }
-            nome_template = mapa_metricas_template.get(metrica_identificada)
-    
-    # OUTRAS INTENÇÕES
-    else:
-        # Mapeia os outros índices para os templates correspondentes
-        mapa_outras_intencoes = {
-            1: 'Template_2A', # "Qual o código..."
-            2: 'Template_3A', # "Quais são as ações..."
-            3: 'Template_4A'  # "Qual foi o volume do setor..."
-        }
-        nome_template = mapa_outras_intencoes.get(indice_intencao)
+    # ETAPA 1: Encontrar o melhor template USANDO A PERGUNTA NORMALIZADA
+    tfidf_usuario = vectorizer.transform([pergunta_normalizada])
+    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+    indice_melhor = similaridades.argmax()
+    template_id = ref_ids[indice_melhor]
 
-    # MONTAGEM FINAL DA RESPOSTA PARA O JAVA
+    # ETAPA 2: Extrair todas as entidades da PERGUNTA ORIGINAL
+    entidades_extraidas = extrair_entidades(pergunta_usuario)
+
+    # ETAPA 3: Identificar a métrica da PERGUNTA ORIGINAL e mapeá-la
+    metrica_canonico = identificar_metrica(pergunta_usuario)
+    if metrica_canonico:
+        # A chave no template é #VALOR_DESEJADO#. O valor será a chave que o Java usará 
+        # para buscar no placeholders.properties. Ex: "metrica.preco_maximo"
+        entidades_extraidas['VALOR_DESEJADO'] = f'metrica.{metrica_canonico}'
+
+    # Montar a resposta final para o serviço Java
     response = {
-        "template": nome_template,
-        "entities": entidades
+        "templateId": template_id,
+        "entities": entidades_extraidas,
+        "debugInfo": {
+            "perguntaOriginal": data.get('question', ''),
+            "perguntaNormalizada": pergunta_normalizada,
+            "templateEscolhido": template_id,
+            "similaridadeScore": float(similaridades[indice_melhor])
+        }
     }
     
     return jsonify(response)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # Este bloco é para rodar o script diretamente para testes locais.
+    # Em produção (no Render), o Gunicorn será usado para iniciar o 'app'.
+    app.run(host='0.0.0.0', port=5000, debug=True)
