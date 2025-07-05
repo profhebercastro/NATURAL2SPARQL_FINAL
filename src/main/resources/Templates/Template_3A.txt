@@ -1,6 +1,7 @@
-SELECT ?S2_label WHERE {
-    ?C5_setor P18 "#NOME_SETOR#" .
-    ?S1 P10 ?C5_setor .
-    ?S1 P1 ?S2 .
-    ?S2 rdfs:label ?S2_label .
+SELECT DISTINCT ?O1 WHERE {
+  ?S5 P18 #SETOR# .
+  ?S1 P9 ?S5 .
+  ?S1 P1 ?S2 .
+  ?S2 (P19|(P2/P19)) ?O1 .
 }
+ORDER BY ?O1
