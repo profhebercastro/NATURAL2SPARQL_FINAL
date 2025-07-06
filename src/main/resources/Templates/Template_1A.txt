@@ -1,4 +1,4 @@
-# Template 1A: Busca métrica por nome de empresa (Estrutura da Imagem)
+# Template 1A: Busca métrica por nome de empresa 
 SELECT ?ANS WHERE {
     ?S1 P18 "#ENTIDADE_NOME#"@pt .
     ?S1 P1 ?S2 .          

@@ -1,4 +1,3 @@
-
 package com.example.Programa_heber.ontology;
 
 import jakarta.annotation.PostConstruct;
@@ -68,7 +67,6 @@ public class Ontology {
             try (InputStream in = inferredResource.getInputStream()) {
                 RDFDataMgr.read(dataModel, in, Lang.TURTLE);
             }
-            // CORREÇÃO: Retorna o modelo carregado DIRETAMENTE.
             return dataModel; 
         } else {
             logger.warn("--- Modelo inferido '{}' não encontrado ou vazio. Construindo do zero... ---", INFERENCE_OUTPUT_FILENAME);
@@ -146,8 +144,8 @@ public class Ontology {
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
 
-                Date dataPregao = getDateCellValue(row.getCell(2));
-                String ticker = getStringCellValue(row.getCell(4));
+                Date dataPregao = getDateCellValue(row.getCell(2)); // Coluna C
+                String ticker = getStringCellValue(row.getCell(4)); // Coluna E
                 
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
                 
@@ -165,11 +163,17 @@ public class Ontology {
                 addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
                 
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
+                // Carregamento das propriedades numéricas
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));   // Coluna I
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));     // Coluna J
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));    // Coluna K
+                
+                // ***** LINHA CORRIGIDA/ADICIONADA *****
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "temPrecoMedio"), getNumericCellValue(row.getCell(11)));  // Coluna L
+                
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));// Coluna M
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "temQuantidade"), getNumericCellValue(row.getCell(14))); // Coluna O
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));// Coluna P
             }
         }
     }
@@ -178,7 +182,10 @@ public class Ontology {
     public List<Map<String, String>> executeQuery(String sparqlQuery) {
         lock.readLock().lock();
         try {
-            if (this.model == null) return Collections.emptyList(); 
+            if (this.model == null) {
+                logger.error("Tentativa de executar consulta em um modelo nulo.");
+                return Collections.emptyList(); 
+            }
             List<Map<String, String>> resultsList = new ArrayList<>();
             logger.debug("Executando a consulta SPARQL:\n{}", sparqlQuery);
             Query query = QueryFactory.create(sparqlQuery);
@@ -192,8 +199,11 @@ public class Ontology {
                         RDFNode node = soln.get(varName);
                         String value = "N/A";
                         if (node != null) {
-                            if (node.isLiteral()) value = node.asLiteral().getLexicalForm();
-                            else value = node.toString();
+                            if (node.isLiteral()) {
+                                value = node.asLiteral().getLexicalForm();
+                            } else { 
+                                value = node.isAnon() ? node.asResource().getId().toString() : node.toString();
+                            }
                         }
                         rowMap.put(varName, value);
                     }
@@ -204,11 +214,14 @@ public class Ontology {
             return resultsList;
         } catch (Exception e) {
             logger.error("Erro durante a execução da consulta SPARQL.", e);
+            // Lançar uma exceção ou retornar uma lista vazia com erro pode ser uma opção
             return Collections.emptyList();
         } finally {
             lock.readLock().unlock();
         }
     }
+
+    // --- MÉTODOS AUXILIARES ---
 
     private String getStringCellValue(Cell cell) {
         if (cell == null) return null;
@@ -216,13 +229,9 @@ public class Ontology {
         switch (type) {
             case STRING: return cell.getStringCellValue().trim();
             case NUMERIC: 
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    return null;
-                }
+                if (DateUtil.isCellDateFormatted(cell)) { return null; }
                 double numericValue = cell.getNumericCellValue();
-                if (numericValue == Math.floor(numericValue)) {
-                    return String.valueOf((long) numericValue);
-                }
+                if (numericValue == Math.floor(numericValue)) { return String.valueOf((long) numericValue); }
                 return String.valueOf(numericValue);
             default: return null;
         }
@@ -260,6 +269,7 @@ public class Ontology {
     
     private void saveInferredModelToFileSystem(InfModel modelToSave) {
         try {
+            // Tenta salvar na pasta 'target/classes' que é o classpath de um build Maven
             Path outputPath = Paths.get("target/classes/" + INFERENCE_OUTPUT_FILENAME);
             Files.createDirectories(outputPath.getParent());
             try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
@@ -267,14 +277,13 @@ public class Ontology {
                 RDFDataMgr.write(out, modelToSave, Lang.TURTLE);
             }
         } catch (IOException e) {
-            logger.warn("Não foi possível salvar o modelo inferido em disco no diretório target/classes.", e);
+            logger.warn("Não foi possível salvar o modelo inferido em disco no diretório target/classes. Isso é normal em ambientes que não são de build.", e);
         }
     }
     
     private void addStatement(Model model, Resource s, Property p, RDFNode o) { if (s != null && p != null && o != null) model.add(s, p, o); }
-    private void addStatement(Model model, Resource s, Property p, String o) { if (s != null && p != null && o != null && !o.isBlank()) model.add(s, p, o); }
     private void addStatement(Model model, Resource s, Property p, String o, String lang) { if (s != null && p != null && o != null && !o.isBlank()) model.add(s, p, o, lang); }
-    private void addNumericProperty(Model model, Resource s, Property p, double value) { if (!Double.isNaN(value)) addStatement(model, s, p, model.createTypedLiteral(value)); }
+    private void addNumericProperty(Model model, Resource s, Property p, double value) { if (!Double.isNaN(value)) model.add(s, p, model.createTypedLiteral(value)); }
     private void validateBaseModelLoad(long size) { if (size < 1000) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
 
 }
