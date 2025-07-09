@@ -1,10 +1,10 @@
 # TEMPLATE_1A -- Qual foi o preço de fechamento da CSN em 08/05/2023?
 SELECT ?ANS WHERE {
-    ?S1 P2 "#ENTIDADE_NOME#"@pt .
-    ?S1 P3 ?SO2 .
-    ?SO2 P4 ?S03 .
-    ?S03 P6 ?S2 .
-    ?S2 P7 "#DATA#"^^xsd:date .
-    ?S03 #VALOR_DESEJADO# ?ANS .
+    ?S1 rdfs:label "#ENTIDADE_NOME#"@pt .  # Ponto de entrada
+    ?S1 P3 ?SO2 .                          # empresa -> temValorMobiliario -> valorMobiliario
+    ?SO2 P4 ?S03 .                         # valorMobiliario -> negociado -> negociadoEmPregao
+    ?S03 P6 ?S2 .                          # negociadoEmPregao -> negociadoDurante -> pregao
+    ?S2 P7 "#DATA#"^^xsd:date .            # pregao -> ocorreEmData -> data
+    ?S03 #VALOR_DESEJADO# ?ANS .           # negociadoEmPregao -> [precoFechamento] -> resultado
 }
 LIMIT 1

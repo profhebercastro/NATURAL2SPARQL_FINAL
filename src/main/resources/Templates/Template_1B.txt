@@ -1,10 +1,11 @@
 # TEMPLATE_1B -- Qual foi o preço de abertura da CBAV3 em 08/05/2023?
 SELECT ?ANS WHERE {
-    ?O2 P2 "#TICKER#" .
-    ?SO2 P5 ?O2 .
-    ?SO2 P4 ?S03 .
-    ?S03 P6 ?S2 .
-    ?S2 P7 "#DATA#"^^xsd:date .
-    ?S03 #VALOR_DESEJADO# ?ANS .
+    ?O2 rdfs:label "#TICKER#" .            # Ponto de entrada
+    ?SO2 P5 ?O2 .                          # valorMobiliario -> representadoPor -> codigoNegociacao
+    ?SO2 P4 ?S03 .                         # valorMobiliario -> negociado -> negociadoEmPregao
+    ?S03 P6 ?S2 .                          # negociadoEmPregao -> negociadoDurante -> pregao
+    ?S2 P7 "#DATA#"^^xsd:date .            # pregao -> ocorreEmData -> data
+    ?S03 #VALOR_DESEJADO# ?ANS .           # negociadoEmPregao -> [precoAbertura] -> resultado
 }
 LIMIT 1
+

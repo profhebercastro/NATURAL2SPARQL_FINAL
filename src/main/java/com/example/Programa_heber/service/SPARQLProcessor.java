@@ -37,16 +37,10 @@ public class SPARQLProcessor {
         this.placeholderService = placeholderService;
     }
 
-    /**
-     * Gera a consulta SPARQL e retorna um objeto de resposta detalhado.
-     * @param naturalLanguageQuery A pergunta do usuário.
-     * @return Um objeto ProcessamentoDetalhadoResposta contendo a query, o ID do template ou um erro.
-     */
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String naturalLanguageQuery) {
-        logger.info("Iniciando geração de query para: '{}'", naturalLanguageQuery);
         ProcessamentoDetalhadoResposta resposta = new ProcessamentoDetalhadoResposta();
-
         try {
+            // 1. Chamar o serviço de NLP
             String nlpResponseJson = callNlpService(naturalLanguageQuery);
             logger.info("Resposta do NLP: {}", nlpResponseJson);
 
@@ -54,61 +48,77 @@ public class SPARQLProcessor {
             String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
 
-            if (templateId.isEmpty() || templateId.equals("template_desconhecido")) {
-                resposta.setErro("NLP não conseguiu determinar um template válido.");
-                return resposta;
+            if (templateId.isEmpty() || "template_desconhecido".equals(templateId)) {
+                throw new RuntimeException("NLP não retornou um templateId válido.");
             }
 
+            // 2. Carregar o conteúdo do template
             String templateContent = loadTemplate(templateId);
+
+            // 3. Primeira Fase: Substituir placeholders de entidade (ex: #ENTIDADE_NOME#, #DATA#)
             String queryWithEntities = replaceEntityPlaceholders(templateContent, entitiesNode);
+            
+            // 4. Segunda Fase: Substituir placeholders genéricos (ex: P1, S1)
             String finalQuery = placeholderService.replaceGenericPlaceholders(queryWithEntities);
 
             resposta.setSparqlQuery(finalQuery);
-            resposta.setTemplateId(templateId); // Passa o ID do template para o frontend
-
+            resposta.setTemplateId(templateId);
             logger.info("Consulta SPARQL final gerada:\n{}", finalQuery);
+            
             return resposta;
 
         } catch (Exception e) {
-            logger.error("Erro fatal ao gerar query para '{}': {}", naturalLanguageQuery, e.getMessage(), e);
+            logger.error("Erro fatal ao gerar query para '{}': {}", e.getMessage(), e);
             resposta.setErro("Erro ao processar a pergunta: " + e.getMessage());
             return resposta;
         }
     }
 
-    private String callNlpService(String query) throws IOException, InterruptedException {
-        String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(NLP_SERVICE_URL))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
-                .build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body());
-        }
-        return response.body();
-    }
-
-    private String loadTemplate(String templateName) throws IOException {
-        ClassPathResource resource = new ClassPathResource("Templates/" + templateName + ".txt");
-        if (!resource.exists()) {
-             throw new IOException("Arquivo de template não encontrado: Templates/" + templateName + ".txt");
-        }
-        try (InputStream inputStream = resource.getInputStream()) {
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
-
+    /**
+     * Realiza a primeira etapa de substituição, trocando os placeholders de entidade
+     * (ex: #ENTIDADE_NOME#) e o de métrica (ex: #VALOR_DESEJADO#)
+     * pelos valores extraídos pelo NLP.
+     */
     private String replaceEntityPlaceholders(String template, JsonNode entities) {
         String finalQuery = template;
+        
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey() + "#";
             String value = field.getValue().asText();
-            finalQuery = finalQuery.replace(placeholder, value);
+            
+            // Lógica especial para o valor desejado (métrica)
+            if (field.getKey().equals("VALOR_DESEJADO")) {
+                // O valor aqui é a CHAVE para o .properties, ex: "metrica.preco_fechamento"
+                // Buscamos o valor real (o predicado RDF) no PlaceholderService
+                String predicadoRDF = placeholderService.getPlaceholderValue(value);
+                if (predicadoRDF != null) {
+                    finalQuery = finalQuery.replace(placeholder, predicadoRDF);
+                } else {
+                    logger.warn("Chave de métrica '{}' não encontrada no placeholders.properties.", value);
+                    // Substitui por algo que provavelmente causará um erro de sintaxe, para facilitar a depuração
+                    finalQuery = finalQuery.replace(placeholder, "b3:metricaNaoEncontrada");
+                }
+            } else {
+                // Substituição normal para outras entidades
+                finalQuery = finalQuery.replace(placeholder, value);
+            }
         }
         return finalQuery;
+    }
+
+    private String callNlpService(String query) throws IOException, InterruptedException {
+        String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(NLP_SERVICE_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8)).build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) { throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body()); }
+        return response.body();
+    }
+    
+    private String loadTemplate(String templateName) throws IOException {
+        ClassPathResource resource = new ClassPathResource("Templates/" + templateName + ".txt");
+        if (!resource.exists()) { throw new IOException("Arquivo de template não encontrado: Templates/" + templateName + ".txt"); }
+        try (InputStream inputStream = resource.getInputStream()) { return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8); }
     }
 }
