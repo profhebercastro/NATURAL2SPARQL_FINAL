@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +23,11 @@ public class PlaceholderService {
 
     private Properties placeholders = new Properties();
 
+    /**
+     * Carrega o arquivo de propriedades na inicialização do serviço.
+     * Este método é anotado com @PostConstruct para garantir que seja executado
+     * após a criação do bean pelo Spring.
+     */
     @PostConstruct
     public void loadProperties() {
         logger.info("Tentando carregar o arquivo de placeholders de: {}", PROPERTIES_PATH);
@@ -43,7 +49,7 @@ public class PlaceholderService {
 
     /**
      * Retorna o valor de uma chave específica do arquivo de propriedades.
-     * Usado para obter o predicado RDF de uma métrica.
+     * É usado pelo SPARQLProcessor para obter o predicado RDF de uma métrica.
      * @param key A chave a ser buscada (ex: "metrica.preco_fechamento").
      * @return O valor correspondente (ex: "b3:precoFechamento") ou null se não for encontrado.
      */
@@ -52,46 +58,53 @@ public class PlaceholderService {
     }
     
     /**
-     * Substitui todos os placeholders genéricos (S1, P1, etc.) na string da query
+     * Substitui todos os placeholders genéricos (S1, P1, SO1 etc.) na string da query
      * pelos seus valores correspondentes do arquivo .properties.
      * @param query A string da query com placeholders genéricos.
-     * @return A query final com os placeholders RDF substituídos.
+     * @return A query final com os placeholders RDF substituídos e os prefixos adicionados.
      */
     public String replaceGenericPlaceholders(String query) {
         String result = query;
 
-        // Ordena as chaves do maior para o menor comprimento para evitar substituições parciais (ex: P10 antes de P1)
+        // Obtém e ordena as chaves do maior para o menor comprimento.
+        // Isso é crucial para evitar substituições parciais (ex: substituir "S1" antes de "SO1").
         List<String> sortedKeys = placeholders.stringPropertyNames().stream()
-                .filter(k -> !k.startsWith("metrica.") && !k.startsWith("prefix.")) // Filtra chaves que não são para substituição direta de placeholders
+                .filter(k -> !k.startsWith("metrica.") && !k.startsWith("prefix.")) // Filtra chaves de configuração
                 .sorted(Comparator.comparingInt(String::length).reversed())
                 .collect(Collectors.toList());
 
         for (String key : sortedKeys) {
             String value = placeholders.getProperty(key);
             
-            // A substituição usa regex com '\b' (word boundary) para encontrar a "palavra" exata do placeholder.
-            // Matcher.quoteReplacement é importante para tratar valores que contêm '$' ou '\' (como as variáveis SPARQL).
-            result = result.replaceAll("\\b" + key + "\\b", Matcher.quoteReplacement(value));
+            // Lógica de substituição robusta:
+            // - \\b: Garante que estamos substituindo a "palavra" inteira (ex: P1 e não o P1 em P18).
+            // - Pattern.quote(key): Trata a chave (o placeholder, como "S1") como um texto literal,
+            //   evitando que caracteres especiais sejam interpretados como comandos de regex.
+            // - Matcher.quoteReplacement(value): Trata o valor (a substituição, como "?empresa") como um texto literal,
+            //   evitando que caracteres como '?' ou '$' causem erros na substituição.
+            result = result.replaceAll("\\b" + Pattern.quote(key) + "\\b", Matcher.quoteReplacement(value));
         }
         
-        // Adiciona os prefixos no início da consulta final
+        // Adiciona o cabeçalho de prefixos no início da consulta final.
         return addPrefixes() + result;
     }
 
     /**
-     * Monta o cabeçalho de prefixos para a consulta SPARQL a partir do arquivo .properties.
+     * Monta o cabeçalho de prefixos para a consulta SPARQL a partir das chaves "prefix.*"
+     * no arquivo .properties.
      * @return Uma string contendo todas as declarações de prefixos.
      */
     private String addPrefixes() {
         StringBuilder prefixHeader = new StringBuilder();
         placeholders.stringPropertyNames().stream()
             .filter(key -> key.startsWith("prefix."))
+            .sorted() // Ordena para um cabeçalho consistente
             .forEach(key -> {
                 String prefixName = key.substring("prefix.".length());
                 String prefixUri = placeholders.getProperty(key);
                 prefixHeader.append("PREFIX ").append(prefixName).append(": <").append(prefixUri).append(">\n");
             });
-        prefixHeader.append("\n");
+        prefixHeader.append("\n"); // Adiciona uma linha em branco após os prefixos
         return prefixHeader.toString();
     }
 }

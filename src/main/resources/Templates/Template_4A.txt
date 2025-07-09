@@ -1,10 +1,10 @@
 # TEMPLATE_4A -- Qual foi o volume negociado nas ações do Setor Financeiro em 05/05/2023?
-SELECT (SUM(?ANS) AS ?VolumeTotal) WHERE {
-    ?O1 rdfs:label "#NOME_SETOR#"@pt .   # Ponto de entrada
-    ?S1 P1 ?O1 .                         # empresa -> atuaEm -> setor
-    ?S1 P3 ?SO2 .                        # empresa -> temValorMobiliario -> valorMobiliario
-    ?SO2 P4 ?S03 .                       # valorMobiliario -> negociado -> negociadoEmPregao
-    ?S03 P6 ?S2 .                        # negociadoEmPregao -> negociadoDurante -> pregao
-    ?S2 P7 "#DATA#"^^xsd:date .          # pregao -> ocorreEmData -> data
-    ?S03 #VALOR_DESEJADO# ?ANS .         # negociadoEmPregao -> [volumeNegociado] -> resultado
+SELECT (SUM(?ANS) as ?VolumeTotal) WHERE {
+    ?O1 P6 "#NOME_SETOR#"@pt .
+    ?S1 P1 ?O1 .
+    ?S1 P3 ?SO2 .
+    ?SO2 P4 ?S03 .
+    ?S03 P6 ?S2 .
+    ?S2 P7 "#DATA#"^^xsd:date .
+    ?S03 P8 ?ANS .
 }

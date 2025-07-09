@@ -1,9 +1,8 @@
 # TEMPLATE_3A -- Quais são as ações do setor eletrico?
-SELECT DISTINCT ?ANS WHERE {
-    ?O1 rdfs:label "#NOME_SETOR#"@pt .   # Ponto de entrada
-    ?S1 P1 ?O1 .                         # empresa -> atuaEm -> setor
-    ?S1 P3 ?SO2 .                        # empresa -> temValorMobiliario -> valorMobiliario
-    ?SO2 P5 ?O2 .                        # valorMobiliario -> representadoPor -> codigoNegociacao
-    ?O2 rdfs:label ?ANS .                # Pega o label do codigo
+SELECT ?ANS WHERE {
+    ?O1 P5_label "#NOME_SETOR#"@pt .
+    ?S1 P1 ?O1 .
+    ?S1 P3 ?SO2 .
+    ?SO2 P4 ?O2 .  # P4 aqui é representadoPor
+    ?O2 rdfs:label ?ANS .
 }
-ORDER BY ?ANS
