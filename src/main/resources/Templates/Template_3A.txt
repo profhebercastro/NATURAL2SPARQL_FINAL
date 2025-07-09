@@ -1,8 +1,8 @@
-# Template 3A: Busca ações de um setor
-SELECT DISTINCT ?O1 WHERE {
-  ?S5 P18 "#NOME_SETOR#"@pt .
-  ?S1 P9 ?S5 .
-  ?S1 P1 ?S2 .
-  ?S2 (P19|(P2/P19)) ?O1 .
+# TEMPLATE_3A -- Quais são as ações do setor eletrico?
+SELECT ?ANS WHERE {
+    ?O1 P5 "#NOME_SETOR#"@pt .
+    ?S1 P1 ?O1 .              
+    ?S1 P3 ?SO2 .             
+    ?SO2 P5 ?O2 .           
+    ?O2 rdfs:label ?ANS .      
 }
-ORDER BY ?O1

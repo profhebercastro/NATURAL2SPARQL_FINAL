@@ -1,9 +1,10 @@
-# Template 1B: Busca métrica por ticker/código
+# TEMPLATE_1B -- Qual foi o preço de abertura da CBAV3 em 08/05/2023?
 SELECT ?ANS WHERE {
-    ?S2 P18 "#TICKER#" .
-    ?S2 P3 ?S3 .
-    ?S3 P4 ?S4 .
-    ?S4 P6 "#DATA#"^^xsd:date .
-    ?S3 #VALOR_DESEJADO# ?ANS .
+    ?O2 P2 "#TICKER#" .
+    ?SO2 P5 ?O2 .
+    ?SO2 P4 ?S03 .
+    ?S03 P6 ?S2 .
+    ?S2 P7 "#DATA#"^^xsd:date .
+    ?S03 #VALOR_DESEJADO# ?ANS .
 }
 LIMIT 1
