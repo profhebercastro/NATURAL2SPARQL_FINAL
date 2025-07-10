@@ -1,8 +1,8 @@
-# TEMPLATE_3A -- Quais são as ações do setor eletrico?
+# TEMPLATE_3A -- Quais são as ações do setor <setor>?
 SELECT DISTINCT ?O1 WHERE {
-  ?S5 P18 "#NOME_SETOR#"@pt .
-  ?S1 P9 ?S5 .
-  ?S1 P1 ?S2 .
-  ?S2 P19 ?O1 .
+  ?S4 P7 "#NOME_SETOR#"@pt .
+  ?S1 P9 ?S4 .
+  ?S1 P1 ?SO1 .
+  ?SO1 (P8 | (P2 / P8)) ?O1 .
 }
 ORDER BY ?O1

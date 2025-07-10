@@ -1,10 +1,10 @@
-# TEMPLATE_2A - Qual o código de negociação da ação da Gerdau?
+# TEMPLATE_2A -- Qual o código de negociação da ação da Gerdau?
 SELECT DISTINCT ?O1 WHERE {
   ?S1 P7 "#ENTIDADE_NOME#"@pt .
   ?S1 P1 ?SO1 .
-  { ?SO1 P7 ?O1 . }  # Opção A: O ticker é o rdfs:label da ação
+  { ?SO1 P7 ?O1 . }  
   UNION
-  { ?SO1 P8 ?O1 . }  # Opção B: O ticker está na propriedade b3:ticker da ação
+  { ?SO1 P8 ?O1 . }  
 }
 ORDER BY ?O1
 
