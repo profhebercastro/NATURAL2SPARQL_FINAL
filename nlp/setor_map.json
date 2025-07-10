@@ -1,39 +1,68 @@
 {
-  "petroleo gas e biocombustiveis": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
-  "petroleo e gas": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
-  "oleo e gas": "Petróleo._Gás_e_Biocombustíveis,_Exploracao_Refino_e_Distribuicao.",
-  "energia eletrica": "Utilidade_Publica,_Energia_Elétrica.",
-  "eletrico": "Utilidade_Publica,_Energia_Elétrica.",
-  "setor eletrico": "Utilidade_Publica,_Energia_Elétrica.",
-  "agua e saneamento": "Utilidade_Publica,_Agua_e_Saneamento.",
-  "saneamento": "Utilidade_Publica,_Agua_e_Saneamento.",
-  "financeiro": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
-  "setor financeiro": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
-  "bancos": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
-  "bancario": "Financeiro,_Intermediarios_Financeiros,_Bancos.",
-  "seguradoras": "Financeiro,_Previdencia_e_Seguros,_Seguradoras.",
-  "consumo nao ciclico": "Consumo_Nao_Ciclico.",
-  "alimentos": "Consumo_Nao_Ciclico,_Alimentos_Processados,_Alimentos_Processados.",
-  "comunicacoes": "Comunicações,_Telecomunicações.",
-  "telecomunicacoes": "Comunicações,_Telecomunicações.",
-  "telecom": "Comunicações,_Telecomunicações.",
-  "materiais basicos": "Materiais_Basicos.",
-  "mineracao": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
-  "minerais metalicos": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
-  "metais": "Materiais_Basicos,_Mineracao,_Minerais_Metalicos.",
-  "siderurgia": "Materiais_Basicos,_Siderurgia_e_Metalurgia,_Siderurgia.",
-  "quimicos": "Materiais_Basicos,_Quimicos,_Quimicos_Diversos.",
-  "papel e celulose": "Materiais_Basicos,_Madeira_e_Papel,_Papel_e_Celulose.",
-  "tecnologia da informacao": "Tecnologia_da_Informação,_Computadores_e_Equipamentos.",
-  "ti": "Tecnologia_da_Informação,_Computadores_e_Equipamentos.",
-  "software": "Tecnologia_da_Informação,_Programas_e_Serviços,_Programas_e_Servicos.",
-  "transporte rodoviario": "Bens_Industriais,_Transporte,_Transporte_Rodoviário.",
-  "transporte aereo": "Bens_Industriais,_Transporte,_Transporte_Aéreo.",
-  "construcao civil": "Bens_Industriais,_Construcao_e_Engenharia,_Construcao_Civil.",
-  "varejo": "Consumo_Ciclico,_Comercio,_Varejo_Diversos.",
-  "eletrodomesticos": "Consumo_Ciclico,_Comercio,_Eletrodomesticos.",
-  "textil": "Consumo_Ciclico,_Tecidos._Vestuario_e_Calcados,_Fios_e_Tecidos.",
-  "saude": "Saude_Serv.Med.Hospit..Analises_e_Diagnosticos_Serv.Med.Hospit..Analises_e_Diagnosticos.",
-  "setor de saude": "Saude_Serv.Med.Hospit..Analises_e_Diagnosticos_Serv.Med.Hospit..Analises_e_Diagnosticos.",
-  "educacao": "Consumo_Ciclico,_Diversos,_Servicos_Educacionais."
+  "petroleo gas e biocombustiveis": "Petróleo, Gás e Biocombustíveis",
+  "petroleo e gas": "Petróleo, Gás e Biocombustíveis",
+  "oleo e gas": "Petróleo, Gás e Biocombustíveis",
+  "biocombustiveis": "Petróleo, Gás e Biocombustíveis",
+
+  "energia eletrica": "Energia Elétrica",
+  "eletrico": "Energia Elétrica",
+  "setor eletrico": "Energia Elétrica",
+
+  "utilidade publica": "Utilidade Pública",
+  
+  "agua e saneamento": "Água e Saneamento",
+  "saneamento": "Água e Saneamento",
+
+  "financeiro": "Bancos",
+  "setor financeiro": "Bancos",
+  "bancos": "Bancos",
+  "bancario": "Bancos",
+  
+  "seguradoras": "Previdência e Seguros",
+  "previdencia e seguros": "Previdência e Seguros",
+
+  "consumo nao ciclico": "Consumo não Cíclico",
+  "alimentos": "Alimentos Processados",
+  "alimentos processados": "Alimentos Processados",
+
+  "comunicacoes": "Telecomunicações",
+  "telecomunicacoes": "Telecomunicações",
+  "telecom": "Telecomunicações",
+
+  "materiais basicos": "Materiais Básicos",
+  "mineracao": "Mineração",
+  "minerais metalicos": "Mineração",
+  "metais": "Mineração",
+
+  "siderurgia": "Siderurgia e Metalurgia",
+  "metalurgia": "Siderurgia e Metalurgia",
+
+  "quimicos": "Químicos",
+  "papel e celulose": "Madeira e Papel",
+
+  "tecnologia da informacao": "Tecnologia da Informação",
+  "ti": "Tecnologia da Informação",
+  "software": "Programas e Serviços",
+
+  "transporte": "Transporte",
+  "transporte rodoviario": "Transporte Rodoviário",
+  "transporte aereo": "Transporte Aéreo",
+
+  "construcao civil": "Construção Civil",
+  "construcao e engenharia": "Construção e Engenharia",
+
+  "varejo": "Comércio e Distribuição",
+  "comercio": "Comércio e Distribuição",
+
+  "eletrodomesticos": "Eletrodomésticos",
+  
+  "textil": "Tecidos, Vestuário e Calçados",
+  "vestuario": "Tecidos, Vestuário e Calçados",
+  "calcados": "Tecidos, Vestuário e Calçados",
+
+  "saude": "Saúde",
+  "setor de saude": "Saúde",
+
+  "educacao": "Serviços Educacionais",
+  "servicos educacionais": "Serviços Educacionais"
 }
