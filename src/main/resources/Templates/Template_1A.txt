@@ -1,6 +1,6 @@
 # TEMPLATE_1A -- Qual foi o preço de fechamento da CSN em 08/05/2023?
 SELECT ?ANS WHERE {
-    ?S1 P7 "#ENTIDADE_NOME#"@pt .
+    ?S1 P7 "#TICKER#"@pt .
     ?S1 P1 ?SO1 .
     ?SO1 P1 ?S3 .
     ?S3 P3 ?SO2 .
