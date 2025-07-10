@@ -1,4 +1,4 @@
-# Template 2A: Busca o ticker de uma empresa, testando label e propriedade ticker
+# TEMPLATE_2A - Qual o código de negociação da ação da Gerdau?
 SELECT DISTINCT ?O1 WHERE {
   ?S1 P7 "#ENTIDADE_NOME#"@pt .
   ?S1 P1 ?SO1 .
