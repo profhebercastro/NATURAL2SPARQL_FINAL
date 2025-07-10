@@ -1,10 +1,10 @@
+# Template 2A: Busca o ticker de uma empresa, testando label e propriedade ticker
 SELECT DISTINCT ?O1 WHERE {
   ?S1 P7 "#ENTIDADE_NOME#"@pt .
   ?S1 P1 ?SO1 .
-  ?SO1 P8 ?O1 .
   { ?SO1 P7 ?O1 . }  # Opção A: O ticker é o rdfs:label da ação
   UNION
-  { ?SO1 P8 ?O1 . }  # Opção B:
+  { ?SO1 P8 ?O1 . }  # Opção B: O ticker está na propriedade b3:ticker da ação
 }
 ORDER BY ?O1
 
