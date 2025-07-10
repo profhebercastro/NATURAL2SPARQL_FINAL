@@ -1,8 +1,9 @@
 # TEMPLATE_1B -- Qual foi o preço de abertura da CBAV3 em 08/05/2023?
 SELECT ?ANS WHERE {
-  ?SO1 P8 "#TICKER#" .
-  ?SO1 P1 ?S3 .
-  ?S3 P3 ?SO2 .
+  ?O1 rdfs:label "#TICKER#" .
+  ?SO1 P2 ?O1 .
+  ?SO1 P1 ?S3 .        
+  ?S3 P3 ?SO2 .        
   ?SO2 P5 ?S2 .
   ?S2 P6 "#DATA#"^^xsd:date .
   ?SO2 #VALOR_DESEJADO# ?ANS .
