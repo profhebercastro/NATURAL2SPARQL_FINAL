@@ -1,7 +1,8 @@
 # TEMPLATE_2A -- Qual foi o código de negociação da ação da Gerdau?
 SELECT DISTINCT ?O1 WHERE {
-  ?S1 P18 "#ENTIDADE_NOME#"@pt .
-  ?S1 P1 ?S2 .
-  ?S2 P19 ?O1 .
+  ?S1 P7 "#ENTIDADE_NOME#"@pt .
+  ?S1 P1 ?SO1 .
+  ?SO1 P8 ?O1 .
 }
 ORDER BY ?O1
+
