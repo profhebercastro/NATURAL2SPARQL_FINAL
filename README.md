@@ -29,7 +29,7 @@ Um sistema poliglota que traduz perguntas em linguagem natural (Português) em c
 
 ## ✨ Funcionalidades Principais
 
-*   **🗣️ Interface em Linguagem Natural**: Permite que usuários façam perguntas sobre o mercado de ações sem precisar conhecer a sintaxe SPARQL.
+*   **🗣️ Interface em Linguagem Natural**: Permite que usuários façam perguntas sobre um dominio de conhecimento sem precisar conhecer a sintaxe SPARQL.
 *   **⚙️ Arquitetura de Microserviços**: Combina a robustez do **Java/Spring Boot** para o backend principal e gerenciamento da ontologia com um microserviço **Python/Flask** dedicado ao Processamento de Linguagem Natural (NLP).
 *   **🧠 Povoamento da Base de Conhecimento**: Na inicialização, o sistema lê dados de planilhas `.xlsx` e popula dinamicamente uma ontologia RDF em memória usando Apache Jena.
 *   **🧩 Motor Baseado em Templates Genéricos**: Utiliza um sistema de substituição em duas fases. Os templates SPARQL contêm placeholders abstratos (`P1`, `S1`), que são mapeados para termos RDF específicos de um domínio através de um arquivo de propriedades. Isso permite que a lógica de consulta seja reutilizada em diferentes ontologias.
