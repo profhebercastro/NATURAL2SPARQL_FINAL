@@ -1,4 +1,4 @@
-# TEMPLATE_4B -- Qual foi a quantidade de ações do Itau negociadas no pregão de 05/05/2023?
+# TEMPLATE_5A -- Qual foi o preço mínimo da ação da Vale em 08/05/2023?
 SELECT ?ANS WHERE {
     ?S1 P7 "#ENTIDADE_NOME#"@pt .
     ?S1 P1 ?SO1 .
@@ -8,3 +8,4 @@ SELECT ?ANS WHERE {
     ?SO2 #VALOR_DESEJADO# ?ANS .
 }
 LIMIT 1
+
