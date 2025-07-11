@@ -48,16 +48,13 @@ public class PlaceholderService {
             String placeholderToReplace = key;
             String finalValue = value;
 
-            // ***** LÓGICA DE SUBSTITUIÇÃO CORRIGIDA *****
-            // Se a chave é para uma variável (S*, O*, ANS), o placeholder no template
-            // precisa do '?' e o valor da substituição também.
+
             if (key.matches("^(S|O|ANS).*")) {
                 placeholderToReplace = "?" + key;
                 finalValue = "?" + value;
             }
             
-            // Substitui a chave (ex: "?S1" ou "P1") pelo seu valor (ex: "?empresa" ou "b3:propriedade")
-            // Usamos Pattern.quote no placeholder para tratá-lo como texto literal.
+
             result = result.replaceAll(Pattern.quote(placeholderToReplace), Matcher.quoteReplacement(finalValue));
         }
         return addPrefixes() + result;

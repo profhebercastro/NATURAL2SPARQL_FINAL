@@ -162,8 +162,7 @@
                     const data = await response.json();
                     if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
-                    // *** CORREÇÃO PRINCIPAL AQUI ***
-                    // A resposta é uma string simples, então a colocamos diretamente no 'value' da textarea.
+
                     resultOutput.value = data.resultado || "Nenhum resultado encontrado.";
 
                 } catch (error) {

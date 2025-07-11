@@ -40,7 +40,7 @@ public class Main {
     
     @PostMapping("/gerar_consulta")
     public ResponseEntity<ProcessamentoDetalhadoResposta> gerarConsulta(@RequestBody PerguntaRequest request) {
-        // Esta parte já está correta e não precisa de alterações.
+        
         String pergunta = request.getPergunta();
         ProcessamentoDetalhadoResposta resposta = new ProcessamentoDetalhadoResposta();
 
@@ -77,13 +77,13 @@ public class Main {
 
         logger.info("Recebida requisição para EXECUTAR a consulta.");
         try {
-            // A classe Ontology já retorna uma lista de mapas, que é uma ótima estrutura.
+           
             List<Map<String, String>> resultList = ontology.executeQuery(sparqlQuery);
 
-            // Chamamos nosso novo método auxiliar para formatar essa lista em uma string
+            
             String formattedResult = formatResultSet(resultList);
             
-            // Retornamos a string formatada no campo "resultado" do JSON
+           
             return ResponseEntity.ok(Map.of("resultado", formattedResult));
 
         } catch (Exception e) {
@@ -103,23 +103,22 @@ public class Main {
             return "A consulta foi executada com sucesso, mas não retornou resultados.";
         }
 
-        // Caso especial: uma única linha e uma única coluna (ex: "Qual o preço...")
-        // Extrai apenas o valor para uma resposta mais limpa.
+ 
         if (resultList.size() == 1 && resultList.get(0).size() == 1) {
             String singleValue = resultList.get(0).values().iterator().next();
             logger.info("Resultado de valor único extraído da consulta: {}", singleValue);
             return singleValue;
         }
 
-        // Caso geral: múltiplas linhas ou colunas. Formata como uma tabela de texto.
+
         StringBuilder sb = new StringBuilder();
         
-        // Constrói o cabeçalho da tabela com os nomes das variáveis
+     
         String header = String.join("\t | \t", resultList.get(0).keySet());
         sb.append(header).append("\n");
         sb.append("=".repeat(header.length() + (resultList.get(0).size() * 5))).append("\n");
 
-        // Constrói as linhas de dados
+        
         for (Map<String, String> row : resultList) {
             String line = row.values().stream().collect(Collectors.joining("\t | \t"));
             sb.append(line).append("\n");

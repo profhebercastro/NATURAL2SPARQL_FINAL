@@ -17,7 +17,7 @@ def carregar_arquivo_json(nome_arquivo):
         return json.load(f)
 
 # Carrega todos os arquivos de configuração
-thesaurus = carregar_arquivo_json('Thesaurus.json')
+thesaurus = carregar_arquivo_json('synonym_dictionary.json')
 empresa_map = carregar_arquivo_json('empresa_nome_map.json')
 setor_map = carregar_arquivo_json('setor_map.json')
 
@@ -41,7 +41,7 @@ tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 
 def normalizar_pergunta(pergunta_lower):
-    """Substitui sinônimos na pergunta pelo seu termo canônico do Thesaurus."""
+    """Substitui sinônimos na pergunta pelo seu termo canônico do synonym dictionary."""
     pergunta_normalizada = pergunta_lower
     for conceito in thesaurus.get('conceitos', []):
         termo_canonico = conceito['canonico'].replace('_', ' ')

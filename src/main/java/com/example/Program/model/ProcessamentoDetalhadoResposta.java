@@ -8,7 +8,7 @@ public class ProcessamentoDetalhadoResposta {
     private String sparqlQuery;
     private String resposta;
     private String erro;
-    private String templateId; // Campo para passar o ID do template para o frontend
+    private String templateId; 
 
     public String getSparqlQuery() {
         return sparqlQuery;

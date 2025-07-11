@@ -8,7 +8,7 @@ public class PerguntaRequest {
     
     private String pergunta;
 
-    // É crucial ter um construtor padrão vazio para o Jackson (o Java o cria implicitamente se nenhum outro for definido).
+
 
     // Getter para 'pergunta'
     public String getPergunta() {

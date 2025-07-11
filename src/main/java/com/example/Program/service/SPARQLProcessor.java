@@ -90,18 +90,17 @@ public class SPARQLProcessor {
             
             // Lógica especial para o valor desejado (métrica)
             if (field.getKey().equals("VALOR_DESEJADO")) {
-                // O valor aqui é a CHAVE para o .properties, ex: "metrica.preco_fechamento"
-                // Buscamos o valor real (o predicado RDF) no PlaceholderService
+
                 String predicadoRDF = placeholderService.getPlaceholderValue(value);
                 if (predicadoRDF != null) {
                     finalQuery = finalQuery.replace(placeholder, predicadoRDF);
                 } else {
                     logger.warn("Chave de métrica '{}' não encontrada no placeholders.properties.", value);
-                    // Substitui por algo que provavelmente causará um erro de sintaxe, para facilitar a depuração
+               
                     finalQuery = finalQuery.replace(placeholder, "b3:metricaNaoEncontrada");
                 }
             } else {
-                // Substituição normal para outras entidades
+             
                 finalQuery = finalQuery.replace(placeholder, value);
             }
         }
