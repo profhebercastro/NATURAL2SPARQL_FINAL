@@ -45,7 +45,7 @@ public class Ontology {
         logger.info(">>> INICIANDO Inicialização do Componente Ontology (@PostConstruct)...");
         lock.writeLock().lock();
         try {
-            // Deletar o cache para forçar a reconstrução com os dados corretos
+            // Durante o desenvolvimento, é útil deletar o cache para forçar a reconstrução
             deleteInferredModelCache();
 
             this.model = loadOrCreateInferredModel();
@@ -153,12 +153,22 @@ public class Ontology {
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
                 
                 String tickerTrim = ticker.trim();
-                Resource valorMobiliario = model.getResource(ONT_PREFIX + tickerTrim);
+                
+                // ***** CORREÇÃO PRINCIPAL AQUI *****
+                // Usamos createResource em vez de getResource.
+                // Se o recurso :CBAV3 já foi criado, este método apenas o retorna.
+                // Se não foi (porque talvez não estivesse no Info_Empresas), este método o cria.
+                Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
+                // É uma boa prática garantir que o tipo e o label sejam definidos aqui também,
+                // para o caso de a ação existir nos dados de pregão mas não no arquivo de cadastro.
+                addStatement(model, valorMobiliario, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
+                addStatement(model, valorMobiliario, RDFS.label, model.createLiteral(tickerTrim));
 
                 String dataFmt = rdfDateFormat.format(dataPregao);
                 Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
+                // Esta ligação agora funcionará de forma muito mais confiável.
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
 
                 Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
@@ -166,13 +176,11 @@ public class Ontology {
                 addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
                 
+                // Carregamento de todas as propriedades numéricas, incluindo precoMedio
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));
-                
-                // ***** LINHA CORRIGIDA *****
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(11)));
-                
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "temQuantidade"), getNumericCellValue(row.getCell(14)));
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
