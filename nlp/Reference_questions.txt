@@ -1,8 +1,22 @@
-Template_1A;Qual foi a <métrica> da <empresa> em <data>?
-Template_1B;Qual foi a <métrica> do <código> em <data>?
-Template_2A;Qual o <código> de negociação da <empresa>?
-Template_3A;Quais são as <ações> do <setor>?
-Template_4A;Qual foi o <volume> das <ações> do <setor> em <data>?Qual o <metrica> da <entidade> em <data>?
-Qual o código de negociação da <empresa>?
-Quais são as ações do setor <setor>?
-Qual o volume negociado para o setor <setor> em <data>?
+# Arquivo de Perguntas de Referência
+
+# Template 1A: Busca uma métrica genérica de um código (ex: VALE3). 
+Template_1A;Qual o preço de abertura do PETR4 em 10/10/2023?
+
+# Template 2A: Busca o código de negociação de uma empresa.
+Template_2A;Qual o código de negociação da empresa Vale?
+
+# Template 3A: Lista todos os códigos de ação de um determinado setor.
+Template_3A;Quais são todas as ações do setor de mineração?
+
+# Template 4A: Calcula o volume total negociado para um setor em uma data.
+Template_4A;Qual foi o volume total negociado para o setor bancário em 05/05/2023?
+
+# Template 4B: Pergunta focada em "quantidade" e "negociadas".
+Template_4B;Qual foi a quantidade de ações do Itau negociadas no pregão de 05/05/2023?
+
+# Template 5A: Pergunta focada na frase "da ação da".
+Template_5A;Qual foi o preço mínimo da ação da Vale em 08/05/2023?
+
+# Template 5B (Agrupado): Pergunta que obrigatoriamente contém um tipo (ordinária, preferencial, unit).
+Template_5B;Qual foi o preço máximo da ação ordinária da Gerdau em 08/05/2023?
