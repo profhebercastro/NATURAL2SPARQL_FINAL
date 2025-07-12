@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS (Inicialização) ---
+# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def carregar_arquivo_json(nome_arquivo):
@@ -13,16 +13,10 @@ def carregar_arquivo_json(nome_arquivo):
     try:
         with open(caminho_completo, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except FileNotFoundError:
-        print(f"AVISO: Arquivo {nome_arquivo} não encontrado.")
-        return {}
+    except FileNotFoundError: return {}
 
-# Carrega todos os arquivos de configuração
-thesaurus = carregar_arquivo_json('synonym_dictionary.json')
 empresa_map = carregar_arquivo_json('empresa_nome_map.json')
-setor_map = carregar_arquivo_json('setor_map.json')
 
-# Carrega as perguntas de referência do arquivo de texto
 reference_templates = {}
 try:
     caminho_ref_questions = os.path.join(SCRIPT_DIR, 'Reference_questions.txt')
@@ -32,10 +26,8 @@ try:
             if line and ';' in line and not line.startswith('#'):
                 template_id, question_text = line.split(';', 1)
                 reference_templates[template_id.strip()] = question_text.strip()
-except FileNotFoundError:
-    print("AVISO: Arquivo Reference_questions.txt não encontrado.")
+except FileNotFoundError: pass
 
-# Prepara o modelo de similaridade TF-IDF
 ref_ids = list(reference_templates.keys())
 ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
@@ -43,37 +35,41 @@ tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else
 
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 
+# --- CORREÇÃO 1: LÓGICA DE EXTRAÇÃO MELHORADA ---
 def extrair_entidades(pergunta_lower, template_id):
     entidades = {}
+    
+    # Extrai o NOME DA EMPRESA e o TERMO DE BUSCA ORIGINAL
     sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
     for key in sorted_empresa_keys:
         if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-            entidades['entidade_nome'] = empresa_map[key]
-            break 
+            entidades['entidade_nome'] = empresa_map[key]  # Nome formal, ex: "VALE S.A."
+            entidades['termo_busca_empresa'] = key        # Termo original, ex: "Vale"
+            break
+    
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
+
     if template_id == 'Template_5B':
-        if "ordinária" in pergunta_lower:
-            entidades["regex_pattern"] = "3$"
-        elif "preferencial" in pergunta_lower:
-            entidades["regex_pattern"] = "[456]$"
-        elif "unit" in pergunta_lower:
-            entidades["regex_pattern"] = "11$"
+        if "ordinária" in pergunta_lower: entidades["regex_pattern"] = "3$"
+        elif "preferencial" in pergunta_lower: entidades["regex_pattern"] = "[456]$"
+        elif "unit" in pergunta_lower: entidades["regex_pattern"] = "11$"
+            
     return entidades
 
+# --- CORREÇÃO 2: IDENTIFICAÇÃO DE MÉTRICA ROBUSTA ---
 def identificar_metrica_canonico(pergunta_lower):
     """Identifica a métrica na pergunta de forma robusta, usando um mapa interno."""
     mapa_metricas = {
-        'preco_maximo': ['preço máximo', 'preco maximo', 'maior preço'],
-        'preco_minimo': ['preço mínimo', 'preco minimo', 'menor preço'],
+        'preco_maximo': ['preço máximo', 'preco maximo', 'máximo'],
+        'preco_minimo': ['preço mínimo', 'preco minimo', 'mínimo'],
         'preco_fechamento': ['preço de fechamento', 'fechamento'],
         'preco_abertura': ['preço de abertura', 'abertura'],
         'preco_medio': ['preço médio', 'preco medio'],
-        'volume': ['volume'],
-        # Mapeamento de 'quantidade' para o canônico que será usado no .properties
-        'quantidade': ['quantidade', 'quantidade de ações', 'total de negocios']
+        'quantidade': ['quantidade', 'quantidade de ações', 'total de negocios'],
+        'volume': ['volume']
     }
     for canonico, sinonimos in mapa_metricas.items():
         for s in sinonimos:
@@ -90,10 +86,8 @@ def process_question():
     pergunta_usuario_original = data.get('question', '')
     pergunta_lower = pergunta_usuario_original.lower()
 
-    if not pergunta_lower.strip():
-        return jsonify({"error": "Pergunta não pode ser vazia"}), 400
-    if not ref_questions or tfidf_matrix_ref is None:
-         return jsonify({"error": "Sistema de NLP não inicializado."}), 500
+    if not pergunta_lower.strip(): return jsonify({"error": "Pergunta não pode ser vazia"}), 400
+    if not ref_questions: return jsonify({"error": "Sistema de NLP não inicializado."}), 500
 
     tfidf_usuario = vectorizer.transform([pergunta_lower])
     similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
@@ -113,18 +107,13 @@ def process_question():
     if metrica_canonico:
         entidades_extraidas['valor_desejado'] = f'metrica.{metrica_canonico}'
 
+    # Usa o termo de busca para o REGEX, se existir, senão usa o nome formal.
+    if 'termo_busca_empresa' in entidades_extraidas:
+        entidades_extraidas['entidade_nome'] = entidades_extraidas['termo_busca_empresa']
+    
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
 
-    response = {
-        "templateId": template_id,
-        "entities": entidades_maiusculas,
-        "debugInfo": {
-            "perguntaOriginal": pergunta_usuario_original,
-            "templateEscolhidoPelaSimilaridade": ref_ids[indice_melhor_similaridade],
-            "templateFinalAposRegras": template_id,
-        }
-    }
-    return jsonify(response)
+    return jsonify({"templateId": template_id, "entities": entidades_maiusculas})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
