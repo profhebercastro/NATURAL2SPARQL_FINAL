@@ -1,5 +1,5 @@
 # TEMPLATE_5B -- Busca métrica com filtro de TIPO, seguindo o caminho completo.
-SELECT ?S1 ?ANS WHERE {
+SELECT ?ANS WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
                       
