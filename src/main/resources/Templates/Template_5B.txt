@@ -1,16 +1,17 @@
-# TEMPLATE_5B (Agrupado) -- Busca métrica de empresa em data, filtrando por TIPO de ação.
+# TEMPLATE_5B -- Busca métrica com filtro de TIPO, seguindo o caminho completo.
 SELECT ?S1 ?ANS WHERE {
     ?S1 P7 ?label .
-    # Filtro case-insensitive para o nome da empresa
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
                       
     ?S1 P1 ?SO1 .
-    ?SO1 P2 ?O1 .                      
-    ?SO1 P3 ?SO2 .
+    ?SO1 P1 ?intermediario .
+    ?intermediario P2 ?tickerCode .  # P2 = representadoPor (Intermediário -> Codigo)
+    ?tickerCode b3:ticker ?O1 .   # Propriedade final que contém o literal do ticker
+
+    ?intermediario P3 ?SO2 .
     ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
     ?SO2 #VALOR_DESEJADO# ?ANS .
     
-    # Filtro REGEX para o final do ticker (ex: "3$", "[456]$", "11$")
     FILTER(REGEX(STR(?O1), "#REGEX_PATTERN#"))
 }
