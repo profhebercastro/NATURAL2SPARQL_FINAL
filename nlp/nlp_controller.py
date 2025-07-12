@@ -1,121 +1,137 @@
-import os
 import json
 import re
+import os
 from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- Configuração Inicial do Flask ---
-app = Flask(__name__)
+# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
 
-# --- Carregamento dos Modelos e Dicionários (em memória) ---
+# Descobre o diretório absoluto onde este script está localizado para carregar arquivos de forma robusta.
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Define os caminhos relativos ao script para robustez
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+def carregar_arquivo_json(nome_arquivo):
+    """Função auxiliar para carregar arquivos JSON do mesmo diretório que o script."""
+    caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
+    with open(caminho_completo, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
-# 1. Carregar Perguntas de Referência e treinar o modelo TF-IDF
-try:
-    with open(os.path.join(BASE_DIR, 'Reference_questions.txt'), 'r', encoding='utf-8') as f:
-        reference_data = [line.strip().split(';') for line in f if line.strip() and not line.startswith('#')]
-    
-    template_ids = [data[0] for data in reference_data]
-    reference_questions = [data[1] for data in reference_data]
+# Carrega todos os arquivos de configuração
+thesaurus = carregar_arquivo_json('synonym_dictionary.json')
+empresa_map = carregar_arquivo_json('empresa_nome_map.json')
+setor_map = carregar_arquivo_json('setor_map.json')
 
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(reference_questions)
-except FileNotFoundError:
-    print("ERRO: O arquivo 'Reference_questions.txt' não foi encontrado.")
-    template_ids, reference_questions, vectorizer, tfidf_matrix = [], [], None, None
+# Carrega as perguntas de referência
+reference_templates = {}
+caminho_ref_questions = os.path.join(SCRIPT_DIR, 'Reference_questions.txt')
+with open(caminho_ref_questions, 'r', encoding='utf-8') as f:
+    for line in f:
+        line = line.strip()
+        if line and ';' in line:
+            template_id, question_text = line.split(';', 1)
+            reference_templates[template_id.strip()] = question_text.strip()
 
-# 2. Carregar dicionários de mapeamento
-try:
-    with open(os.path.join(BASE_DIR, 'empresa_nome_map.json'), 'r', encoding='utf-8') as f:
-        empresa_map = json.load(f)
-    with open(os.path.join(BASE_DIR, 'synonym_dictionary.json'), 'r', encoding='utf-8') as f:
-        synonym_map = json.load(f)
-except FileNotFoundError as e:
-    print(f"ERRO: Não foi possível carregar um dos arquivos JSON de mapeamento: {e}")
-    empresa_map, synonym_map = {}, {}
+# Prepara o modelo de similaridade
+ref_ids = list(reference_templates.keys())
+ref_questions = list(reference_templates.values())
+vectorizer = TfidfVectorizer()
+tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
 
 
-# --- Funções de Lógica ---
+# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 
-def find_best_template(user_question):
-    """Encontra o template mais similar usando similaridade de cosseno."""
-    if not vectorizer:
-        return None
-    user_tfidf = vectorizer.transform([user_question])
-    similarities = cosine_similarity(user_tfidf, tfidf_matrix).flatten()
-    best_index = similarities.argmax()
-    return template_ids[best_index]
+def normalizar_pergunta(pergunta_lower):
+    """Substitui sinônimos na pergunta pelo seu termo canônico do synonym dictionary."""
+    pergunta_normalizada = pergunta_lower
+    for conceito in thesaurus.get('conceitos', []):
+        termo_canonico = conceito['canonico'].replace('_', ' ')
+        sorted_sinonimos = sorted(conceito.get('sinonimos', []), key=lambda x: len(x['termo']), reverse=True)
+        for sinonimo_info in sorted_sinonimos:
+            termo_sinonimo = sinonimo_info['termo'].lower()
+            pergunta_normalizada = re.sub(r'\b' + re.escape(termo_sinonimo) + r'\b', termo_canonico, pergunta_normalizada)
+    return pergunta_normalizada
 
-def extract_entities(user_question, template_id):
-    """Extrai entidades (empresa, data, métrica, etc.) da pergunta."""
+def extrair_entidades(pergunta_lower):
+    """Extrai entidades específicas e retorna os DADOS BRUTOS."""
     entidades = {}
-    question_lower = user_question.lower()
-
-    # Extrair data (DD/MM/AAAA)
-    date_match = re.search(r'\d{2}/\d{2}/\d{4}', user_question)
-    if date_match:
-        entidades['data'] = date_match.group(0)
-
-    # Extrair nome da empresa
-    for key, value in empresa_map.items():
-        if key.lower() in question_lower:
-            entidades['nome_empresa'] = value
+    
+    # Extrair Empresa/Ticker
+    sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
+    for key in sorted_empresa_keys:
+        if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
+            value = empresa_map[key]
+            if re.match(r'^[A-Z]{4}\d{1,2}$', value):
+                entidades['TICKER'] = value
+            else:
+                entidades['ENTIDADE_NOME'] = value
+            break 
+    
+    # Extrair Setor
+    sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
+    for key in sorted_setor_keys:
+        if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
+            entidades['NOME_SETOR'] = setor_map[key]
             break
-            
-    # Extrair métrica
-    for key, synonyms in synonym_map.items():
-        for synonym in synonyms:
-            if synonym.lower() in question_lower:
-                entidades['metrica'] = key
-                break
-        if 'metrica' in entidades:
-            break
-            
-    # --- LÓGICA NOVA: Extrair padrão REGEX para Template 5B ---
-    if template_id == 'Template_5B':
-        if "ordinária" in question_lower:
-            entidades["regex_pattern"] = "3$"
-        elif "preferencial" in question_lower:
-            entidades["regex_pattern"] = "[456]$"
-        elif "unit" in question_lower:
-            entidades["regex_pattern"] = "11$"
-            
+
+    # Extrair Data
+    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
+    if match_data:
+        dia, mes, ano = match_data.groups()
+        entidades['DATA'] = f"{ano}-{mes}-{dia}"
+
     return entidades
 
+def identificar_metrica_canonico(pergunta_lower):
+    """Identifica o nome canônico da métrica na pergunta (ex: "preco_maximo")."""
+    for conceito in thesaurus.get('conceitos', []):
+        if conceito['canonico'].startswith('preco_') or conceito['canonico'] in ['volume', 'quantidade']:
+            sorted_sinonimos = sorted(conceito.get('sinonimos', []), key=lambda x: len(x['termo']), reverse=True)
+            for sinonimo in sorted_sinonimos:
+                if re.search(r'\b' + re.escape(sinonimo['termo'].lower()) + r'\b', pergunta_lower):
+                    return conceito['canonico']
+    if 'volume' in pergunta_lower and 'setor' in pergunta_lower:
+        return 'volume'
+    return None
 
-# --- Endpoint da API ---
+# --- API FLASK ---
+app = Flask(__name__)
 
-@app.route('/api/nlp/processar', methods=['POST'])
-def process_question_endpoint():
-    """Endpoint principal que recebe a pergunta e retorna o payload processado."""
+@app.route('/process_question', methods=['POST'])
+def process_question():
     data = request.get_json()
-    if not data or 'pergunta' not in data:
-        return jsonify({"erro": "Payload inválido. A chave 'pergunta' é necessária."}), 400
+    pergunta_usuario_original = data.get('question', '')
+    pergunta_lower = pergunta_usuario_original.lower()
 
-    user_question = data['pergunta']
-    
-    # 1. Encontrar o melhor template
-    best_template_id = find_best_template(user_question)
-    if not best_template_id:
-        return jsonify({"erro": "Modelo de NLP não inicializado."}), 500
+    if not pergunta_lower:
+        return jsonify({"error": "Pergunta não pode ser vazia"}), 400
 
-    # 2. Extrair todas as entidades
-    extracted_entities = extract_entities(user_question, best_template_id)
+    if not ref_questions or tfidf_matrix_ref is None:
+         return jsonify({"error": "O sistema de NLP não foi inicializado corretamente (sem perguntas de referência)."}), 500
+
+    pergunta_normalizada = normalizar_pergunta(pergunta_lower)
+    tfidf_usuario = vectorizer.transform([pergunta_normalizada])
+    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+    indice_melhor = similaridades.argmax()
+    template_id = ref_ids[indice_melhor]
+
+    entidades_extraidas = extrair_entidades(pergunta_lower)
+    metrica_canonico = identificar_metrica_canonico(pergunta_lower)
     
-    # 3. Montar o payload final para o Java
-    response_payload = {
-        "templateId": best_template_id,
-        "entidades": extracted_entities
+    if metrica_canonico:
+        # Adiciona a CHAVE da métrica para o Java usar no .properties
+        entidades_extraidas['VALOR_DESEJADO'] = f'metrica.{metrica_canonico}'
+
+    response = {
+        "templateId": template_id,
+        "entities": entidades_extraidas,
+        "debugInfo": {
+            "perguntaOriginal": pergunta_usuario_original,
+            "perguntaNormalizada": pergunta_normalizada,
+            "templateEscolhido": template_id,
+            "similaridadeScore": float(similaridades[indice_melhor])
+        }
     }
-    
-    return jsonify(response_payload)
-
-
-# --- Bloco de Execução ---
+    return jsonify(response)
 
 if __name__ == '__main__':
-    # Usar '0.0.0.0' para ser acessível dentro do container Docker
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
