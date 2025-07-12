@@ -41,7 +41,7 @@ tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 
 def normalizar_pergunta(pergunta_lower):
-    """Substitui sinônimos na pergunta pelo seu termo canônico do synonym dictionary."""
+    """Substitui sinônimos na pergunta pelo seu termo canônico do synonym_dictionary.json."""
     pergunta_normalizada = pergunta_lower
     for conceito in thesaurus.get('conceitos', []):
         termo_canonico = conceito['canonico'].replace('_', ' ')
