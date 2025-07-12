@@ -20,6 +20,6 @@ public class WebController {
      */
     @GetMapping("/")
     public String index() {
-        return "index2.html";
+        return "index.html";
     }
 }
