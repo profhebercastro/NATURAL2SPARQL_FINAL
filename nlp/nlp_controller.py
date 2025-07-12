@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
+# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS (Inicialização) ---
 
 # Descobre o diretório absoluto onde este script está localizado para carregar arquivos de forma robusta.
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -27,7 +27,7 @@ caminho_ref_questions = os.path.join(SCRIPT_DIR, 'Reference_questions.txt')
 with open(caminho_ref_questions, 'r', encoding='utf-8') as f:
     for line in f:
         line = line.strip()
-        if line and ';' in line:
+        if line and ';' in line and not line.startswith('#'):
             template_id, question_text = line.split(';', 1)
             reference_templates[template_id.strip()] = question_text.strip()
 
@@ -51,8 +51,8 @@ def normalizar_pergunta(pergunta_lower):
             pergunta_normalizada = re.sub(r'\b' + re.escape(termo_sinonimo) + r'\b', termo_canonico, pergunta_normalizada)
     return pergunta_normalizada
 
-def extrair_entidades(pergunta_lower):
-    """Extrai entidades específicas e retorna os DADOS BRUTOS."""
+def extrair_entidades(pergunta_lower, template_id):
+    """Extrai entidades específicas e retorna um dicionário."""
     entidades = {}
     
     # Extrair Empresa/Ticker
@@ -60,24 +60,36 @@ def extrair_entidades(pergunta_lower):
     for key in sorted_empresa_keys:
         if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
             value = empresa_map[key]
+            # Diferencia se o valor é um ticker ou um nome completo
             if re.match(r'^[A-Z]{4}\d{1,2}$', value):
-                entidades['TICKER'] = value
+                entidades['ticker'] = value
             else:
-                entidades['ENTIDADE_NOME'] = value
+                entidades['entidade_nome'] = value
             break 
     
     # Extrair Setor
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-            entidades['NOME_SETOR'] = setor_map[key]
+            entidades['nome_setor'] = setor_map[key]
             break
 
-    # Extrair Data
+    # Extrair Data no formato YYYY-MM-DD
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
-        entidades['DATA'] = f"{ano}-{mes}-{dia}"
+        entidades['data'] = f"{ano}-{mes}-{dia}"
+
+    # --- NOVO BLOCO DE LÓGICA ---
+    # Adiciona o padrão REGEX se o template for o que filtra por tipo de ação.
+    if template_id == 'Template_5B':
+        if "ordinária" in pergunta_lower:
+            entidades["regex_pattern"] = "3$"
+        elif "preferencial" in pergunta_lower:
+            entidades["regex_pattern"] = "[456]$"
+        elif "unit" in pergunta_lower:
+            entidades["regex_pattern"] = "11$"
+    # --- FIM DO NOVO BLOCO ---
 
     return entidades
 
@@ -106,24 +118,29 @@ def process_question():
         return jsonify({"error": "Pergunta não pode ser vazia"}), 400
 
     if not ref_questions or tfidf_matrix_ref is None:
-         return jsonify({"error": "O sistema de NLP não foi inicializado corretamente (sem perguntas de referência)."}), 500
+         return jsonify({"error": "O sistema de NLP não foi inicializado corretamente."}), 500
 
+    # Lógica de processamento
     pergunta_normalizada = normalizar_pergunta(pergunta_lower)
     tfidf_usuario = vectorizer.transform([pergunta_normalizada])
     similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
     indice_melhor = similaridades.argmax()
     template_id = ref_ids[indice_melhor]
 
-    entidades_extraidas = extrair_entidades(pergunta_lower)
-    metrica_canonico = identificar_metrica_canonico(pergunta_lower)
+    # Passamos o template_id para a função de extração
+    entidades_extraidas = extrair_entidades(pergunta_lower, template_id)
     
+    metrica_canonico = identificar_metrica_canonico(pergunta_lower)
     if metrica_canonico:
-        # Adiciona a CHAVE da métrica para o Java usar no .properties
-        entidades_extraidas['VALOR_DESEJADO'] = f'metrica.{metrica_canonico}'
+        entidades_extraidas['valor_desejado'] = f'metrica.{metrica_canonico}'
+
+    # --- NOVO ---
+    # Converte as chaves do dicionário para maiúsculas para corresponder aos placeholders #NOME#
+    entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
 
     response = {
         "templateId": template_id,
-        "entities": entidades_extraidas,
+        "entities": entidades_maiusculas, # Enviamos o dicionário com chaves em maiúsculas
         "debugInfo": {
             "perguntaOriginal": pergunta_usuario_original,
             "perguntaNormalizada": pergunta_normalizada,
