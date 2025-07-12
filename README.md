@@ -1,4 +1,4 @@
-# Natural2SPARQL V4 💬 ➡️ SPARQL
+# Natural2SPARQL 💬 ➡️ SPARQL
 
 [![Java](https://img.shields.io/badge/Java-17-blue.svg?style=for-the-badge&logo=openjdk)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
 [![Spring](https://img.shields.io/badge/Spring_Boot-3.2-green.svg?style=for-the-badge&logo=spring)](https://spring.io/projects/spring-boot)
@@ -7,7 +7,7 @@
 [![Apache Jena](https://img.shields.io/badge/Apache-Jena-orange.svg?style=for-the-badge&logo=apache)](https://jena.apache.org/)
 [![Docker](https://img.shields.io/badge/Docker-gray.svg?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-Um sistema poliglota que traduz perguntas em linguagem natural (Português) em consultas **SPARQL**, executando-as contra uma base de conhecimento RDF para obter respostas precisas. O framework utiliza uma arquitetura flexível baseada em templates e placeholders genéricos para permitir fácil adaptação a diferentes domínios.
+Um sistema que traduz perguntas em linguagem natural (Português) em consultas **SPARQL**, executando-as contra uma base de conhecimento RDF para obter respostas precisas. O framework utiliza uma arquitetura flexível baseada em templates e placeholders genéricos para permitir fácil adaptação a diferentes domínios.
 
 ---
 
@@ -102,7 +102,7 @@ A maneira mais fácil e que melhor simula o ambiente de produção é usar o `Do
 
 ## 🕹️ Como Usar a Aplicação
 
-1.  Acesse a interface web: [**Demo Online**](https://natural2sparql-v4.onrender.com) ou `http://localhost:8080`.
+1.  Acesse a interface web: [**Demo Online**](https://natural2sparql-v5.onrender.com) ou `http://localhost:8080`.
 2.  Digite sua pergunta no campo de texto.
     > **Exemplos de perguntas que o sistema entende:**
     > *   `Qual foi o preço de fechamento da ação da CSN em 08/05/2023?`
