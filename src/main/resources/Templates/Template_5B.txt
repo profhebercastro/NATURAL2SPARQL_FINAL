@@ -1,22 +1,16 @@
-# TEMPLATE 5B -- Busca métrica com filtro de TIPO, com caminho corrigido e filtro REGEX.
+# TEMPLATE 5B -- Busca métrica com filtro de TIPO
 SELECT ?ticker ?ANS WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
                       
-    ?S1 P1 ?SO1 . # Empresa -> ValorMobiliario
-
-    # Caminho corrigido para o Ticker, a partir do ValorMobiliario
-    ?SO1 P2 ?codigo .   # ValorMobiliario -> representadoPor -> Codigo
-    ?codigo b3:ticker ?ticker . # Codigo -> ticker -> "Literal" (ex: "GGBR3")
-    
-    # Caminho corrigido para a Negociação
+    ?S1 P1 ?SO1 . 
+    ?SO1 P2 ?codigo .   
+    ?codigo b3:ticker ?ticker . 
     ?SO1 P1 ?intermediario . 
     ?intermediario P3 ?SO2 . 
     ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
     ?SO2 #VALOR_DESEJADO# ?ANS .
-    
-    # --- LINHA CRÍTICA QUE ESTAVA FALTANDO ---
-    # Filtra o resultado final para incluir apenas os tickers que correspondem ao padrão
+
     FILTER(REGEX(STR(?ticker), "#REGEX_PATTERN#"))
 }

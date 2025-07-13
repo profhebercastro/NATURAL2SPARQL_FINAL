@@ -1,5 +1,4 @@
-# TEMPLATE_1A -- Qual foi o preço de fechamento da CSN em 08/05/2023?
-# TEMPLATE 1A -- Busca métrica de uma empresa (resultado simples).
+# TEMPLATE 1A -- Busca métrica de uma empresa
 SELECT ?ANS WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))

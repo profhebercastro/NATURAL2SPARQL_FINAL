@@ -1,4 +1,4 @@
-# TEMPLATE 5A -- Qual foi o preço mínimo da ação da Vale em 08/05/2023?
+# TEMPLATE 5A -- Busca métrica de uma ticker
 SELECT ?ANS WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))

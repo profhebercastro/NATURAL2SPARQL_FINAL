@@ -1,4 +1,4 @@
-# TEMPLATE_3A -- Quais são as ações do setor <setor>?
+# TEMPLATE_3A -- Busca ticker pelo setor
 SELECT DISTINCT ?O1 WHERE {
   ?S4 P7 "#NOME_SETOR#"@pt .
   ?S1 P9 ?S4 .

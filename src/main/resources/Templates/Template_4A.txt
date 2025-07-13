@@ -1,4 +1,4 @@
-# TEMPLATE_4A -- Qual foi o volume negociado nas ações do setor <setor> em <data>?
+# TEMPLATE_4A -- Busca métrica de um setor
 SELECT ?O1 (SUM(?ANS) AS ?volumeTotal) WHERE {
     ?S4 P7 "#NOME_SETOR#"@pt .
     ?S1 P9 ?S4 .

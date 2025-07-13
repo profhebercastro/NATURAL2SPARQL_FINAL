@@ -1,4 +1,4 @@
-# TEMPLATE_2A -- Qual o código de negociação da ação da Gerdau?
+# TEMPLATE_2A -- Busca ticker
 SELECT DISTINCT ?O1 WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))

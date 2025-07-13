@@ -1,4 +1,4 @@
-# TEMPLATE 4B -- Qual foi a quantidade de ações do Itau negociadas no pregão de 05/05/2023?
+# TEMPLATE 4B -- Busca métrica de um ticker
 SELECT ?O1 ?ANS WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))

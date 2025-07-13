@@ -1,4 +1,4 @@
-# TEMPLATE_1B -- Qual foi o preço de abertura da CBAV3 em 08/05/2023?
+# TEMPLATE_1B -- Busca métrica de um ticker
 SELECT ?ANS WHERE {
  
   { ?SO1 P7 "#TICKER#" . }
