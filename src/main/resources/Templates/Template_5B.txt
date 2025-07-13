@@ -1,8 +1,8 @@
-# TEMPLATE 5B -- Qual foi o preço mínima da ação preferencial do Itau em 05/05/2023?
-#Qual foi o preço máximo da ação ordinária da Gerdau em 08/05/2023?
+# TEMPLATE 5B -- Busca métrica com filtro de TIPO, com a linha FILTER incluída.
 SELECT ?ticker ?ANS WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
+                      
     ?S1 P1 ?SO1 . 
     ?SO1 P2 ?codigo .   
     ?codigo b3:ticker ?ticker . 
@@ -11,5 +11,6 @@ SELECT ?ticker ?ANS WHERE {
     ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
     ?SO2 #VALOR_DESEJADO# ?ANS .
+
     FILTER(REGEX(STR(?ticker), "#REGEX_PATTERN#"))
 }
