@@ -11,6 +11,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def carregar_arquivo_json(nome_arquivo):
+    """Função auxiliar para carregar arquivos JSON do mesmo diretório que o script."""
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
     try:
         with open(caminho_completo, 'r', encoding='utf-8') as f:
@@ -19,10 +20,11 @@ def carregar_arquivo_json(nome_arquivo):
         print(f"AVISO: Arquivo {nome_arquivo} não foi encontrado.")
         return {}
 
-thesaurus = carregar_arquivo_json('synonym_dictionary.json')
+# Carrega todos os arquivos de configuração
 empresa_map = carregar_arquivo_json('empresa_nome_map.json')
 setor_map = carregar_arquivo_json('setor_map.json')
 
+# Carrega as perguntas de referência do arquivo de texto
 reference_templates = {}
 try:
     caminho_ref_questions = os.path.join(SCRIPT_DIR, 'Reference_questions.txt')
@@ -35,6 +37,7 @@ try:
 except FileNotFoundError:
     print("AVISO: Arquivo Reference_questions.txt não encontrado.")
 
+# Prepara o modelo de similaridade TF-IDF
 ref_ids = list(reference_templates.keys())
 ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
@@ -44,13 +47,16 @@ tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 
 def remover_acentos(texto):
+    """Remove acentos e caracteres diacríticos de uma string. Ex: 'elétrico' -> 'eletrico'."""
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def extrair_entidades(pergunta_lower, template_id):
+    """Extrai entidades específicas (empresa, data, setor, etc.) e retorna um dicionário."""
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
 
+    # Extrai Nome da Empresa e o Termo de Busca Original
     sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
     for key in sorted_empresa_keys:
         if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
@@ -58,25 +64,32 @@ def extrair_entidades(pergunta_lower, template_id):
             entidades['entidade_nome'] = empresa_map[key]
             break
 
+    # Extrai Nome do Setor
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
             entidades['nome_setor'] = setor_map[key]
             break
 
+    # Extrai Data
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
 
+    # Lógica para o filtro de tipo de ação (CORRIGIDA)
     if template_id == 'Template_5B':
-        if "ordinária" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
-        elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
-        elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
+        if "ordinaria" in pergunta_sem_acento:
+            entidades["regex_pattern"] = "3$"
+        elif "preferencial" in pergunta_sem_acento:
+            entidades["regex_pattern"] = "[456]$"
+        elif "unit" in pergunta_sem_acento:
+            entidades["regex_pattern"] = "11$"
             
     return entidades
 
 def identificar_metrica_canonico(pergunta_lower):
+    """Identifica a métrica na pergunta de forma robusta, usando um mapa interno."""
     mapa_metricas = {
         'preco_maximo': ['preço máximo', 'preco maximo', 'máximo'],
         'preco_minimo': ['preço mínimo', 'preco minimo', 'mínimo'],
@@ -89,6 +102,7 @@ def identificar_metrica_canonico(pergunta_lower):
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     for canonico, sinonimos in mapa_metricas.items():
         for s in sinonimos:
+            # Compara as versões sem acento
             if remover_acentos(s) in pergunta_sem_acento:
                 return canonico
     return None
@@ -110,30 +124,17 @@ def process_question():
     indice_melhor_similaridade = similaridades.argmax()
     template_id_final = ref_ids[indice_melhor_similaridade]
 
-    # --- INÍCIO: Bloco de Lógica de Refinamento FINAL ---
-    
-    # PRIORIDADE 1 (Máxima): A pergunta é sobre o CÓDIGO DE NEGOCIAÇÃO?
+    # Bloco de Lógica de Refinamento Final
     if "código de negociação" in pergunta_lower or "codigo de negociacao" in pergunta_lower:
         template_id_final = 'Template_2A'
-
-    # PRIORIDADE 2: A pergunta é sobre o VOLUME de um SETOR?
     elif "volume" in pergunta_lower and "setor" in pergunta_lower:
         template_id_final = 'Template_4A'
-    
-    # PRIORIDADE 3: A pergunta contém um TIPO de ação?
     elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "unit" in pergunta_lower:
         template_id_final = 'Template_5B'
-    
-    # PRIORIDADE 4: A pergunta é sobre QUANTIDADE negociada?
     elif "quantidade" in pergunta_lower and "negociadas" in pergunta_lower:
         template_id_final = 'Template_4B'
-        
-    # PRIORIDADE 5 (Menos específica): A pergunta usa a frase "da ação da"?
     elif "da ação da" in pergunta_lower:
         template_id_final = 'Template_5A'
-        
-    # Se nenhuma regra específica for acionada, a escolha da similaridade é mantida.
-    # --- FIM: Bloco de Lógica de Refinamento ---
 
     entidades_extraidas = extrair_entidades(pergunta_lower, template_id_final)
     
@@ -144,7 +145,8 @@ def process_question():
     if 'termo_busca_empresa' in entidades_extraidas:
         entidades_extraidas['entidade_nome'] = entidades_extraidas['termo_busca_empresa']
     elif 'nome_setor' in entidades_extraidas:
-        entidades_extraidas['nome_setor'] = entidades_extraidas['nome_setor']
+        # Garante que a chave usada no Java seja consistente
+        entidades_extraidas['nome_setor_busca'] = entidades_extraidas['nome_setor']
 
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
 
