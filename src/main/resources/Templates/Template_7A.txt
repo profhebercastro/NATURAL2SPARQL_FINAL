@@ -1,21 +1,32 @@
-# TEMPLATE 7A (Genérico) -- Ranqueia ações por métricas calculadas.
+# TEMPLATE 7A (Genérico) -- Versão Final e Robusta
 SELECT ?O1 ?resultadoCalculado
 WHERE {
+    # Opcionalmente, filtra por setor
     #SETOR_FILTER_BLOCK#
+
+    # Garante que estamos lidando apenas com Empresas de Capital Aberto
+    ?S1 a b3:Empresa_Capital_Aberto .
+
+    # Navegação com o caminho que sabemos que funciona
     ?S1 P1 ?SO1 .
     ?SO1 P1 ?intermediario .
     ?intermediario P3 ?SO2 .
     ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
+
+    # Busca o ticker com o caminho correto
     ?SO1 P2 ?codigo .
     ?codigo P8 ?O1 .
+    
+    # Obtém todos os valores base para o cálculo
     ?SO2 b3:precoAbertura ?abertura .
     ?SO2 b3:precoFechamento ?fechamento .
     ?SO2 b3:precoMaximo ?maximo .
     ?SO2 b3:precoMinimo ?minimo .
     
     FILTER(?abertura > 0)
-
+    
+    # Placeholder para a fórmula de cálculo
     BIND(#CALCULO# AS ?resultadoCalculado)
 }
 ORDER BY #ORDEM#(?resultadoCalculado)
