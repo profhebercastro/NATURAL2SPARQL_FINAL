@@ -1,5 +1,5 @@
 # TEMPLATE_4A -- Busca métrica de um setor
-SELECT ?O1 (SUM(?ANS) AS ?volumeTotal) WHERE {
+SELECT ?O1 (SUM(?ANS) AS ?Volume) WHERE {
     ?S4 P7 "#NOME_SETOR#"@pt .
     ?S1 P9 ?S4 .
     ?S1 P1 ?SO1 .
