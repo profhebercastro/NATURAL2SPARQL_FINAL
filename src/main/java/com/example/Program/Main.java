@@ -40,7 +40,6 @@ public class Main {
     
     @PostMapping("/gerar_consulta")
     public ResponseEntity<ProcessamentoDetalhadoResposta> gerarConsulta(@RequestBody PerguntaRequest request) {
-        
         String pergunta = request.getPergunta();
         ProcessamentoDetalhadoResposta resposta = new ProcessamentoDetalhadoResposta();
 
@@ -65,7 +64,7 @@ public class Main {
 
     /**
      * Endpoint para EXECUTAR uma consulta SPARQL.
-     * AGORA COM LÓGICA DE FORMATAÇÃO ROBUSTA.
+     * Versão CORRIGIDA que retorna o resultado para o frontend.
      */
     @PostMapping("/executar_query")
     public ResponseEntity<Map<String, String>> executarQuery(@RequestBody ExecuteQueryRequest request) {
@@ -77,48 +76,48 @@ public class Main {
 
         logger.info("Recebida requisição para EXECUTAR a consulta.");
         try {
-           
+            // 1. Executa a consulta e obtém a lista de resultados
             List<Map<String, String>> resultList = ontology.executeQuery(sparqlQuery);
 
-            
+            // 2. Formata a lista em uma string legível para a tela
             String formattedResult = formatResultSet(resultList);
             
-           
+            // 3. --- ESTA É A CORREÇÃO ---
+            //    Retorna um JSON no formato {"resultado": "..."} que o JavaScript espera.
             return ResponseEntity.ok(Map.of("resultado", formattedResult));
 
         } catch (Exception e) {
             logger.error("Erro no endpoint /executar_query: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(Map.of("erro", "Erro interno ao executar a consulta."));
+            return ResponseEntity.status(500).body(Map.of("erro", "Erro interno ao executar a consulta: " + e.getMessage()));
         }
     }
 
     /**
-     * NOVO MÉTODO AUXILIAR: Formata uma lista de resultados SPARQL em uma string de texto legível.
+     * Método auxiliar para formatar uma lista de resultados SPARQL em uma string de texto legível.
      * Consegue lidar com resultados vazios, uma linha/uma coluna, ou múltiplas linhas/colunas.
-     * @param resultList A lista de resultados vinda da classe Ontology.
-     * @return Uma string formatada para ser exibida na <textarea> do frontend.
      */
     private String formatResultSet(List<Map<String, String>> resultList) {
         if (resultList == null || resultList.isEmpty()) {
             return "A consulta foi executada com sucesso, mas não retornou resultados.";
         }
-
  
+        // Se o resultado for apenas uma única célula (como em muitas de suas consultas),
+        // retorna apenas o valor, sem cabeçalho.
         if (resultList.size() == 1 && resultList.get(0).size() == 1) {
             String singleValue = resultList.get(0).values().iterator().next();
             logger.info("Resultado de valor único extraído da consulta: {}", singleValue);
             return singleValue;
         }
 
-
+        // Se for uma tabela com múltiplas linhas/colunas, formata com cabeçalho.
         StringBuilder sb = new StringBuilder();
         
-     
+        // Cabeçalho da tabela
         String header = String.join("\t | \t", resultList.get(0).keySet());
         sb.append(header).append("\n");
         sb.append("=".repeat(header.length() + (resultList.get(0).size() * 5))).append("\n");
 
-        
+        // Linhas da tabela
         for (Map<String, String> row : resultList) {
             String line = row.values().stream().collect(Collectors.joining("\t | \t"));
             sb.append(line).append("\n");
