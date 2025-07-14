@@ -1,29 +1,21 @@
 # TEMPLATE 7A (Genérico) -- Versão Final com caminho corrigido e validado.
 SELECT ?O1 ?resultadoCalculado
 WHERE {
-    # Bloco para filtro de setor (opcional)
     #SETOR_FILTER_BLOCK#
-
-    # Navegação com o caminho que sabemos que funciona
-    ?S1 P1 ?SO1 .               # Empresa -> temValorMobiliarioNegociado -> ValorMobiliario
-    ?SO1 P1 ?intermediario .    # ValorMobiliario -> temValorMobiliarioNegociado -> Intermediario
-    ?intermediario P3 ?SO2 .    # Intermediario -> negociado -> NegociadoEmPregao
-    ?SO2 P5 ?S2 .               # NegociadoEmPregao -> negociadoDurante -> Pregao
-    ?S2 P6 "#DATA#"^^xsd:date . # Pregao -> ocorreEmData -> Data
-
-    # Busca o ticker com o caminho correto
+    ?S1 P1 ?SO1 .               
+    ?SO1 P1 ?intermediario .   
+    ?intermediario P3 ?SO2 .   
+    ?SO2 P5 ?S2 .               
+    ?S2 P6 "#DATA#"^^xsd:date . 
     ?SO1 P2 ?codigo .   
     ?codigo P8 ?O1 .
-    
-    # Obtém todos os valores base para o cálculo
     ?SO2 b3:precoAbertura ?abertura .
     ?SO2 b3:precoFechamento ?fechamento .
     ?SO2 b3:precoMaximo ?maximo .
     ?SO2 b3:precoMinimo ?minimo .
     
     FILTER(?abertura > 0)
-    
-    # Placeholder para a fórmula de cálculo
+
     BIND(#CALCULO# AS ?resultadoCalculado)
 }
 ORDER BY #ORDEM#(?resultadoCalculado)
