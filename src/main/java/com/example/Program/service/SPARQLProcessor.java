@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -16,8 +15,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class SPARQLProcessor {
@@ -28,7 +30,6 @@ public class SPARQLProcessor {
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
 
-    // A URL do seu serviço Python
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
@@ -41,7 +42,6 @@ public class SPARQLProcessor {
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String naturalLanguageQuery) {
         ProcessamentoDetalhadoResposta resposta = new ProcessamentoDetalhadoResposta();
         try {
-            // 1. Chamar o serviço de NLP
             String nlpResponseJson = callNlpService(naturalLanguageQuery);
             logger.info("Resposta do NLP: {}", nlpResponseJson);
 
@@ -49,20 +49,10 @@ public class SPARQLProcessor {
             String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
 
-            if (templateId.isEmpty() || "template_desconhecido".equals(templateId)) {
-                throw new RuntimeException("NLP não retornou um templateId válido.");
-            }
-
-            // 2. Carregar o conteúdo do template
+            // Lógica unificada para todos os templates
             String templateContent = loadTemplate(templateId);
-
-            // 3. Primeira Fase: Substituir placeholders de entidade (ex: #ENTIDADE_NOME#, #DATA# e #REGEX_PATTERN#)
-            String queryWithEntities = replaceEntityPlaceholders(templateContent, entitiesNode);
+            String finalQuery = replacePlaceholders(templateContent, entitiesNode);
             
-            // 4. Segunda Fase: Substituir placeholders genéricos (ex: P1, S1)
-            // ---- CORREÇÃO DO NOME DO MÉTODO AQUI ----
-            String finalQuery = placeholderService.replaceGenericPlaceholders(queryWithEntities);
-
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
             logger.info("Consulta SPARQL final gerada:\n{}", finalQuery);
@@ -75,66 +65,63 @@ public class SPARQLProcessor {
             return resposta;
         }
     }
-
-    /**
-     * Realiza a primeira etapa de substituição, trocando os placeholders de entidade
-     * (ex: #ENTIDADE_NOME#) e o de métrica (ex: #VALOR_DESEJADO#)
-     * pelos valores extraídos pelo NLP.
-     */
-    private String replaceEntityPlaceholders(String template, JsonNode entities) {
+    
+    private String replacePlaceholders(String template, JsonNode entities) {
         String finalQuery = template;
         
+        // Substitui placeholders simples como #DATA#, #LIMITE#, #ORDEM#, #ENTIDADE_NOME#
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
-            // A chave vem em MAIÚSCULAS do Python (ex: "ENTIDADE_NOME", "REGEX_PATTERN")
             String placeholder = "#" + field.getKey() + "#"; 
             String value = field.getValue().asText();
             
+            // Tratamento especial para métricas/variações, que buscam o valor no .properties
             if (field.getKey().equals("VALOR_DESEJADO")) {
-                // ---- CORREÇÃO DO NOME DO MÉTODO AQUI ----
-                String predicadoRDF = placeholderService.getPlaceholderValue(value);
+                String predicadoRDF = placeholderService.getPlaceholderValue(value); // Busca "b3:variacaoAbsoluta"
                 if (predicadoRDF != null) {
                     finalQuery = finalQuery.replace(placeholder, predicadoRDF);
-                } else {
-                    logger.warn("Chave de métrica '{}' não encontrada no placeholders.properties.", value);
-                    finalQuery = finalQuery.replace(placeholder, "b3:metricaNaoEncontrada");
                 }
             } else {
-                // Substituição normal para outras entidades, incluindo o novo #REGEX_PATTERN#
                 finalQuery = finalQuery.replace(placeholder, value);
             }
         }
-
-        // Medida de segurança: Se o placeholder REGEX não foi substituído, remove a linha FILTER.
-        if (finalQuery.contains("#REGEX_PATTERN#")) {
-            finalQuery = finalQuery.replaceAll(".*#REGEX_PATTERN#.*\\R?", "");
+        
+        // Lógica especial para o bloco de filtro de setor
+        if (entities.has("NOME_SETOR_BUSCA")) {
+            String nomeSetor = entities.get("NOME_SETOR_BUSCA").asText();
+            String setorFilter = "?S1 P9 ?S4 . \n" +
+                                 "    ?S4 P7 \"" + nomeSetor + "\"@pt .";
+            finalQuery = finalQuery.replace("#SETOR_FILTER_BLOCK#", setorFilter);
+        } else {
+            // Se não houver filtro de setor, remove o placeholder para não quebrar a consulta
+            finalQuery = finalQuery.replace("#SETOR_FILTER_BLOCK#", "");
         }
         
-        return finalQuery;
+        // Remove placeholders não substituídos para evitar erros
+        finalQuery = finalQuery.replaceAll("#[A-Z_]+#", "");
+        
+        // Chama o serviço que substitui P1, S1, etc., e adiciona os prefixos
+        return placeholderService.replaceGenericPlaceholders(finalQuery);
     }
-
+    
     private String callNlpService(String query) throws IOException, InterruptedException {
         String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(NLP_SERVICE_URL))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
-                .build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(NLP_SERVICE_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody)).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body());
-        }
+        if (response.statusCode() != 200) { throw new IOException("Serviço NLP falhou com status " + response.statusCode()); }
         return response.body();
     }
     
-    private String loadTemplate(String templateName) throws IOException {
-        ClassPathResource resource = new ClassPathResource("Templates/" + templateName + ".txt");
-        if (!resource.exists()) {
-            throw new IOException("Arquivo de template não encontrado: Templates/" + templateName + ".txt");
-        }
-        try (InputStream inputStream = resource.getInputStream()) {
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+    private String loadTemplate(String templateName) {
+        String path = "/Templates/" + templateName + ".txt";
+        try (InputStream is = SPARQLProcessor.class.getResourceAsStream(path)) {
+            if (is == null) throw new IOException("Arquivo de template não encontrado: " + path);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                return reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao carregar template: " + path, e);
         }
     }
 }

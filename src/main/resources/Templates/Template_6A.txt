@@ -1,0 +1,13 @@
+# TEMPLATE 6A -- Busca uma métrica de variação para uma empresa específica.
+SELECT ?ticker ?ANS WHERE {
+    ?S1 P7 ?label .
+    FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
+    ?S1 P1 ?SO1 . 
+    ?SO1 P1 ?intermediario .
+    ?intermediario P3 ?SO2 .
+    ?SO2 P5 ?S2 .
+    ?S2 P6 "#DATA#"^^xsd:date .
+    ?SO1 P2 ?codigo .   
+    ?codigo P8 ?ticker .
+    ?SO2 #VALOR_DESEJADO# ?ANS .
+}

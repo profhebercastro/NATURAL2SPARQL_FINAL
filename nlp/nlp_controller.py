@@ -7,7 +7,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # --- CARREGAMENTO E PREPARAÇÃO DOS DADOS (Inicialização) ---
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def carregar_arquivo_json(nome_arquivo):
@@ -52,7 +51,7 @@ def remover_acentos(texto):
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def extrair_entidades(pergunta_lower, template_id):
-    """Extrai entidades específicas (empresa, data, setor, etc.) e retorna um dicionário."""
+    """Extrai entidades fixas como empresa, data e setor."""
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
 
@@ -76,36 +75,49 @@ def extrair_entidades(pergunta_lower, template_id):
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
-
-    # Lógica para o filtro de tipo de ação (CORRIGIDA)
-    if template_id == 'Template_5B':
-        if "ordinaria" in pergunta_sem_acento:
-            entidades["regex_pattern"] = "3$"
-        elif "preferencial" in pergunta_sem_acento:
-            entidades["regex_pattern"] = "[456]$"
-        elif "unit" in pergunta_sem_acento:
-            entidades["regex_pattern"] = "11$"
             
     return entidades
 
-def identificar_metrica_canonico(pergunta_lower):
-    """Identifica a métrica na pergunta de forma robusta, usando um mapa interno."""
-    mapa_metricas = {
-        'preco_maximo': ['preço máximo', 'preco maximo', 'máximo'],
-        'preco_minimo': ['preço mínimo', 'preco minimo', 'mínimo'],
-        'preco_fechamento': ['preço de fechamento', 'fechamento'],
-        'preco_abertura': ['preço de abertura', 'abertura'],
-        'preco_medio': ['preço médio', 'preco medio'],
-        'quantidade': ['quantidade', 'quantidade de ações', 'total de negocios'],
-        'volume': ['volume']
-    }
+def identificar_parametros_dinamicos(pergunta_lower):
+    """Identifica qual propriedade buscar (seja de preço ou variação) e os parâmetros de ranking."""
+    dados = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
-    for canonico, sinonimos in mapa_metricas.items():
+    
+    # Mapeia palavras-chave para a chave do .properties
+    mapa_metricas = {
+        'metrica.variacao_abs': ['variacao intradiaria absoluta'],
+        'metrica.variacao_perc': ['alta percentual', 'baixa percentual', 'variacao intradiaria percentual', 'percentual de alta', 'percentual de baixa'],
+        'metrica.intervalo_abs': ['intervalo intradiario absoluto'],
+        'metrica.intervalo_perc': ['intervalo intradiario percentual'],
+        'metrica.variacao_abs_abs': ['menor variacao'],
+        'metrica.preco_maximo': ['preço máximo', 'preco maximo'],
+        'metrica.preco_minimo': ['preço mínimo', 'preco minimo'],
+        'metrica.preco_fechamento': ['preço de fechamento', 'fechamento'],
+        'metrica.preco_abertura': ['preço de abertura', 'abertura'],
+        'metrica.preco_medio': ['preço médio', 'preco medio'],
+        'metrica.quantidade': ['quantidade', 'total de negocios'],
+        'metrica.volume': ['volume']
+    }
+
+    for chave_prop, sinonimos in mapa_metricas.items():
         for s in sinonimos:
-            # Compara as versões sem acento
             if remover_acentos(s) in pergunta_sem_acento:
-                return canonico
-    return None
+                dados['valor_desejado'] = chave_prop
+                break
+        if 'valor_desejado' in dados:
+            break
+
+    # Detecção de Ordem
+    dados['ordem'] = "DESC" # Padrão para "maior"
+    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento:
+        dados['ordem'] = "ASC"
+        
+    # Detecção de Limite
+    dados['limite'] = "1"
+    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
+        dados['limite'] = "5"
+        
+    return dados
 
 # --- API FLASK ---
 app = Flask(__name__)
@@ -124,28 +136,22 @@ def process_question():
     indice_melhor_similaridade = similaridades.argmax()
     template_id_final = ref_ids[indice_melhor_similaridade]
 
-    # Bloco de Lógica de Refinamento Final
-    if "código de negociação" in pergunta_lower or "codigo de negociacao" in pergunta_lower:
-        template_id_final = 'Template_2A'
-    elif "volume" in pergunta_lower and "setor" in pergunta_lower:
-        template_id_final = 'Template_4A'
-    elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "unit" in pergunta_lower:
-        template_id_final = 'Template_5B'
-    elif "quantidade" in pergunta_lower and "negociadas" in pergunta_lower:
-        template_id_final = 'Template_4B'
-    elif "da ação da" in pergunta_lower:
-        template_id_final = 'Template_5A'
+    # Bloco de Lógica de Refinamento
+    ranking_keywords = ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]
+    if any(keyword in pergunta_lower for keyword in ranking_keywords):
+        template_id_final = 'Template_7A'
+    elif "variacao intradiaria absoluta" in remover_acentos(pergunta_lower):
+        template_id_final = 'Template_6A'
 
+    # Extrai todas as entidades e parâmetros
     entidades_extraidas = extrair_entidades(pergunta_lower, template_id_final)
-    
-    metrica_canonico = identificar_metrica_canonico(pergunta_lower)
-    if metrica_canonico:
-        entidades_extraidas['valor_desejado'] = f'metrica.{metrica_canonico}'
+    parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
+    entidades_extraidas.update(parametros_dinamicos) # Combina os dois dicionários
 
+    # Prepara o payload final
     if 'termo_busca_empresa' in entidades_extraidas:
         entidades_extraidas['entidade_nome'] = entidades_extraidas['termo_busca_empresa']
     elif 'nome_setor' in entidades_extraidas:
-        # Garante que a chave usada no Java seja consistente
         entidades_extraidas['nome_setor_busca'] = entidades_extraidas['nome_setor']
 
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}

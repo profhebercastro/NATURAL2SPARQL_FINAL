@@ -1,6 +1,8 @@
-# Arquivo de Perguntas de Referência
+# Arquivo de Perguntas de Referência para mapear a intenção do usuário a um template SPARQL.
+# Formato: ID_do_Template;Padrão da pergunta em linguagem natural
 
-# Template 1A: Busca uma métrica genérica de um código (ex: VALE3). 
+# --- Templates de Busca Direta ---
+# Template 1A: Busca uma métrica genérica de um código (ex: VALE3).
 Template_1A;Qual o preço de abertura do PETR4 em 10/10/2023?
 
 # Template 2A: Busca o código de negociação de uma empresa.
@@ -20,3 +22,14 @@ Template_5A;Qual foi o preço mínimo da ação da Vale em 08/05/2023?
 
 # Template 5B (Agrupado): Pergunta que obrigatoriamente contém um tipo (ordinária, preferencial, unit).
 Template_5B;Qual foi o preço máximo da ação ordinária da Gerdau em 08/05/2023?
+
+# Template 6A: Busca a variação intradiária absoluta de uma ação.
+Template_6A;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 08/05/2023?
+
+# Template 7A (Genérico): Ranqueia ações por uma métrica de variação (alta/baixa/menor).
+Template_7A;Qual ação do setor de mineração teve a maior alta percentual no pregão?
+Template_7A;Qual ação do setor bancário teve a maior baixa percentual no pregão?
+Template_7A;Qual ação do setor de consumo não cíclico teve a menor variação no dia?
+Template_7A;Qual a ação com o maior percentual de alta no pregão?
+Template_7A;Quais as cinco ações de maior percentual de alta?
+Template_7A;Quais as cinco ações de maior percentual de baixa?

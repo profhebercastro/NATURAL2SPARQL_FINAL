@@ -1,0 +1,15 @@
+# TEMPLATE 7A (Genérico) -- Ranqueia ações por uma métrica de variação pré-calculada.
+SELECT ?ticker ?ANS
+WHERE {
+    #SETOR_FILTER_BLOCK#
+    ?S1 P1 ?SO1 .
+    ?SO1 P1 ?intermediario .
+    ?intermediario P3 ?SO2 .
+    ?SO2 P5 ?S2 .
+    ?S2 P6 "#DATA#"^^xsd:date .
+    ?SO1 P2 ?codigo .
+    ?codigo P8 ?ticker .
+    ?SO2 #VALOR_DESEJADO# ?ANS .
+}
+ORDER BY #ORDEM#(?ANS)
+LIMIT #LIMITE#
