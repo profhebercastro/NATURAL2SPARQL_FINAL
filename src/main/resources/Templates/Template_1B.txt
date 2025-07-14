@@ -1,14 +1,12 @@
-# TEMPLATE_1B -- Busca métrica de um ticker
+# TEMPLATE 1B -- Busca uma métrica diretamente pelo TICKER.
 SELECT ?ANS WHERE {
- 
-  { ?SO1 P7 "#TICKER#" . }
-  UNION
-  { ?SO1 P8 "#TICKER#" . }
-  ?SO1 P3 ?SO2 .
-  ?SO2 P5 ?S2 .
-  ?S2 P6 "#DATA#"^^xsd:date .
-  ?SO2 #VALOR_DESEJADO# ?ANS .
+    ?codigo P8 "#ENTIDADE_NOME#" . 
+    ?SO1 P2 ?codigo .
+    ?SO1 P1 ?intermediario .
+    ?intermediario P3 ?SO2 .
+    ?SO2 P5 ?S2 .
+    ?S2 P6 "#DATA#"^^xsd:date .
+    
+    ?SO2 #VALOR_DESEJADO# ?ANS .
 }
 LIMIT 1
-
-

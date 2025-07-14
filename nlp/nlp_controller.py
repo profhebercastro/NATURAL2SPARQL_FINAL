@@ -8,7 +8,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
     try:
@@ -20,11 +19,9 @@ setor_map = carregar_arquivo_json('setor_map.json')
 
 reference_templates = {}
 try:
-    caminho_ref_questions = os.path.join(SCRIPT_DIR, 'Reference_questions.txt')
-    with open(caminho_ref_questions, 'r', encoding='utf-8') as f:
+    with open(os.path.join(SCRIPT_DIR, 'Reference_questions.txt'), 'r', encoding='utf-8') as f:
         for line in f:
-            line = line.strip()
-            if line and ';' in line and not line.startswith('#'):
+            if line.strip() and ';' in line and not line.startswith('#'):
                 template_id, question_text = line.split(';', 1)
                 reference_templates[template_id.strip()] = question_text.strip()
 except FileNotFoundError: pass
@@ -40,54 +37,51 @@ def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def extrair_entidades_fixas(pergunta_lower):
+def extrair_entidades(pergunta_lower):
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
-    sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
-    for key in sorted_empresa_keys:
-        if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-            entidades['termo_busca_empresa'] = key
-            entidades['entidade_nome'] = empresa_map[key]
-            break
+    
+    # Tenta encontrar um ticker exato primeiro (ex: CBAV3, PETR4)
+    ticker_match = re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower)
+    if ticker_match:
+        entidades['entidade_nome'] = ticker_match.group(1).upper()
+    else:
+        # Se não for um ticker, procura por um nome de empresa
+        sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
+        for key in sorted_empresa_keys:
+            if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
+                entidades['entidade_nome'] = key # Usa o termo curto para o REGEX
+                break
+    
+    # Extrai outras entidades
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
-            entidades['nome_setor'] = setor_map[key]
+            entidades['nome_setor_busca'] = setor_map[key]
             break
+
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
+            
     return entidades
 
-def identificar_parametros_dinamicos(pergunta_lower):
+def identificar_parametros(pergunta_lower):
     dados = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
-    
-    if "variacao intradiaria absoluta" in pergunta_sem_acento:
-        dados['calculo'] = 'variacao_abs'
-    elif any(s in pergunta_sem_acento for s in ["alta percentual", "baixa percentual", "percentual de alta", "percentual de baixa"]):
-        dados['calculo'] = 'variacao_perc'
-    elif "intervalo intradiario absoluto" in pergunta_sem_acento:
-        dados['calculo'] = 'intervalo_abs'
-    elif "intervalo intradiario percentual" in pergunta_sem_acento:
-        dados['calculo'] = 'intervalo_perc'
-    elif "menor variacao" in pergunta_sem_acento:
-        dados['calculo'] = 'variacao_abs_abs'
-    
-    mapa_metricas = {'metrica.preco_maximo': ['preço máximo', 'preco maximo'],'metrica.preco_minimo': ['preço mínimo', 'preco minimo'],'metrica.preco_fechamento': ['preço de fechamento', 'fechamento'],'metrica.preco_abertura': ['preço de abertura', 'abertura'],'metrica.preco_medio': ['preço médio', 'preco medio'],'metrica.quantidade': ['quantidade', 'total de negocios'],'metrica.volume': ['volume']}
+
+    # Identifica a métrica desejada
+    mapa_metricas = {'metrica.preco_maximo': ['preço máximo', 'preco maximo'],'metrica.preco_minimo': ['preço mínimo', 'preco minimo'],'metrica.preco_fechamento': ['preço de fechamento', 'fechamento'],'metrica.preco_abertura': ['preço de abertura', 'abertura'],'metrica.quantidade': ['quantidade', 'total de negocios']}
     for chave, sinonimos in mapa_metricas.items():
         if any(remover_acentos(s) in pergunta_sem_acento for s in sinonimos):
             dados['valor_desejado'] = chave; break
-
-    dados['ordem'] = "DESC"
-    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento:
-        dados['ordem'] = "ASC"
-        
-    dados['limite'] = "1"
-    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
-        dados['limite'] = "5"
-        
+            
+    # Identifica o padrão para filtro de tipo de ação
+    if "ordinaria" in pergunta_sem_acento: dados["regex_pattern"] = "3$"
+    elif "preferencial" in pergunta_sem_acento: dados["regex_pattern"] = "[456]$"
+    elif "unit" in pergunta_sem_acento: dados["regex_pattern"] = "11$"
+            
     return dados
 
 # --- API FLASK ---
@@ -100,40 +94,19 @@ def process_question():
 
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
     if not ref_questions: return jsonify({"error": "Sistema de NLP não inicializado."}), 500
-    
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
-    template_id_final = None
 
-    ranking_keywords = ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]
-    if any(keyword in pergunta_lower for keyword in ranking_keywords):
-        template_id_final = 'Template_7A'
-    elif "variacao intradiaria absoluta" in pergunta_sem_acento:
-        template_id_final = 'Template_6A'
-    elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "unit" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
-        template_id_final = 'Template_5B'
-    elif "quantidade" in pergunta_lower and "negociadas" in pergunta_lower:
-        template_id_final = 'Template_4B'
-    elif "volume" in pergunta_lower and "setor" in pergunta_lower:
-        template_id_final = 'Template_4A'
+    # Lógica de Classificação do Template por Similaridade (Fallback)
+    tfidf_usuario = vectorizer.transform([pergunta_lower])
+    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+    template_id_final = ref_ids[similaridades.argmax()]
 
-    if template_id_final is None:
-        tfidf_usuario = vectorizer.transform([pergunta_lower])
-        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-        indice_melhor_similaridade = similaridades.argmax()
-        template_id_final = ref_ids[indice_melhor_similaridade]
-
-    entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
-    parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
+    # Extração
+    entidades_extraidas = extrair_entidades(pergunta_lower)
+    parametros_dinamicos = identificar_parametros(pergunta_lower)
     entidades_extraidas.update(parametros_dinamicos)
 
-    if 'termo_busca_empresa' in entidades_extraidas:
-        entidades_extraidas['entidade_nome'] = entidades_extraidas['termo_busca_empresa']
-    elif 'nome_setor' in entidades_extraidas:
-        entidades_extraidas['nome_setor_busca'] = entidades_extraidas['nome_setor']
-
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
-
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
