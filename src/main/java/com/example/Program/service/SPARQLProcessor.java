@@ -25,11 +25,9 @@ import java.util.stream.Collectors;
 public class SPARQLProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(SPARQLProcessor.class);
-    
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
-
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
@@ -49,9 +47,15 @@ public class SPARQLProcessor {
             String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
 
-            // Lógica unificada para todos os templates
-            String templateContent = loadTemplate(templateId);
-            String finalQuery = replacePlaceholders(templateContent, entitiesNode);
+            String finalQuery;
+
+            // Roteia para o método de construção correto com base no template
+            if ("Template_6A".equals(templateId) || "Template_7A".equals(templateId)) {
+                finalQuery = buildCalculationQuery(templateId, entitiesNode);
+            } else {
+                String templateContent = loadTemplate(templateId);
+                finalQuery = replaceSimplePlaceholders(templateContent, entitiesNode);
+            }
             
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
@@ -65,63 +69,55 @@ public class SPARQLProcessor {
             return resposta;
         }
     }
+
+    private String buildCalculationQuery(String templateId, JsonNode entities) {
+        String template = loadTemplate(templateId);
+
+        // Traduz a chave do NLP (ex: "variacao_perc") para a fórmula SPARQL
+        String calculoKey = entities.path("CALCULO").asText("");
+        String calculoSparql;
+        switch (calculoKey) {
+            case "variacao_abs": calculoSparql = "(?fechamento - ?abertura)"; break;
+            case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break;
+            case "intervalo_abs": calculoSparql = "(?maximo - ?minimo)"; break;
+            case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
+            case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+            default: calculoSparql = "0";
+        }
+        template = template.replace("#CALCULO#", calculoSparql);
+
+        // Substitui outros placeholders dinâmicos
+        if (entities.has("NOME_SETOR")) {
+            String nomeSetor = entities.get("NOME_SETOR").asText();
+            String setorFilter = "?S1 P9 ?S4 . \n" + "    ?S4 P7 \"" + nomeSetor + "\"@pt .";
+            template = template.replace("#SETOR_FILTER_BLOCK#", setorFilter);
+        } else {
+            template = template.replace("#SETOR_FILTER_BLOCK#", "");
+        }
+        
+        if (entities.has("ENTIDADE_NOME")) template = template.replace("#ENTIDADE_NOME#", entities.get("ENTIDADE_NOME").asText());
+        if (entities.has("DATA")) template = template.replace("#DATA#", entities.get("DATA").asText());
+        template = template.replace("#ORDEM#", entities.path("ORDEM").asText("DESC"));
+        template = template.replace("#LIMITE#", entities.path("LIMITE").asText("1"));
+        
+        return placeholderService.replaceGenericPlaceholders(template);
+    }
     
-    private String replacePlaceholders(String template, JsonNode entities) {
+    private String replaceSimplePlaceholders(String template, JsonNode entities) {
         String finalQuery = template;
-        
-        // --- LÓGICA DE SUBSTITUIÇÃO UNIFICADA E ROBUSTA ---
-        
-        // 1. Substitui placeholders dinâmicos (ex: #ENTIDADE_NOME#, #DATA#, #REGEX_PATTERN#, etc.)
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey() + "#"; 
             String value = field.getValue().asText();
-            
-            // Tratamento especial para métricas/variações, que buscam o valor no .properties
             if (field.getKey().equals("VALOR_DESEJADO")) {
                 String predicadoRDF = placeholderService.getPlaceholderValue(value);
-                if (predicadoRDF != null) {
-                    finalQuery = finalQuery.replace(placeholder, predicadoRDF);
-                } else {
-                    logger.warn("Chave de métrica '{}' não encontrada. Placeholder '{}' não será substituído.", value, placeholder);
-                }
+                if (predicadoRDF != null) finalQuery = finalQuery.replace(placeholder, predicadoRDF);
             } else {
-                // Substituição direta para todos os outros placeholders dinâmicos
                 finalQuery = finalQuery.replace(placeholder, value);
             }
         }
-        
-        // 2. Substitui placeholders de cálculo (se existirem no template)
-        // Isso é feito em um passo separado para garantir que as variáveis do BIND não sejam afetadas.
-        if (entities.has("CALCULO")) {
-             String calculoKey = entities.get("CALCULO").asText("");
-             String calculoSparql;
-             switch (calculoKey) {
-                 case "variacao_abs": calculoSparql = "(?fechamento - ?abertura)"; break;
-                 case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break;
-                 case "intervalo_abs": calculoSparql = "(?maximo - ?minimo)"; break;
-                 case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
-                 case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                 default: calculoSparql = "0";
-             }
-             finalQuery = finalQuery.replace("#CALCULO#", calculoSparql);
-        }
-
-        // 3. Lógica para o bloco de filtro de setor (opcional)
-        if (entities.has("NOME_SETOR")) {
-            String nomeSetor = entities.get("NOME_SETOR").asText();
-            String setorFilter = "?S1 P9 ?S4 . \n" +
-                                 "    ?S4 P7 \"" + nomeSetor + "\"@pt .";
-            finalQuery = finalQuery.replace("#SETOR_FILTER_BLOCK#", setorFilter);
-        } else {
-            finalQuery = finalQuery.replace("#SETOR_FILTER_BLOCK#", "");
-        }
-        
-        // 4. Limpeza final de placeholders não utilizados
         finalQuery = finalQuery.replaceAll("#[A-Z_]+#", "");
-        
-        // 5. Chama o serviço que substitui os placeholders genéricos (P1, S1, etc.) e adiciona os prefixos
         return placeholderService.replaceGenericPlaceholders(finalQuery);
     }
     
@@ -129,7 +125,7 @@ public class SPARQLProcessor {
         String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(NLP_SERVICE_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody)).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) { throw new IOException("Serviço NLP falhou com status " + response.statusCode()); }
+        if (response.statusCode() != 200) throw new IOException("Serviço NLP falhou com status " + response.statusCode());
         return response.body();
     }
     

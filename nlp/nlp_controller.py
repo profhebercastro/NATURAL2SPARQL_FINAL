@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
+# --- Carregamento de Dados ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -31,7 +31,7 @@ ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
 tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
 
-# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
+# --- Funções Auxiliares ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -95,7 +95,7 @@ def process_question():
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # 1. Classificação do Template por Regras + Fallback
+    # 1. Classificação por Regras + Fallback
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     template_id_final = None
 
@@ -117,7 +117,7 @@ def process_question():
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
         template_id_final = ref_ids[similaridades.argmax()]
 
-    # 2. Extrai tudo que a pergunta pode oferecer de uma vez
+    # 2. Extrai tudo que a pergunta pode oferecer
     entidades_extraidas = extrair_todas_entidades(pergunta_lower)
     
     # 3. Converte as chaves para maiúsculas para o Java
