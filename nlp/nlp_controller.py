@@ -42,15 +42,14 @@ ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
 tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
 
-
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 
 def remover_acentos(texto):
-    """Remove acentos e caracteres diacríticos de uma string. Ex: 'elétrico' -> 'eletrico'."""
+    """Remove acentos e caracteres diacríticos de uma string."""
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def extrair_entidades(pergunta_lower, template_id):
+def extrair_entidades_fixas(pergunta_lower):
     """Extrai entidades fixas como empresa, data e setor."""
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
@@ -79,43 +78,33 @@ def extrair_entidades(pergunta_lower, template_id):
     return entidades
 
 def identificar_parametros_dinamicos(pergunta_lower):
-    """Identifica qual propriedade buscar (seja de preço ou variação) e os parâmetros de ranking."""
+    """Identifica o tipo de cálculo, a ordem e o limite para perguntas de ranking."""
     dados = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     
-    # Mapeia palavras-chave para a chave do .properties
-    mapa_metricas = {
-        'metrica.variacao_abs': ['variacao intradiaria absoluta'],
-        'metrica.variacao_perc': ['alta percentual', 'baixa percentual', 'variacao intradiaria percentual', 'percentual de alta', 'percentual de baixa'],
-        'metrica.intervalo_abs': ['intervalo intradiario absoluto'],
-        'metrica.intervalo_perc': ['intervalo intradiario percentual'],
-        'metrica.variacao_abs_abs': ['menor variacao'],
-        'metrica.preco_maximo': ['preço máximo', 'preco maximo'],
-        'metrica.preco_minimo': ['preço mínimo', 'preco minimo'],
-        'metrica.preco_fechamento': ['preço de fechamento', 'fechamento'],
-        'metrica.preco_abertura': ['preço de abertura', 'abertura'],
-        'metrica.preco_medio': ['preço médio', 'preco medio'],
-        'metrica.quantidade': ['quantidade', 'total de negocios'],
-        'metrica.volume': ['volume']
-    }
-
-    for chave_prop, sinonimos in mapa_metricas.items():
-        for s in sinonimos:
-            if remover_acentos(s) in pergunta_sem_acento:
-                dados['valor_desejado'] = chave_prop
-                break
-        if 'valor_desejado' in dados:
-            break
+    # Detecção de Cálculo a ser feito
+    if "variacao intradiaria absoluta" in pergunta_sem_acento:
+        dados['calculo'] = 'variacao_abs'
+    elif any(s in pergunta_sem_acento for s in ["alta percentual", "baixa percentual", "percentual de alta", "percentual de baixa"]):
+        dados['calculo'] = 'variacao_perc'
+    elif "intervalo intradiario absoluto" in pergunta_sem_acento:
+        dados['calculo'] = 'intervalo_abs'
+    elif "intervalo intradiario percentual" in pergunta_sem_acento:
+        dados['calculo'] = 'intervalo_perc'
+    elif "menor variacao" in pergunta_sem_acento:
+        dados['calculo'] = 'variacao_abs_abs'
 
     # Detecção de Ordem
-    dados['ordem'] = "DESC" # Padrão para "maior"
     if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento:
         dados['ordem'] = "ASC"
+    else:
+        dados['ordem'] = "DESC"
         
     # Detecção de Limite
-    dados['limite'] = "1"
     if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
         dados['limite'] = "5"
+    else:
+        dados['limite'] = "1"
         
     return dados
 
@@ -137,18 +126,19 @@ def process_question():
     template_id_final = ref_ids[indice_melhor_similaridade]
 
     # Bloco de Lógica de Refinamento
-    ranking_keywords = ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]
+    ranking_keywords = ["qual ação", "maior alta", "maior baixa", "menor variação", "cinco ações"]
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
     if any(keyword in pergunta_lower for keyword in ranking_keywords):
         template_id_final = 'Template_7A'
-    elif "variacao intradiaria absoluta" in remover_acentos(pergunta_lower):
+    elif "variacao intradiaria absoluta" in pergunta_sem_acento:
         template_id_final = 'Template_6A'
 
-    # Extrai todas as entidades e parâmetros
-    entidades_extraidas = extrair_entidades(pergunta_lower, template_id_final)
+    # Extração de Entidades e Parâmetros
+    entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
     parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
-    entidades_extraidas.update(parametros_dinamicos) # Combina os dois dicionários
+    entidades_extraidas.update(parametros_dinamicos)
 
-    # Prepara o payload final
+    # Preparação final do payload
     if 'termo_busca_empresa' in entidades_extraidas:
         entidades_extraidas['entidade_nome'] = entidades_extraidas['termo_busca_empresa']
     elif 'nome_setor' in entidades_extraidas:
@@ -156,15 +146,7 @@ def process_question():
 
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
 
-    return jsonify({
-        "templateId": template_id_final,
-        "entities": entidades_maiusculas,
-        "debugInfo": {
-            "perguntaOriginal": pergunta_usuario_original,
-            "templateEscolhidoPelaSimilaridade": ref_ids[indice_melhor_similaridade],
-            "templateFinalAposRegras": template_id_final,
-        }
-    })
+    return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

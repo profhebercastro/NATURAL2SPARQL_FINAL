@@ -1,35 +1,39 @@
-# Arquivo de Perguntas de Referência para mapear a intenção do usuário a um template SPARQL.
+# ===================================================================
+# Arquivo de Perguntas de Referência 
+# Mapeia a intenção do usuário a um template SPARQL.
 # Formato: ID_do_Template;Padrão da pergunta em linguagem natural
+# ===================================================================
 
 # --- Templates de Busca Direta ---
-# Template 1A: Busca uma métrica genérica de um código (ex: VALE3).
+
+# Template 1A: Busca uma métrica genérica de preço para um ticker.
 Template_1A;Qual o preço de abertura do PETR4 em 10/10/2023?
 
-# Template 2A: Busca o código de negociação de uma empresa.
+# Template 2A: Busca o código de negociação (ticker) de uma empresa.
 Template_2A;Qual o código de negociação da empresa Vale?
 
-# Template 3A: Lista todos os códigos de ação de um determinado setor.
+# Template 3A: Lista todos os tickers de um determinado setor.
 Template_3A;Quais são todas as ações do setor de mineração?
 
 # Template 4A: Calcula o volume total negociado para um setor em uma data.
 Template_4A;Qual foi o volume total negociado para o setor bancário em 05/05/2023?
 
-# Template 4B: Pergunta focada em "quantidade" e "negociadas".
+# Template 4B: Busca a quantidade de negócios para uma empresa específica.
 Template_4B;Qual foi a quantidade de ações do Itau negociadas no pregão de 05/05/2023?
 
-# Template 5A: Pergunta focada na frase "da ação da".
+# Template 5A: Pergunta genérica sobre preço de uma empresa, focada na frase "da ação da".
 Template_5A;Qual foi o preço mínimo da ação da Vale em 08/05/2023?
 
-# Template 5B (Agrupado): Pergunta que obrigatoriamente contém um tipo (ordinária, preferencial, unit).
+# Template 5B (Agrupado): Busca uma métrica de uma empresa, filtrando pelo tipo de ação (ordinária, preferencial, unit).
 Template_5B;Qual foi o preço máximo da ação ordinária da Gerdau em 08/05/2023?
 
-# Template 6A: Busca a variação intradiária absoluta de uma ação.
+# Template 6A: Calcula a variação intradiária absoluta de uma ação específica.
 Template_6A;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 08/05/2023?
 
-# Template 7A (Genérico): Ranqueia ações por uma métrica de variação (alta/baixa/menor).
+# Template 7A (Genérico): Ranqueia ações por uma métrica de variação (alta/baixa/menor variação).
 Template_7A;Qual ação do setor de mineração teve a maior alta percentual no pregão?
 Template_7A;Qual ação do setor bancário teve a maior baixa percentual no pregão?
 Template_7A;Qual ação do setor de consumo não cíclico teve a menor variação no dia?
 Template_7A;Qual a ação com o maior percentual de alta no pregão?
-Template_7A;Quais as cinco ações de maior percentual de alta?
-Template_7A;Quais as cinco ações de maior percentual de baixa?
+Template_7A;Quais as cinco ações com maior percentual de alta no pregão?
+Template_7A;Quais as cinco ações com maior percentual de baixa no pregão?

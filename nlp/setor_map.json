@@ -6,6 +6,7 @@
 
   "energia eletrica": "Energia Elétrica",
   "eletrico": "Energia Elétrica",
+  "elétrico": "Energia Elétrica",
   "setor eletrico": "Energia Elétrica",
 
   "utilidade publica": "Utilidade Pública",
@@ -17,11 +18,13 @@
   "setor financeiro": "Bancos",
   "bancos": "Bancos",
   "bancario": "Bancos",
+  "bancário": "Bancos",
   
   "seguradoras": "Previdência e Seguros",
   "previdencia e seguros": "Previdência e Seguros",
 
   "consumo nao ciclico": "Consumo não Cíclico",
+  "consumo não cíclico": "Consumo não Cíclico",
   "alimentos": "Alimentos Processados",
   "alimentos processados": "Alimentos Processados",
 
@@ -30,9 +33,11 @@
   "telecom": "Telecomunicações",
 
   "materiais basicos": "Materiais Básicos",
-  "mineracao": "Mineração",
-  "minerais metalicos": "Mineração",
-  "metais": "Mineração",
+  
+  "mineracao": "Minerais Metálicos",
+  "mineração": "Minerais Metálicos",
+  "minerais metalicos": "Minerais Metálicos",
+  "metais": "Minerais Metálicos",
 
   "siderurgia": "Siderurgia e Metalurgia",
   "metalurgia": "Siderurgia e Metalurgia",

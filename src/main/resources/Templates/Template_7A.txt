@@ -1,5 +1,5 @@
-# TEMPLATE 7A (Genérico) -- Ranqueia ações por uma métrica de variação pré-calculada.
-SELECT ?ticker ?ANS
+# TEMPLATE 7A (Genérico) -- Ranqueia ações por métricas calculadas.
+SELECT ?O1 ?resultadoCalculado
 WHERE {
     #SETOR_FILTER_BLOCK#
     ?S1 P1 ?SO1 .
@@ -8,8 +8,14 @@ WHERE {
     ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
     ?SO1 P2 ?codigo .
-    ?codigo P8 ?ticker .
-    ?SO2 #VALOR_DESEJADO# ?ANS .
+    ?codigo P8 ?O1 .
+    ?SO2 b3:precoAbertura ?abertura .
+    ?SO2 b3:precoFechamento ?fechamento .
+    ?SO2 b3:precoMaximo ?maximo .
+    ?SO2 b3:precoMinimo ?minimo .
+    
+    FILTER(?abertura > 0)
+    BIND(#CALCULO# AS ?resultadoCalculado)
 }
-ORDER BY #ORDEM#(?ANS)
+ORDER BY #ORDEM#(?resultadoCalculado)
 LIMIT #LIMITE#
