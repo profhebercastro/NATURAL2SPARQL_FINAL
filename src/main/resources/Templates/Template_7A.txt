@@ -15,6 +15,7 @@ WHERE {
     ?SO2 b3:precoMinimo ?minimo .
     
     FILTER(?abertura > 0)
+
     BIND(#CALCULO# AS ?resultadoCalculado)
 }
 ORDER BY #ORDEM#(?resultadoCalculado)
