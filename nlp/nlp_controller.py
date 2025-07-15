@@ -36,10 +36,12 @@ def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def extrair_entidades_fixas(pergunta_lower):
+def extrair_todas_entidades(pergunta_lower):
+    """Extrai TODAS as possíveis entidades e parâmetros de uma vez."""
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
-    
+
+    # Extrai Ticker OU Nome de Empresa
     ticker_match = re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower)
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1).upper()
@@ -49,54 +51,41 @@ def extrair_entidades_fixas(pergunta_lower):
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
                 entidades['entidade_nome'] = key; break
     
+    # Extrai Setor
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
             entidades['nome_setor'] = setor_map[key]; break
 
+    # Extrai Data
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups(); entidades['data'] = f"{ano}-{mes}-{dia}"
+    
+    # Extrai Cálculo Principal
+    if "variacao intradiaria absoluta" in pergunta_sem_acento:
+        entidades['calculo_principal'] = 'variacao_abs'
+    elif "intervalo intradiario percentual" in pergunta_sem_acento:
+        entidades['calculo_principal'] = 'intervalo_perc'
+
+    # Extrai Cálculo de Ranking
+    if any(s in pergunta_sem_acento for s in ["alta percentual", "percentual de alta"]):
+        entidades['calculo_ranking'] = 'variacao_perc'
+        entidades['ordem_ranking'] = 'DESC'
+    elif any(s in pergunta_sem_acento for s in ["baixa percentual", "percentual de baixa"]):
+        entidades['calculo_ranking'] = 'variacao_perc'
+        entidades['ordem_ranking'] = 'ASC'
+    elif "menor variacao" in pergunta_sem_acento:
+        entidades['calculo_ranking'] = 'variacao_abs_abs'
+        entidades['ordem_ranking'] = 'ASC'
+
+    # Extrai Limite
+    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
+        entidades['limite_ranking'] = "5"
+    else:
+        entidades['limite_ranking'] = "1"
             
     return entidades
-
-def identificar_parametros_dinamicos(pergunta_lower):
-    dados = {}
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
-
-    # --- CORREÇÃO IMPORTANTE NESTE MAPA ---
-    mapa_metricas = {
-        'calculo_variacao_abs': ['variacao intradiaria absoluta'],
-        'calculo_variacao_perc': ['alta percentual', 'baixa percentual', 'percentual de alta', 'percentual de baixa'],
-        'calculo_variacao_abs_abs': ['menor variacao'],
-        'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
-        'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
-        'metrica.preco_fechamento': ['preco de fechamento', 'fechamento'],
-        'metrica.preco_abertura': ['preco de abertura', 'abertura'],
-        'metrica.preco_medio': ['preco medio', 'preço médio'], # <-- Adicionado sinônimo com acento
-        'metrica.quantidade': ['quantidade', 'total de negocios'],
-        'metrica.volume': ['volume']
-    }
-
-    for chave, sinonimos in mapa_metricas.items():
-        if any(remover_acentos(s) in pergunta_sem_acento for s in sinonimos):
-            if chave.startswith('calculo_'):
-                dados['calculo'] = chave.replace('calculo_', '')
-            else:
-                dados['valor_desejado'] = chave
-            break
-
-    if "ordinaria" in pergunta_sem_acento: dados["regex_pattern"] = "3$"
-    elif "preferencial" in pergunta_sem_acento: dados["regex_pattern"] = "[456]$"
-    elif "unit" in pergunta_sem_acento: dados["regex_pattern"] = "11$"
-    
-    dados['ordem'] = "DESC"
-    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento: dados['ordem'] = "ASC"
-        
-    dados['limite'] = "1"
-    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower: dados['limite'] = "5"
-        
-    return dados
 
 # --- API FLASK ---
 app = Flask(__name__)
@@ -106,27 +95,13 @@ def process_question():
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # Lógica de Classificação por Regras + Fallback
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
-    template_id_final = None
-
-    ranking_keywords = ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]
-    if any(keyword in pergunta_lower for keyword in ranking_keywords):
-        template_id_final = 'Template_7A'
-    elif "variacao intradiaria absoluta" in pergunta_sem_acento:
-        template_id_final = 'Template_6A'
-    elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
-        template_id_final = 'Template_5B'
-    elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
-        template_id_final = 'Template_1B'
-    else:
-        tfidf_usuario = vectorizer.transform([pergunta_lower])
-        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-        template_id_final = ref_ids[similaridades.argmax()]
-        
-    entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
-    parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
-    entidades_extraidas.update(parametros_dinamicos)
+    # Classificação por Similaridade
+    tfidf_usuario = vectorizer.transform([pergunta_lower])
+    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+    template_id_final = ref_ids[similaridades.argmax()]
+    
+    # Extrai tudo
+    entidades_extraidas = extrair_todas_entidades(pergunta_lower)
     
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})

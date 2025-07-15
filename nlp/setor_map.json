@@ -3,71 +3,59 @@
   "petroleo e gas": "Petróleo, Gás e Biocombustíveis",
   "oleo e gas": "Petróleo, Gás e Biocombustíveis",
   "biocombustiveis": "Petróleo, Gás e Biocombustíveis",
-
   "energia eletrica": "Energia Elétrica",
   "eletrico": "Energia Elétrica",
   "elétrico": "Energia Elétrica",
   "setor eletrico": "Energia Elétrica",
-
   "utilidade publica": "Utilidade Pública",
-  
   "agua e saneamento": "Água e Saneamento",
   "saneamento": "Água e Saneamento",
-
   "financeiro": "Bancos",
   "setor financeiro": "Bancos",
   "bancos": "Bancos",
   "bancario": "Bancos",
   "bancário": "Bancos",
-  
   "seguradoras": "Previdência e Seguros",
   "previdencia e seguros": "Previdência e Seguros",
-
   "consumo nao ciclico": "Consumo não Cíclico",
   "consumo não cíclico": "Consumo não Cíclico",
   "alimentos": "Alimentos Processados",
   "alimentos processados": "Alimentos Processados",
-
   "comunicacoes": "Telecomunicações",
   "telecomunicacoes": "Telecomunicações",
   "telecom": "Telecomunicações",
-
   "materiais basicos": "Materiais Básicos",
-  
   "mineracao": "Minerais Metálicos",
   "mineração": "Minerais Metálicos",
   "minerais metalicos": "Minerais Metálicos",
   "metais": "Minerais Metálicos",
-
   "siderurgia": "Siderurgia e Metalurgia",
   "metalurgia": "Siderurgia e Metalurgia",
-
   "quimicos": "Químicos",
   "papel e celulose": "Madeira e Papel",
-
   "tecnologia da informacao": "Tecnologia da Informação",
   "ti": "Tecnologia da Informação",
   "software": "Programas e Serviços",
-
   "transporte": "Transporte",
   "transporte rodoviario": "Transporte Rodoviário",
   "transporte aereo": "Transporte Aéreo",
-
   "construcao civil": "Construção Civil",
   "construcao e engenharia": "Construção e Engenharia",
-
   "varejo": "Comércio e Distribuição",
   "comercio": "Comércio e Distribuição",
-
   "eletrodomesticos": "Eletrodomésticos",
-  
   "textil": "Tecidos, Vestuário e Calçados",
   "vestuario": "Tecidos, Vestuário e Calçados",
   "calcados": "Tecidos, Vestuário e Calçados",
-
   "saude": "Saúde",
   "setor de saude": "Saúde",
-
   "educacao": "Serviços Educacionais",
-  "servicos educacionais": "Serviços Educacionais"
+  "servicos educacionais": "Serviços Educacionais",
+  "imat": [
+    "Materiais Básicos",
+    "Minerais Metálicos",
+    "Siderurgia e Metalurgia",
+    "Químicos",
+    "Madeira e Papel"
+  ]
 }
