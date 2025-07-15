@@ -36,6 +36,7 @@ def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
+# --- NOME DA FUNÇÃO CORRIGIDO ---
 def extrair_entidades_e_parametros(pergunta_lower):
     """Função única e robusta que extrai todas as entidades e parâmetros."""
     entidades = {}
@@ -114,10 +115,12 @@ def process_question():
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     template_id_final = None
 
-    # Verifica primeiro os casos mais complexos e específicos
-    if "variacao intradiaria absoluta" in pergunta_sem_acento and any(s in pergunta_sem_acento for s in ["alta percentual", "baixa percentual"]):
+    multi_step_keywords_1 = ["variacao intradiaria absoluta", "maior percentual de alta", "maior percentual de baixa"]
+    multi_step_keywords_2 = ["intervalo intradiario percentual", "maior percentual de alta", "maior percentual de baixa"]
+
+    if all(keyword in pergunta_sem_acento for keyword in multi_step_keywords_1):
         template_id_final = 'Template_8A'
-    elif "intervalo intradiario percentual" in pergunta_sem_acento and any(s in pergunta_sem_acento for s in ["alta percentual", "baixa percentual"]):
+    elif all(keyword in pergunta_sem_acento for keyword in multi_step_keywords_2):
         template_id_final = 'Template_8B'
     elif any(keyword in pergunta_lower for keyword in ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]):
         template_id_final = 'Template_7A'
@@ -128,17 +131,14 @@ def process_question():
     elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
         template_id_final = 'Template_1B'
     else:
-        # Se nenhuma regra específica se aplica, usa a similaridade
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
         template_id_final = ref_ids[similaridades.argmax()]
 
-    # Extrai tudo que a pergunta pode oferecer
-    entidades_extraidas = extrair_todas_entidades_e_parametros(pergunta_lower)
+    # --- CORREÇÃO: NOME DA FUNÇÃO CORRIGIDO ---
+    entidades_extraidas = extrair_entidades_e_parametros(pergunta_lower)
     
-    # Converte as chaves para maiúsculas
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
-
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
 if __name__ == '__main__':
