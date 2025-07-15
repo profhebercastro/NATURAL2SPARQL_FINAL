@@ -1,57 +1,37 @@
-# Pergunta de referência para encontrar este template
-Qual foi o intervalo intradiário percentual da ação com maior baixa entre as ações do IMAT?
-
-# Marcadores de posição (placeholders) que o NLP deve extrair
-DATA
-CALCULO
-ORDEM
-NOME_SETOR
-
-# --- Consulta SPARQL com Subquery (usando Placeholders) ---
 SELECT ?O1 ?ANS
 WHERE {
-    # PARTE 1: A CONSULTA PRINCIPAL
-    # Usa o ?SO1 encontrado pela subquery para buscar os dados finais para o cálculo.
+    # PARTE PRINCIPAL
     ?SO1 P2 ?codigoNode .
-    ?codigoNode P8 ?O1 . # O1 = ticker
-    ?SO1 P3 ?SO2 .        # SO2 = negociadoEmPregao
-    ?SO2 P5 ?S2 .         # S2  = pregao
+    ?codigoNode P8 ?O1 .
+    ?SO1 P3 ?SO2 .
+    ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
 
-    # Busca os valores necessários para a fórmula do BIND que será injetada em #CALCULO#
     ?SO2 b3:precoAbertura ?abertura .
     ?SO2 b3:precoFechamento ?fechamento .
     ?SO2 b3:precoMaximo ?maximo .
     ?SO2 b3:precoMinimo ?minimo .
     FILTER(?abertura > 0)
 
-    # A fórmula do cálculo final é injetada aqui pelo Java. Ex: (((?maximo - ?minimo) / ?abertura))
-    # O resultado é armazenado na variável ?ANS (valor da resposta).
     BIND((#CALCULO#) AS ?ANS)
 
-    # PARTE 2: A SUBQUERY
-    # Encontra o nó do valor mobiliário (?SO1) que satisfaz a condição de ranking.
+    # SUBQUERY
     {
         SELECT ?SO1
         WHERE {
-            # Bloco opcional para filtrar por setor/índice (será preenchido pelo Java)
             #SETOR_FILTER_BLOCK#
 
-            # Caminho padrão para todas as negociações
-            ?S1 P1 ?SO1 .
+            ?S1_rank P1 ?SO1 .
             ?SO1 P3 ?SO2_rank .
             ?SO2_rank P5 ?S2_rank .
             ?S2_rank P6 "#DATA#"^^xsd:date .
             
-            # Busca os valores APENAS para o cálculo do ranking
             ?SO2_rank b3:precoAbertura ?abertura_rank .
             ?SO2_rank b3:precoFechamento ?fechamento_rank .
             FILTER(?abertura_rank > 0)
 
-            # Calcula a métrica de ranking (sempre a variação percentual para este caso)
             BIND((((?fechamento_rank - ?abertura_rank) / ?abertura_rank)) AS ?rankingValue)
         }
-        # Ordena pelo rankingValue para encontrar o topo (#ORDEM# será ASC)
         ORDER BY #ORDEM#(?rankingValue)
         LIMIT 1
     }

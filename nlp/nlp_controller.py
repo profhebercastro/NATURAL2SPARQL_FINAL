@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS (sem alterações aqui) ---
+# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -21,15 +21,23 @@ reference_templates = {}
 try:
     with open(os.path.join(SCRIPT_DIR, 'Reference_questions.txt'), 'r', encoding='utf-8') as f:
         for line in f:
-            if line.strip() and ';' in line and not line.startswith('#'):
-                template_id, question_text = line.split(';', 1)
-                reference_templates[template_id.strip()] = question_text.strip()
-except FileNotFoundError: pass
+            if line.strip() and ';' in line and not line.strip().startswith('#'):
+                parts = line.split(';', 1)
+                if len(parts) == 2:
+                    template_id, question_text = parts
+                    reference_templates[template_id.strip()] = question_text.strip()
+except FileNotFoundError:
+    reference_templates = {}
 
 ref_ids = list(reference_templates.keys())
 ref_questions = list(reference_templates.values())
-vectorizer = TfidfVectorizer()
-tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
+
+if ref_questions:
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix_ref = vectorizer.fit_transform(ref_questions)
+else:
+    vectorizer = None
+    tfidf_matrix_ref = None
 
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 def remover_acentos(texto):
@@ -47,18 +55,20 @@ def extrair_entidades_fixas(pergunta_lower):
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-                entidades['entidade_nome'] = key; break
+                entidades['entidade_nome'] = key
+                break
     
-    # --- ALTERAÇÃO: Adicionar mapeamento para 'IMAT' e outros índices se necessário ---
-    # Para o seu caso, certifique-se que o setor_map.json contém "IMAT"
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
-            entidades['nome_setor'] = setor_map[key]; break
+            # AQUI é onde ele pega o array de setores para "imat"
+            entidades['nome_setor'] = setor_map[key] 
+            break
 
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
-        dia, mes, ano = match_data.groups(); entidades['data'] = f"{ano}-{mes}-{dia}"
+        dia, mes, ano = match_data.groups()
+        entidades['data'] = f"{ano}-{mes}-{dia}"
             
     return entidades
 
@@ -66,28 +76,30 @@ def identificar_parametros_dinamicos(pergunta_lower):
     dados = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
 
-    # --- ALTERAÇÃO: Adicionar a nova métrica 'intervalo_perc' ---
     mapa_metricas = {
+        'calculo_intervalo_perc': ['intervalo intradiario percentual'],
         'calculo_variacao_abs': ['variacao intradiaria absoluta'],
         'calculo_variacao_perc': ['alta percentual', 'baixa percentual', 'percentual de alta', 'percentual de baixa'],
         'calculo_variacao_abs_abs': ['menor variacao'],
-        'calculo_intervalo_perc': ['intervalo intradiario percentual'], # <-- NOVO
         'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
         'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
-        'metrica.preco_fechamento': ['preco de fechamento', 'fechamento'],
-        'metrica.preco_abertura': ['preco de abertura', 'abertura'],
+        'metrica.preco_fechamento': ['preco de fechamento'],
+        'metrica.preco_abertura': ['preco de abertura'],
         'metrica.preco_medio': ['preco medio', 'preço médio'],
         'metrica.quantidade': ['quantidade', 'total de negocios'],
-        'metrica.volume': ['volume']
+        'metrica.volume': ['volume'],
+        'metrica.preco_fechamento': ['fechamento'],
+        'metrica.preco_abertura': ['abertura']
     }
 
     for chave, sinonimos in mapa_metricas.items():
+        if 'calculo' in dados or 'valor_desejado' in dados:
+            break
         if any(remover_acentos(s) in pergunta_sem_acento for s in sinonimos):
             if chave.startswith('calculo_'):
                 dados['calculo'] = chave.replace('calculo_', '')
             else:
                 dados['valor_desejado'] = chave
-            break
 
     if "ordinaria" in pergunta_sem_acento: dados["regex_pattern"] = "3$"
     elif "preferencial" in pergunta_sem_acento: dados["regex_pattern"] = "[456]$"
@@ -106,28 +118,27 @@ app = Flask(__name__)
 @app.route('/process_question', methods=['POST'])
 def process_question():
     data = request.get_json()
+    if not data or 'question' not in data:
+        return jsonify({"error": "Payload inválido."}), 400
+        
     pergunta_lower = data.get('question', '').lower()
-    if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
+    if not pergunta_lower.strip(): 
+        return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # --- ALTERAÇÃO CENTRAL: LÓGICA DE CLASSIFICAÇÃO DE TEMPLATE REFEITA ---
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     template_id_final = None
 
-    # Palavras-chave que indicam uma pergunta de ranking
-    ranking_keywords = ["maior alta", "maior baixa", "menor variacao", "percentual de alta", "percentual de baixa"]
-    is_ranking_question = any(keyword in pergunta_lower for keyword in ranking_keywords)
+    ranking_keywords = ["maior alta", "maior baixa", "menor variacao", "percentual de alta", "percentual de baixa", "cinco ações"]
+    is_ranking_question = any(keyword in pergunta_sem_acento for keyword in ranking_keywords)
 
-    # 1. Tenta identificar as perguntas de ranking complexas primeiro (Templates 8A, 8B)
     if is_ranking_question:
         if "variacao intradiaria absoluta" in pergunta_sem_acento:
             template_id_final = 'Template_8A'
         elif "intervalo intradiario percentual" in pergunta_sem_acento:
             template_id_final = 'Template_8B'
         else:
-            # Se for de ranking, mas não uma das complexas, é uma de ranking simples (Template 7A)
             template_id_final = 'Template_7A'
             
-    # 2. Se não for uma pergunta de ranking, usa as regras antigas
     if not template_id_final:
         if "variacao intradiaria absoluta" in pergunta_sem_acento:
             template_id_final = 'Template_6A'
@@ -136,15 +147,18 @@ def process_question():
         elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
             template_id_final = 'Template_1B'
 
-    # 3. Se nenhuma regra se aplicar, usa a similaridade de cosseno como último recurso
     if not template_id_final:
         if tfidf_matrix_ref is not None:
             tfidf_usuario = vectorizer.transform([pergunta_lower])
             similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-            template_id_final = ref_ids[similaridades.argmax()]
+            if similaridades.any():
+                template_id_final = ref_ids[similaridades.argmax()]
         else:
-            return jsonify({"error": "Nenhum template de referência carregado."}), 500
-        
+            return jsonify({"error": "Nenhum template de referência carregado para fallback."}), 500
+
+    if not template_id_final:
+        return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
+
     entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
     parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
     entidades_extraidas.update(parametros_dinamicos)
