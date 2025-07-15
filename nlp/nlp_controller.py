@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
+# --- Carregamento de Dados ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -31,7 +31,7 @@ ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
 tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
 
-# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
+# --- Funções Auxiliares ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -41,7 +41,7 @@ def extrair_todas_entidades(pergunta_lower):
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
 
-    # Extrai Ticker OU Nome de Empresa
+    # 1. Extrai Ticker OU Nome de Empresa
     ticker_match = re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower)
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1).upper()
@@ -51,39 +51,42 @@ def extrair_todas_entidades(pergunta_lower):
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
                 entidades['entidade_nome'] = key; break
     
-    # Extrai Setor
+    # 2. Extrai Setor
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
             entidades['nome_setor'] = setor_map[key]; break
 
-    # Extrai Data
+    # 3. Extrai Data
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups(); entidades['data'] = f"{ano}-{mes}-{dia}"
     
-    # Extrai Cálculo Principal
+    # 4. Extrai Métrica ou Cálculo
     if "variacao intradiaria absoluta" in pergunta_sem_acento:
-        entidades['calculo_principal'] = 'variacao_abs'
-    elif "intervalo intradiario percentual" in pergunta_sem_acento:
-        entidades['calculo_principal'] = 'intervalo_perc'
-
-    # Extrai Cálculo de Ranking
-    if any(s in pergunta_sem_acento for s in ["alta percentual", "percentual de alta"]):
-        entidades['calculo_ranking'] = 'variacao_perc'
-        entidades['ordem_ranking'] = 'DESC'
-    elif any(s in pergunta_sem_acento for s in ["baixa percentual", "percentual de baixa"]):
-        entidades['calculo_ranking'] = 'variacao_perc'
-        entidades['ordem_ranking'] = 'ASC'
+        entidades['calculo'] = 'variacao_abs'
+    elif any(s in pergunta_sem_acento for s in ["alta percentual", "baixa percentual", "percentual de alta", "percentual de baixa"]):
+        entidades['calculo'] = 'variacao_perc'
     elif "menor variacao" in pergunta_sem_acento:
-        entidades['calculo_ranking'] = 'variacao_abs_abs'
-        entidades['ordem_ranking'] = 'ASC'
-
-    # Extrai Limite
-    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
-        entidades['limite_ranking'] = "5"
+        entidades['calculo'] = 'variacao_abs_abs'
     else:
-        entidades['limite_ranking'] = "1"
+        mapa_metricas = {'metrica.preco_maximo': ['preço máximo', 'preco maximo'],'metrica.preco_minimo': ['preço mínimo', 'preco minimo'],'metrica.preco_fechamento': ['preço de fechamento', 'fechamento'],'metrica.preco_abertura': ['preço de abertura', 'abertura'],'metrica.quantidade': ['quantidade', 'total de negocios'], 'metrica.volume': ['volume']}
+        for chave, sinonimos in mapa_metricas.items():
+            if any(remover_acentos(s) in pergunta_sem_acento for s in sinonimos):
+                entidades['valor_desejado'] = chave; break
+    
+    # 5. Extrai Parâmetros de Ranking
+    if "ordinaria" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
+    elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
+    elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
+    
+    entidades['ordem'] = "DESC"
+    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento:
+        entidades['ordem'] = "ASC"
+        
+    entidades['limite'] = "1"
+    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
+        entidades['limite'] = "5"
             
     return entidades
 
@@ -95,12 +98,29 @@ def process_question():
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # Classificação por Similaridade
-    tfidf_usuario = vectorizer.transform([pergunta_lower])
-    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-    template_id_final = ref_ids[similaridades.argmax()]
-    
-    # Extrai tudo
+    # Classificação por Regras + Fallback
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
+    template_id_final = None
+
+    ranking_keywords = ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]
+    if any(keyword in pergunta_lower for keyword in ranking_keywords):
+        template_id_final = 'Template_7A'
+    elif "variacao intradiaria absoluta" in pergunta_sem_acento:
+        template_id_final = 'Template_6A'
+    elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "unit" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
+        template_id_final = 'Template_5B'
+    elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
+        template_id_final = 'Template_1B'
+    elif "quantidade" in pergunta_lower and "negociadas" in pergunta_lower:
+        template_id_final = 'Template_4B'
+    elif "volume" in pergunta_lower and "setor" in pergunta_lower:
+        template_id_final = 'Template_4A'
+    else:
+        tfidf_usuario = vectorizer.transform([pergunta_lower])
+        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+        template_id_final = ref_ids[similaridades.argmax()]
+
+    # Extrai tudo que a pergunta pode oferecer
     entidades_extraidas = extrair_todas_entidades(pergunta_lower)
     
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
