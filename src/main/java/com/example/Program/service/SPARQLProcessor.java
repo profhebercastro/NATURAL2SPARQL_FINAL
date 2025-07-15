@@ -54,12 +54,12 @@ public class SPARQLProcessor {
             }
 
             String templateContent = loadTemplate(templateId);
-            String queryComPlaceholdersResolvidos = placeholderService.replaceGenericPlaceholders(templateContent);
-
+            
             String finalQuery;
             if ("Template_6A".equals(templateId) || "Template_7A".equals(templateId) || "Template_8A".equals(templateId) || "Template_8B".equals(templateId)) {
-                finalQuery = buildCalculationQuery(templateId, queryComPlaceholdersResolvidos, entitiesNode);
+                finalQuery = buildCalculationQuery(templateId, templateContent, entitiesNode);
             } else {
+                String queryComPlaceholdersResolvidos = placeholderService.replaceGenericPlaceholders(templateContent);
                 finalQuery = replaceSimplePlaceholders(queryComPlaceholdersResolvidos, entitiesNode);
             }
 
@@ -79,7 +79,42 @@ public class SPARQLProcessor {
     private String buildCalculationQuery(String templateId, String template, JsonNode entities) {
         String query = template;
         
-        // --- 1. Substituir a fórmula de cálculo ---
+        // --- 1. Substituições de Filtros (ANTES de substituir os placeholders genéricos) ---
+        // Filtro por NOME DA ENTIDADE
+        if (entities.has("ENTIDADE_NOME")) {
+            String nomeEntidade = entities.get("ENTIDADE_NOME").asText();
+            String entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
+            query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+        } else {
+            query = query.replace("#FILTER_BLOCK_ENTIDADE#", "");
+        }
+
+        // Filtro por NOME DO SETOR
+        if (entities.has("NOME_SETOR")) {
+            JsonNode setorNode = entities.get("NOME_SETOR");
+            String setorFilter;
+            String subjectVariable = template.contains("?S1_rank") ? "?S1_rank" : "?S1";
+
+            if (setorNode.isArray()) {
+                List<String> setores = new ArrayList<>();
+                for (JsonNode setor : setorNode) {
+                    setores.add("\"" + setor.asText() + "\"@pt");
+                }
+                String inClause = String.join(", ", setores);
+                setorFilter = subjectVariable + " P9 ?S4 . \n    ?S4 P7 ?label . \n    FILTER(?label IN (" + inClause + "))";
+            } else {
+                String nomeSetor = setorNode.asText();
+                setorFilter = subjectVariable + " P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt .";
+            }
+            query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
+        } else {
+            query = query.replace("#FILTER_BLOCK_SETOR#", "");
+        }
+        
+        // --- 2. Substituir os placeholders genéricos (P*, S*) ---
+        query = placeholderService.replaceGenericPlaceholders(query);
+        
+        // --- 3. Substituir a fórmula de cálculo ---
         String calculoKey = entities.path("CALCULO").asText("");
         String calculoSparql;
         switch (calculoKey) {
@@ -91,40 +126,6 @@ public class SPARQLProcessor {
             default: calculoSparql = "0";
         }
         query = query.replace("#CALCULO#", calculoSparql);
-
-        // --- 2. Lógica de Filtro por NOME DA ENTIDADE (para Template 6A) ---
-        if (entities.has("ENTIDADE_NOME")) {
-            String nomeEntidade = entities.get("ENTIDADE_NOME").asText();
-            // O filtro usa REGEX para encontrar nomes que CONTENHAM a palavra (ex: "csn" em "CSN Mineração S.A.")
-            String entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
-            query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
-        } else {
-            query = query.replace("#FILTER_BLOCK_ENTIDADE#", "");
-        }
-
-        // --- 3. Lógica de Filtro por NOME DO SETOR (para Template 7A e 8B) ---
-        if (entities.has("NOME_SETOR")) {
-            JsonNode setorNode = entities.get("NOME_SETOR");
-            String setorFilter;
-            
-            // Usa ?empresa ou ?empresa_rank dependendo do contexto do template
-            String subjectVariable = template.contains("?empresa_rank") ? "?empresa_rank" : "?empresa";
-
-            if (setorNode.isArray()) {
-                List<String> setores = new ArrayList<>();
-                for (JsonNode setor : setorNode) {
-                    setores.add("\"" + setor.asText() + "\"@pt");
-                }
-                String inClause = String.join(", ", setores);
-                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label ?label . \n    FILTER(?label IN (" + inClause + "))";
-            } else {
-                String nomeSetor = setorNode.asText();
-                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
-            }
-            query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
-        } else {
-            query = query.replace("#FILTER_BLOCK_SETOR#", "");
-        }
 
         // --- 4. Substituições Finais ---
         if (entities.has("DATA")) query = query.replace("#DATA#", entities.get("DATA").asText());
@@ -145,7 +146,6 @@ public class SPARQLProcessor {
                 String predicadoRDF = placeholderService.getPlaceholderValue(value);
                 if (predicadoRDF != null) finalQuery = finalQuery.replace(placeholder, predicadoRDF);
             } else {
-                // Substitui #ENTIDADE_NOME# e outros placeholders simples
                 finalQuery = finalQuery.replace(placeholder, value);
             }
         }
@@ -171,8 +171,6 @@ public class SPARQLProcessor {
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 return reader.lines()
-                             .map(String::trim)
-                             .filter(line -> !line.startsWith("#") && !line.isEmpty())
                              .collect(Collectors.joining(System.lineSeparator()));
             }
         } catch (IOException e) {
