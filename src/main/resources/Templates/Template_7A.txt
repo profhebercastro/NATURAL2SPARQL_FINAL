@@ -1,6 +1,10 @@
+
+#### **Arquivo a ser ALTERADO: `Template_7A.txt`**
+*(Este template é para ranking com filtro de setor opcional)*
+```sparql
 SELECT ?ticker ?resultadoCalculado
 WHERE {
-    #SETOR_FILTER_BLOCK#
+    #FILTER_BLOCK_SETOR#
 
     ?S1 P1 ?SO1 .
     ?SO1 P2 ?codigoNode .
