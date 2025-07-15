@@ -30,8 +30,7 @@ public class SPARQLProcessor {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
-    // Garanta que esta URL esteja correta para o seu ambiente
-    private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question"; 
+    private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
     public SPARQLProcessor(PlaceholderService placeholderService) {
@@ -58,7 +57,7 @@ public class SPARQLProcessor {
 
             String finalQuery;
             if ("Template_6A".equals(templateId) || "Template_7A".equals(templateId) || "Template_8A".equals(templateId) || "Template_8B".equals(templateId)) {
-                finalQuery = buildCalculationQuery(templateContent, entitiesNode);
+                finalQuery = buildCalculationQuery(templateId, templateContent, entitiesNode);
             } else {
                 finalQuery = replaceSimplePlaceholders(templateContent, entitiesNode);
             }
@@ -76,7 +75,7 @@ public class SPARQLProcessor {
         }
     }
 
-    private String buildCalculationQuery(String template, JsonNode entities) {
+    private String buildCalculationQuery(String templateId, String template, JsonNode entities) {
         String calculoKey = entities.path("CALCULO").asText("");
         String calculoSparql;
         switch (calculoKey) {
@@ -89,35 +88,33 @@ public class SPARQLProcessor {
         }
         String query = template.replace("#CALCULO#", calculoSparql);
 
-        // **LÓGICA CENTRAL PARA LIDAR COM O ARRAY "IMAT"**
+        // **INÍCIO DA CORREÇÃO DEFINITIVA**
         if (entities.has("NOME_SETOR")) {
             JsonNode setorNode = entities.get("NOME_SETOR");
             String setorFilter;
+            
+            // Determina a variável de sujeito correta com base no template usado.
+            // Templates de subquery (8B) usam ?S1_rank. Template simples (7A) usa ?S1.
+            String subjectVariable = "Template_8B".equals(templateId) ? "?S1_rank" : "?S1";
 
-            if (setorNode.isArray()) { // --> Esta condição será VERDADEIRA para a pergunta do IMAT
+            if (setorNode.isArray()) {
                 List<String> setores = new ArrayList<>();
-                // Itera sobre o array ["Materiais Básicos", "Minerais Metálicos", ...]
                 for (JsonNode setor : setorNode) {
-                    // Formata cada um para a sintaxe SPARQL: "Nome do Setor"@pt
                     setores.add("\"" + setor.asText() + "\"@pt");
                 }
-                // Junta todos com vírgula: "Setor1"@pt, "Setor2"@pt, ...
                 String inClause = String.join(", ", setores);
-                
-                // Determina a variável correta a ser usada no filtro (para subqueries ou não)
-                String subjectVariable = query.contains("?S1_rank") ? "?S1_rank" : "?S1";
-                
-                // Monta o filtro SPARQL com a cláusula IN
                 setorFilter = subjectVariable + " P9 ?S4 . \n    ?S4 P7 ?label . \n    FILTER(?label IN (" + inClause + "))";
-            } else { // Fallback para o caso de ser um único setor (string)
+            } else {
                 String nomeSetor = setorNode.asText();
-                String subjectVariable = query.contains("?S1_rank") ? "?S1_rank" : "?S1";
                 setorFilter = subjectVariable + " P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt .";
             }
+            // Substitui o placeholder no texto da query
             query = query.replace("#SETOR_FILTER_BLOCK#", setorFilter);
         } else {
+            // Se não houver setor, garante que o placeholder seja removido
             query = query.replace("#SETOR_FILTER_BLOCK#", "");
         }
+        // **FIM DA CORREÇÃO DEFINITIVA**
 
         if (entities.has("ENTIDADE_NOME")) query = query.replace("#ENTIDADE_NOME#", entities.get("ENTIDADE_NOME").asText());
         if (entities.has("DATA")) query = query.replace("#DATA#", entities.get("DATA").asText());
