@@ -1,6 +1,7 @@
-# Ranking GERAL de ações (sem filtro de setor)
+# Ranking de ações COM FILTRO DE SETOR
 SELECT ?ticker ?resultadoCalculado
 WHERE {
+    #FILTER_BLOCK_SETOR#
     ?S1 P1 ?SO1 .
     ?SO1 P2 ?codigoNode .
     ?codigoNode P8 ?ticker .

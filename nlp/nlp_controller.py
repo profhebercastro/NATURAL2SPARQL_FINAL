@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
+# --- CARREGAMENTO (sem alterações) ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -39,7 +39,7 @@ else:
     vectorizer = None
     tfidf_matrix_ref = None
 
-# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
+# --- FUNÇÕES AUXILIARES (sem alterações) ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -61,8 +61,7 @@ def extrair_entidades_fixas(pergunta_lower):
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
-            # AQUI é onde ele pega o array de setores para "imat"
-            entidades['nome_setor'] = setor_map[key] 
+            entidades['nome_setor'] = setor_map[key]
             break
 
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
@@ -125,36 +124,16 @@ def process_question():
     if not pergunta_lower.strip(): 
         return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
-    template_id_final = None
-
-    ranking_keywords = ["maior alta", "maior baixa", "menor variacao", "percentual de alta", "percentual de baixa", "cinco ações"]
-    is_ranking_question = any(keyword in pergunta_sem_acento for keyword in ranking_keywords)
-
-    if is_ranking_question:
-        if "variacao intradiaria absoluta" in pergunta_sem_acento:
-            template_id_final = 'Template_8A'
-        elif "intervalo intradiario percentual" in pergunta_sem_acento:
-            template_id_final = 'Template_8B'
+    # LÓGICA DE SELEÇÃO SIMPLIFICADA E ROBUSTA
+    if tfidf_matrix_ref is not None:
+        tfidf_usuario = vectorizer.transform([pergunta_lower])
+        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+        if similaridades.any():
+            template_id_final = ref_ids[similaridades.argmax()]
         else:
-            template_id_final = 'Template_7A'
-            
-    if not template_id_final:
-        if "variacao intradiaria absoluta" in pergunta_sem_acento:
-            template_id_final = 'Template_6A'
-        elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
-            template_id_final = 'Template_5B'
-        elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
-            template_id_final = 'Template_1B'
-
-    if not template_id_final:
-        if tfidf_matrix_ref is not None:
-            tfidf_usuario = vectorizer.transform([pergunta_lower])
-            similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-            if similaridades.any():
-                template_id_final = ref_ids[similaridades.argmax()]
-        else:
-            return jsonify({"error": "Nenhum template de referência carregado para fallback."}), 500
+            return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
+    else:
+        return jsonify({"error": "Nenhum template de referência carregado."}), 500
 
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404

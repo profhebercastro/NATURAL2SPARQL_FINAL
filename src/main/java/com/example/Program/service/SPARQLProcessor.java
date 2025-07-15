@@ -56,8 +56,8 @@ public class SPARQLProcessor {
             String templateContent = loadTemplate(templateId);
             
             String finalQuery;
-            if ("Template_6A".equals(templateId) || "Template_7A".equals(templateId) || "Template_8A".equals(templateId) || "Template_8B".equals(templateId)) {
-                finalQuery = buildCalculationQuery(templateId, templateContent, entitiesNode);
+            if (templateId.startsWith("Template_6") || templateId.startsWith("Template_7") || templateId.startsWith("Template_8")) {
+                finalQuery = buildCalculationQuery(templateContent, entitiesNode);
             } else {
                 String queryComPlaceholdersResolvidos = placeholderService.replaceGenericPlaceholders(templateContent);
                 finalQuery = replaceSimplePlaceholders(queryComPlaceholdersResolvidos, entitiesNode);
@@ -76,20 +76,18 @@ public class SPARQLProcessor {
         }
     }
 
-    private String buildCalculationQuery(String templateId, String template, JsonNode entities) {
+    private String buildCalculationQuery(String template, JsonNode entities) {
         String query = template;
         
         // --- 1. Substituições de Filtros (ANTES de substituir os placeholders genéricos) ---
-        // Filtro por NOME DA ENTIDADE
         if (entities.has("ENTIDADE_NOME")) {
             String nomeEntidade = entities.get("ENTIDADE_NOME").asText();
-            String entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
+            String entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
             query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         } else {
             query = query.replace("#FILTER_BLOCK_ENTIDADE#", "");
         }
 
-        // Filtro por NOME DO SETOR
         if (entities.has("NOME_SETOR")) {
             JsonNode setorNode = entities.get("NOME_SETOR");
             String setorFilter;
@@ -101,10 +99,10 @@ public class SPARQLProcessor {
                     setores.add("\"" + setor.asText() + "\"@pt");
                 }
                 String inClause = String.join(", ", setores);
-                setorFilter = subjectVariable + " P9 ?S4 . \n    ?S4 P7 ?label . \n    FILTER(?label IN (" + inClause + "))";
+                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label ?label . \n    FILTER(?label IN (" + inClause + "))";
             } else {
                 String nomeSetor = setorNode.asText();
-                setorFilter = subjectVariable + " P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt .";
+                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
             }
             query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
         } else {
