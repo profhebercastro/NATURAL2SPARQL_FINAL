@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
+# --- CARREGAMENTO DE DADOS ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -31,13 +31,12 @@ ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
 tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
 
-# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
+# --- FUNÇÕES AUXILIARES ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-# --- NOME DA FUNÇÃO CORRIGIDO ---
-def extrair_entidades_e_parametros(pergunta_lower):
+def extrair_todas_entidades_e_parametros(pergunta_lower):
     """Função única e robusta que extrai todas as entidades e parâmetros."""
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
@@ -63,7 +62,7 @@ def extrair_entidades_e_parametros(pergunta_lower):
     if match_data:
         dia, mes, ano = match_data.groups(); entidades['data'] = f"{ano}-{mes}-{dia}"
     
-    # 4. Extrai Métricas e Cálculos
+    # 4. Extrai Métrica ou Cálculo
     mapa_logico = {
         'calculo_principal_variacao_abs': ['variacao intradiaria absoluta'],
         'calculo_principal_intervalo_perc': ['intervalo intradiario percentual'],
@@ -134,9 +133,8 @@ def process_question():
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
         template_id_final = ref_ids[similaridades.argmax()]
-
-    # --- CORREÇÃO: NOME DA FUNÇÃO CORRIGIDO ---
-    entidades_extraidas = extrair_entidades_e_parametros(pergunta_lower)
+        
+    entidades_extraidas = extrair_todas_entidades_e_parametros(pergunta_lower)
     
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
