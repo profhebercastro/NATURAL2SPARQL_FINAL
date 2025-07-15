@@ -35,7 +35,6 @@ public class SPARQLProcessor {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
-
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
@@ -81,7 +80,7 @@ public class SPARQLProcessor {
     }
 
     private String buildMultiStepQuery(String templateId, JsonNode entities) {
-        // ETAPA 1: Construir e executar a consulta de ranking para encontrar o ticker alvo.
+        // ETAPA 1: Construir e executar a consulta de ranking.
         ObjectNode rankingEntities = entities.deepCopy();
         rankingEntities.put("CALCULO", entities.get("CALCULO_RANKING").asText());
         rankingEntities.put("ORDEM", entities.get("ORDEM_RANKING").asText());
@@ -110,15 +109,15 @@ public class SPARQLProcessor {
         if ("Template_8A".equals(templateId)) {
             finalTemplateId = "Template_6A";
             finalCalculationKey = entities.path("CALCULO_PRINCIPAL").asText("variacao_abs");
-        } else { // Template 8B
-            finalTemplateId = "Template_7A"; // Reutilizamos o genérico
+        } else { // Template_8B
+            finalTemplateId = "Template_7A";
             finalCalculationKey = entities.path("CALCULO_PRINCIPAL").asText("intervalo_perc");
         }
         finalEntities.put("CALCULO", finalCalculationKey);
 
         String finalQuery = buildCalculationQuery(finalTemplateId, finalEntities);
 
-        // Remove cláusulas de ranking desnecessárias na segunda etapa
+        // Remove cláusulas de ranking desnecessárias
         finalQuery = finalQuery.replaceFirst("ORDER BY .*? ", " ");
         finalQuery = finalQuery.replaceFirst("LIMIT .*? ", " ");
         
