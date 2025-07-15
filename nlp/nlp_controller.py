@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
+# --- CARREGAMENTO DE DADOS ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -31,13 +31,13 @@ ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
 tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
 
-# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
+# --- FUNÇÕES AUXILIARES ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def extrair_todas_entidades_e_parametros(pergunta_lower):
-    """Função ÚNICA e ROBUSTA que extrai todas as entidades e parâmetros."""
+def extrair_todas_entidades(pergunta_lower):
+    """Função única e robusta que extrai todas as entidades e parâmetros."""
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
 
@@ -62,44 +62,44 @@ def extrair_todas_entidades_e_parametros(pergunta_lower):
     if match_data:
         dia, mes, ano = match_data.groups(); entidades['data'] = f"{ano}-{mes}-{dia}"
     
-    # 4. Extrai Métricas e Cálculos
-    
-    # Mapeamento de frases para chaves de cálculo/métrica
+    # 4. Extrai Métrica ou Cálculo
     mapa_metricas = {
-        'calculo_principal_variacao_abs': ['variacao intradiaria absoluta'],
-        'calculo_principal_intervalo_perc': ['intervalo intradiario percentual'],
-        'calculo_ranking_variacao_perc_asc': ['baixa percentual', 'percentual de baixa'],
-        'calculo_ranking_variacao_perc_desc': ['alta percentual', 'percentual de alta'],
-        'calculo_ranking_variacao_abs_abs_asc': ['menor variacao'],
+        'calculo_variacao_abs': ['variacao intradiaria absoluta'],
+        'calculo_variacao_perc': ['alta percentual', 'baixa percentual', 'percentual de alta', 'percentual de baixa'],
+        'calculo_intervalo_perc': ['intervalo intradiario percentual'],
+        'calculo_variacao_abs_abs': ['menor variacao'],
         'metrica.preco_maximo': ['preço máximo', 'preco maximo'],
         'metrica.preco_minimo': ['preço mínimo', 'preco minimo'],
         'metrica.preco_fechamento': ['preço de fechamento', 'fechamento'],
         'metrica.preco_abertura': ['preço de abertura', 'abertura'],
-        'metrica.quantidade': ['quantidade', 'total de negocios'],
+        'metrica.preco_medio': ['preço médio', 'preco medio'],
+        'metrica.quantidade': ['quantidade'],
         'metrica.volume': ['volume']
     }
-
     for chave, sinonimos in mapa_metricas.items():
         if any(remover_acentos(s) in pergunta_sem_acento for s in sinonimos):
-            if chave.startswith('calculo_principal'):
-                entidades['calculo_principal'] = chave.split('_')[-1]
-            elif chave.startswith('calculo_ranking'):
-                parts = chave.split('_')
-                entidades['calculo_ranking'] = parts[2]
-                entidades['ordem_ranking'] = parts[3].upper()
+            if chave.startswith('calculo_'):
+                entidades['calculo'] = chave.replace('calculo_', '')
             else:
                 entidades['valor_desejado'] = chave
+            break
     
-    # 5. Extrai Limite
-    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
-        entidades['limite_ranking'] = "5"
-    else:
-        entidades['limite_ranking'] = "1"
-
-    # 6. Extrai Regex para tipo de ação
+    # 5. Extrai Parâmetros de Ranking
     if "ordinaria" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
     elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
     elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
+    
+    dados_ranking = {}
+    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento:
+        dados_ranking['ordem'] = "ASC"
+    else:
+        dados_ranking['ordem'] = "DESC"
+        
+    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
+        dados_ranking['limite'] = "5"
+    else:
+        dados_ranking['limite'] = "1"
+    entidades.update(dados_ranking)
             
     return entidades
 
@@ -111,15 +111,34 @@ def process_question():
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # 1. Classificação por Similaridade (Fallback)
-    tfidf_usuario = vectorizer.transform([pergunta_lower])
-    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-    template_id_final = ref_ids[similaridades.argmax()]
+    # Classificação por Regras + Fallback
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
+    template_id_final = None
 
-    # 2. Extrai tudo que a pergunta pode oferecer
-    entidades_extraidas = extrair_todas_entidades_e_parametros(pergunta_lower)
+    ranking_keywords = ["qual ação", "maior alta", "maior baixa", "menor variação", "cinco ações"]
+    if any(keyword in pergunta_lower for keyword in ranking_keywords):
+        template_id_final = 'Template_7A'
+    elif "variacao intradiaria absoluta" in pergunta_sem_acento:
+        template_id_final = 'Template_6A'
+    elif "intervalo intradiario percentual" in pergunta_sem_acento: # Nova regra para 8B
+        template_id_final = 'Template_8B'
+    elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
+        template_id_final = 'Template_5B'
+    elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
+        template_id_final = 'Template_1B'
+    elif "quantidade" in pergunta_lower and "negociadas" in pergunta_lower:
+        template_id_final = 'Template_4B'
+    elif "volume" in pergunta_lower and "setor" in pergunta_lower:
+        template_id_final = 'Template_4A'
+    else:
+        tfidf_usuario = vectorizer.transform([pergunta_lower])
+        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+        template_id_final = ref_ids[similaridades.argmax()]
+
+    # Extrai tudo que a pergunta pode oferecer
+    entidades_extraidas = extrair_todas_entidades(pergunta_lower)
     
-    # 3. Converte as chaves para maiúsculas
+    # Converte as chaves para maiúsculas para o Java
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
 
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
