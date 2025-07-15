@@ -36,7 +36,7 @@ def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def extrair_todas_entidades_e_parametros(pergunta_lower):
+def extrair_entidades_e_parametros(pergunta_lower):
     """Função única e robusta que extrai todas as entidades e parâmetros."""
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
@@ -110,16 +110,35 @@ def process_question():
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # 1. Classificação por Similaridade
-    tfidf_usuario = vectorizer.transform([pergunta_lower])
-    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-    template_id_final = ref_ids[similaridades.argmax()]
+    # Classificação por Regras + Fallback
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
+    template_id_final = None
 
-    # 2. Extrai tudo que a pergunta pode oferecer
+    # Verifica primeiro os casos mais complexos e específicos
+    if "variacao intradiaria absoluta" in pergunta_sem_acento and any(s in pergunta_sem_acento for s in ["alta percentual", "baixa percentual"]):
+        template_id_final = 'Template_8A'
+    elif "intervalo intradiario percentual" in pergunta_sem_acento and any(s in pergunta_sem_acento for s in ["alta percentual", "baixa percentual"]):
+        template_id_final = 'Template_8B'
+    elif any(keyword in pergunta_lower for keyword in ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]):
+        template_id_final = 'Template_7A'
+    elif "variacao intradiaria absoluta" in pergunta_sem_acento:
+        template_id_final = 'Template_6A'
+    elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
+        template_id_final = 'Template_5B'
+    elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
+        template_id_final = 'Template_1B'
+    else:
+        # Se nenhuma regra específica se aplica, usa a similaridade
+        tfidf_usuario = vectorizer.transform([pergunta_lower])
+        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+        template_id_final = ref_ids[similaridades.argmax()]
+
+    # Extrai tudo que a pergunta pode oferecer
     entidades_extraidas = extrair_todas_entidades_e_parametros(pergunta_lower)
     
-    # 3. Converte as chaves para maiúsculas
+    # Converte as chaves para maiúsculas
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
+
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
 if __name__ == '__main__':
