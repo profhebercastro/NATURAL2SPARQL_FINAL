@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
+# --- CARREGAMENTO DE DADOS ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -31,17 +31,15 @@ ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
 tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
 
-# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
+# --- FUNÇÕES AUXILIARES ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-# --- NOME DA FUNÇÃO CORRIGIDO ---
 def extrair_entidades_e_parametros(pergunta_lower):
-    """Função única e robusta que extrai todas as entidades e parâmetros."""
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
-
+    
     # 1. Extrai Ticker OU Nome de Empresa
     ticker_match = re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower)
     if ticker_match:
@@ -63,7 +61,7 @@ def extrair_entidades_e_parametros(pergunta_lower):
     if match_data:
         dia, mes, ano = match_data.groups(); entidades['data'] = f"{ano}-{mes}-{dia}"
     
-    # 4. Extrai Métricas e Cálculos
+    # 4. Extrai Métricas, Cálculos e Parâmetros
     mapa_logico = {
         'calculo_principal_variacao_abs': ['variacao intradiaria absoluta'],
         'calculo_principal_intervalo_perc': ['intervalo intradiario percentual'],
@@ -86,11 +84,6 @@ def extrair_entidades_e_parametros(pergunta_lower):
             else:
                 entidades['valor_desejado'] = chave
 
-    # 5. Extrai Parâmetros de Ranking
-    if "ordinaria" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
-    elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
-    elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
-    
     if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento:
         entidades['ordem_ranking'] = "ASC"
     else:
@@ -100,6 +93,10 @@ def extrair_entidades_e_parametros(pergunta_lower):
         entidades['limite_ranking'] = "5"
     else:
         entidades['limite_ranking'] = "1"
+        
+    if "ordinaria" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
+    elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
+    elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
             
     return entidades
 
@@ -111,16 +108,16 @@ def process_question():
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # Classificação por Regras + Fallback
+    # Lógica de Classificação por Regras + Fallback
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     template_id_final = None
 
-    multi_step_keywords_1 = ["variacao intradiaria absoluta", "maior percentual de alta", "maior percentual de baixa"]
-    multi_step_keywords_2 = ["intervalo intradiario percentual", "maior percentual de alta", "maior percentual de baixa"]
+    multi_step_keywords_1 = ["variacao intradiaria absoluta", "alta percentual", "baixa percentual"]
+    multi_step_keywords_2 = ["intervalo intradiario percentual", "alta percentual", "baixa percentual"]
 
-    if all(keyword in pergunta_sem_acento for keyword in multi_step_keywords_1):
+    if all(remover_acentos(kw) in pergunta_sem_acento for kw in multi_step_keywords_1):
         template_id_final = 'Template_8A'
-    elif all(keyword in pergunta_sem_acento for keyword in multi_step_keywords_2):
+    elif all(remover_acentos(kw) in pergunta_sem_acento for kw in multi_step_keywords_2):
         template_id_final = 'Template_8B'
     elif any(keyword in pergunta_lower for keyword in ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]):
         template_id_final = 'Template_7A'
@@ -135,10 +132,10 @@ def process_question():
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
         template_id_final = ref_ids[similaridades.argmax()]
         
-    # --- CORREÇÃO: NOME DA FUNÇÃO CORRIGIDO ---
-    entidades_extraidas = extrair_entidades_e_parametros(pergunta_lower)
+    entidades_extraidas = extrair_todas_entidades_e_parametros(pergunta_lower)
     
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
+
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
 if __name__ == '__main__':
