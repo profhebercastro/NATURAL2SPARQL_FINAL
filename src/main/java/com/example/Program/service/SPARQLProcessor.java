@@ -1,11 +1,8 @@
 package com.example.Programa_heber.service;
 
 import com.example.Programa_heber.model.ProcessamentoDetalhadoResposta;
-import com.example.Programa_heber.ontology.Ontology;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +17,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -30,19 +25,16 @@ import java.util.stream.Collectors;
 public class SPARQLProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(SPARQLProcessor.class);
-    
-    private final Ontology ontology;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
-    public SPARQLProcessor(PlaceholderService placeholderService, Ontology ontology) {
+    public SPARQLProcessor(PlaceholderService placeholderService) {
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
         this.placeholderService = placeholderService;
-        this.ontology = ontology;
     }
 
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String naturalLanguageQuery) {
@@ -57,9 +49,8 @@ public class SPARQLProcessor {
 
             String finalQuery;
 
-            if ("Template_8A".equals(templateId) || "Template_8B".equals(templateId)) {
-                finalQuery = buildMultiStepQuery(templateId, entitiesNode);
-            } else if ("Template_6A".equals(templateId) || "Template_7A".equals(templateId)) {
+            // Roteia para o método de construção correto com base no template
+            if ("Template_6A".equals(templateId) || "Template_7A".equals(templateId)) {
                 finalQuery = buildCalculationQuery(templateId, entitiesNode);
             } else {
                 String templateContent = loadTemplate(templateId);
@@ -79,54 +70,10 @@ public class SPARQLProcessor {
         }
     }
 
-    private String buildMultiStepQuery(String templateId, JsonNode entities) {
-        // ETAPA 1: Construir e executar a consulta de ranking.
-        ObjectNode rankingEntities = entities.deepCopy();
-        rankingEntities.put("CALCULO", entities.get("CALCULO_RANKING").asText());
-        rankingEntities.put("ORDEM", entities.get("ORDEM_RANKING").asText());
-        rankingEntities.put("LIMITE", entities.get("LIMITE_RANKING").asText());
-        
-        String rankingQuery = buildCalculationQuery("Template_7A", rankingEntities);
-        
-        logger.info("Executando consulta de ranking intermediária:\n{}", rankingQuery);
-        List<Map<String, String>> rankingResult = ontology.executeQuery(rankingQuery);
-        
-        if (rankingResult.isEmpty() || !rankingResult.get(0).containsKey("ticker")) {
-            return "# Erro: Não foi possível encontrar a ação de referência para a segunda etapa da consulta.";
-        }
-        
-        String targetTicker = rankingResult.get(0).get("ticker");
-        logger.info("Ticker alvo encontrado: {}", targetTicker);
-
-        // ETAPA 2: Construir a consulta final
-        ObjectNode finalEntities = objectMapper.createObjectNode();
-        finalEntities.put("ENTIDADE_NOME", targetTicker);
-        finalEntities.set("DATA", entities.get("DATA"));
-
-        String finalTemplateId;
-        String finalCalculationKey;
-
-        if ("Template_8A".equals(templateId)) {
-            finalTemplateId = "Template_6A";
-            finalCalculationKey = entities.path("CALCULO_PRINCIPAL").asText("variacao_abs");
-        } else { // Template_8B
-            finalTemplateId = "Template_7A";
-            finalCalculationKey = entities.path("CALCULO_PRINCIPAL").asText("intervalo_perc");
-        }
-        finalEntities.put("CALCULO", finalCalculationKey);
-
-        String finalQuery = buildCalculationQuery(finalTemplateId, finalEntities);
-
-        // Remove cláusulas de ranking desnecessárias
-        finalQuery = finalQuery.replaceFirst("ORDER BY .*? ", " ");
-        finalQuery = finalQuery.replaceFirst("LIMIT .*? ", " ");
-        
-        return finalQuery;
-    }
-    
     private String buildCalculationQuery(String templateId, JsonNode entities) {
         String template = loadTemplate(templateId);
-        
+
+        // Traduz a chave do NLP (ex: "variacao_perc") para a fórmula SPARQL
         String calculoKey = entities.path("CALCULO").asText("");
         String calculoSparql;
         switch (calculoKey) {
@@ -135,29 +82,21 @@ public class SPARQLProcessor {
             case "intervalo_abs": calculoSparql = "(?maximo - ?minimo)"; break;
             case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
             case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-            default: calculoSparql = "";
+            default: calculoSparql = "0";
         }
         template = template.replace("#CALCULO#", calculoSparql);
 
+        // Substitui outros placeholders dinâmicos
         if (entities.has("NOME_SETOR")) {
-            JsonNode setorNode = entities.get("NOME_SETOR");
-            String setorFilter;
-            if (setorNode.isArray()) {
-                List<String> setores = objectMapper.convertValue(setorNode, new TypeReference<List<String>>() {});
-                String setorList = setores.stream().map(s -> "\"" + s + "\"@pt").collect(Collectors.joining(", "));
-                setorFilter = "?S1 P9 ?S4 . \n    ?S4 P7 ?setorLabel . \n    FILTER(?setorLabel IN (" + setorList + "))";
-            } else {
-                String nomeSetor = setorNode.asText();
-                setorFilter = "?S1 P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt .";
-            }
+            String nomeSetor = entities.get("NOME_SETOR").asText();
+            String setorFilter = "?S1 P9 ?S4 . \n" + "    ?S4 P7 \"" + nomeSetor + "\"@pt .";
             template = template.replace("#SETOR_FILTER_BLOCK#", setorFilter);
         } else {
-            template = template.replace("#SETOR_FILTER_BLOCK#", "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"#ENTIDADE_NOME#\", \"i\"))");
+            template = template.replace("#SETOR_FILTER_BLOCK#", "");
         }
         
         if (entities.has("ENTIDADE_NOME")) template = template.replace("#ENTIDADE_NOME#", entities.get("ENTIDADE_NOME").asText());
         if (entities.has("DATA")) template = template.replace("#DATA#", entities.get("DATA").asText());
-        
         template = template.replace("#ORDEM#", entities.path("ORDEM").asText("DESC"));
         template = template.replace("#LIMITE#", entities.path("LIMITE").asText("1"));
         
@@ -186,7 +125,7 @@ public class SPARQLProcessor {
         String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(NLP_SERVICE_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody)).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) { throw new IOException("Serviço NLP falhou com status " + response.statusCode()); }
+        if (response.statusCode() != 200) throw new IOException("Serviço NLP falhou com status " + response.statusCode());
         return response.body();
     }
     
