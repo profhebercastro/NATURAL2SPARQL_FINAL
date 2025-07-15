@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO (sem alterações) ---
+# --- CARREGAMENTO ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -25,16 +25,24 @@ try:
                 parts = line.split(';', 1)
                 if len(parts) == 2:
                     template_id, question_text = parts
-                    reference_templates[template_id.strip()] = question_text.strip()
+                    # Permite múltiplas perguntas para o mesmo template
+                    if template_id.strip() not in reference_templates:
+                        reference_templates[template_id.strip()] = []
+                    reference_templates[template_id.strip()].append(question_text.strip())
 except FileNotFoundError:
     reference_templates = {}
 
-ref_ids = list(reference_templates.keys())
-ref_questions = list(reference_templates.values())
+# Achata a lista de perguntas para o vetorizador
+ref_questions_flat = []
+ref_ids_flat = []
+for template_id, questions in reference_templates.items():
+    for q in questions:
+        ref_questions_flat.append(q)
+        ref_ids_flat.append(template_id)
 
-if ref_questions:
+if ref_questions_flat:
     vectorizer = TfidfVectorizer()
-    tfidf_matrix_ref = vectorizer.fit_transform(ref_questions)
+    tfidf_matrix_ref = vectorizer.fit_transform(ref_questions_flat)
 else:
     vectorizer = None
     tfidf_matrix_ref = None
@@ -124,12 +132,13 @@ def process_question():
     if not pergunta_lower.strip(): 
         return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # LÓGICA DE SELEÇÃO SIMPLIFICADA E ROBUSTA
+    # LÓGICA DE SELEÇÃO BASEADA EM SIMILARIDADE
     if tfidf_matrix_ref is not None:
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
         if similaridades.any():
-            template_id_final = ref_ids[similaridades.argmax()]
+            # Pega o ID do template correspondente à pergunta mais similar
+            template_id_final = ref_ids_flat[similaridades.argmax()]
         else:
             return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
     else:

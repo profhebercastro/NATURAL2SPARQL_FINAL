@@ -1,13 +1,13 @@
-# Ranking de ações COM FILTRO DE SETOR
 SELECT ?ticker ?resultadoCalculado
 WHERE {
     #FILTER_BLOCK_SETOR#
     ?S1 P1 ?SO1 .
-    ?SO1 P2 ?codigoNode .
-    ?codigoNode P8 ?ticker .
-    ?SO1 P3 ?SO2 .
+    ?SO1 P1 ?intermediario .
+    ?intermediario P3 ?SO2 .
     ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
+    ?SO1 P2 ?codigo .
+    ?codigo P8 ?ticker .
     ?SO2 b3:precoAbertura ?abertura .
     ?SO2 b3:precoFechamento ?fechamento .
     ?SO2 b3:precoMaximo ?maximo .

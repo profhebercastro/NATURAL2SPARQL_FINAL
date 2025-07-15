@@ -56,11 +56,13 @@ public class SPARQLProcessor {
             String templateContent = loadTemplate(templateId);
             
             String finalQuery;
-            if (templateId.startsWith("Template_6") || templateId.startsWith("Template_7") || templateId.startsWith("Template_8")) {
+            // Roteamento explícito para os métodos de construção
+            if ("Template_5B".equals(templateId)) {
+                finalQuery = buildTypeFilteredQuery(templateContent, entitiesNode);
+            } else if (templateId.startsWith("Template_6") || templateId.startsWith("Template_7") || templateId.startsWith("Template_8")) {
                 finalQuery = buildCalculationQuery(templateContent, entitiesNode);
             } else {
-                String queryComPlaceholdersResolvidos = placeholderService.replaceGenericPlaceholders(templateContent);
-                finalQuery = replaceSimplePlaceholders(queryComPlaceholdersResolvidos, entitiesNode);
+                finalQuery = buildSimpleQuery(templateContent, entitiesNode);
             }
 
             resposta.setSparqlQuery(finalQuery);
@@ -76,10 +78,14 @@ public class SPARQLProcessor {
         }
     }
 
-    private String buildCalculationQuery(String template, JsonNode entities) {
+    private String buildSimpleQuery(String template, JsonNode entities) {
+        String query = placeholderService.replaceGenericPlaceholders(template);
+        return replaceSimplePlaceholders(query, entities);
+    }
+    
+    private String buildTypeFilteredQuery(String template, JsonNode entities) {
         String query = template;
-        
-        // --- 1. Substituições de Filtros (ANTES de substituir os placeholders genéricos) ---
+
         if (entities.has("ENTIDADE_NOME")) {
             String nomeEntidade = entities.get("ENTIDADE_NOME").asText();
             String entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
@@ -87,32 +93,65 @@ public class SPARQLProcessor {
         } else {
             query = query.replace("#FILTER_BLOCK_ENTIDADE#", "");
         }
+        
+        if (entities.has("REGEX_PATTERN")) {
+            String regexPattern = entities.get("REGEX_PATTERN").asText();
+            String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + regexPattern + "\"))";
+            query = query.replace("#REGEX_FILTER#", regexFilter);
+        } else {
+            query = query.replace("#REGEX_FILTER#", "");
+        }
+        
+        query = placeholderService.replaceGenericPlaceholders(query);
 
+        if (entities.has("VALOR_DESEJADO")) {
+            String metrica = entities.get("VALOR_DESEJADO").asText();
+            query = query.replace("#VALOR_DESEJADO#", placeholderService.getPlaceholderValue(metrica));
+        }
+
+        if (entities.has("DATA")) {
+            query = query.replace("#DATA#", entities.get("DATA").asText());
+        }
+        
+        return query;
+    }
+
+    private String buildCalculationQuery(String template, JsonNode entities) {
+        String query = template;
+        
+        // Substitui os filtros ANTES dos placeholders genéricos
         if (entities.has("NOME_SETOR")) {
             JsonNode setorNode = entities.get("NOME_SETOR");
-            String setorFilter;
-            String subjectVariable = template.contains("?S1_rank") ? "?S1_rank" : "?S1";
-
+            String setorFilter = "    ?S1 b3:atuaEm ?setor . \n    ?setor rdfs:label ?label .";
+            
             if (setorNode.isArray()) {
                 List<String> setores = new ArrayList<>();
                 for (JsonNode setor : setorNode) {
                     setores.add("\"" + setor.asText() + "\"@pt");
                 }
                 String inClause = String.join(", ", setores);
-                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label ?label . \n    FILTER(?label IN (" + inClause + "))";
+                setorFilter += "\n    FILTER(?label IN (" + inClause + "))";
             } else {
                 String nomeSetor = setorNode.asText();
-                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
+                setorFilter += "\n    FILTER(?label = \"" + nomeSetor + "\"@pt)";
             }
             query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
         } else {
             query = query.replace("#FILTER_BLOCK_SETOR#", "");
         }
         
-        // --- 2. Substituir os placeholders genéricos (P*, S*) ---
+        if (entities.has("ENTIDADE_NOME")) {
+            String nomeEntidade = entities.get("ENTIDADE_NOME").asText();
+            String entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
+            query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+        } else {
+            query = query.replace("#FILTER_BLOCK_ENTIDADE#", "");
+        }
+        
+        // AGORA substitui os placeholders genéricos (P*, S*)
         query = placeholderService.replaceGenericPlaceholders(query);
         
-        // --- 3. Substituir a fórmula de cálculo ---
+        // Substitui a fórmula de cálculo
         String calculoKey = entities.path("CALCULO").asText("");
         String calculoSparql;
         switch (calculoKey) {
@@ -125,7 +164,7 @@ public class SPARQLProcessor {
         }
         query = query.replace("#CALCULO#", calculoSparql);
 
-        // --- 4. Substituições Finais ---
+        // Substituições finais
         if (entities.has("DATA")) query = query.replace("#DATA#", entities.get("DATA").asText());
         query = query.replace("#ORDEM#", entities.path("ORDEM").asText("DESC"));
         query = query.replace("#LIMITE#", entities.path("LIMITE").asText("1"));
@@ -140,14 +179,8 @@ public class SPARQLProcessor {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey() + "#";
             String value = field.getValue().asText();
-            if (field.getKey().equals("VALOR_DESEJADO")) {
-                String predicadoRDF = placeholderService.getPlaceholderValue(value);
-                if (predicadoRDF != null) finalQuery = finalQuery.replace(placeholder, predicadoRDF);
-            } else {
-                finalQuery = finalQuery.replace(placeholder, value);
-            }
+            finalQuery = finalQuery.replace(placeholder, value);
         }
-        finalQuery = finalQuery.replaceAll("#[A-Z_]+#", ""); 
         return finalQuery;
     }
 
