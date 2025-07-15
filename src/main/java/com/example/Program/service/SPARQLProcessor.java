@@ -93,7 +93,7 @@ public class SPARQLProcessor {
         List<Map<String, String>> rankingResult = ontology.executeQuery(rankingQuery);
         
         if (rankingResult.isEmpty() || !rankingResult.get(0).containsKey("ticker")) {
-            return "# Não foi possível encontrar a ação de referência para a segunda etapa da consulta.";
+            return "# Erro: Não foi possível encontrar a ação de referência para a segunda etapa da consulta.";
         }
         
         String targetTicker = rankingResult.get(0).get("ticker");
@@ -103,9 +103,26 @@ public class SPARQLProcessor {
         ObjectNode finalEntities = objectMapper.createObjectNode();
         finalEntities.put("ENTIDADE_NOME", targetTicker);
         finalEntities.set("DATA", entities.get("DATA"));
-        finalEntities.put("CALCULO", entities.get("CALCULO_PRINCIPAL").asText());
+
+        String finalTemplateId;
+        String finalCalculationKey;
+
+        if ("Template_8A".equals(templateId)) {
+            finalTemplateId = "Template_6A";
+            finalCalculationKey = entities.path("CALCULO_PRINCIPAL").asText("variacao_abs");
+        } else { // Template 8B
+            finalTemplateId = "Template_7A"; // Reutilizamos o genérico
+            finalCalculationKey = entities.path("CALCULO_PRINCIPAL").asText("intervalo_perc");
+        }
+        finalEntities.put("CALCULO", finalCalculationKey);
+
+        String finalQuery = buildCalculationQuery(finalTemplateId, finalEntities);
+
+        // Remove cláusulas de ranking desnecessárias na segunda etapa
+        finalQuery = finalQuery.replaceFirst("ORDER BY .*? ", " ");
+        finalQuery = finalQuery.replaceFirst("LIMIT .*? ", " ");
         
-        return buildCalculationQuery("Template_6A", finalEntities);
+        return finalQuery;
     }
     
     private String buildCalculationQuery(String templateId, JsonNode entities) {
@@ -136,11 +153,12 @@ public class SPARQLProcessor {
             }
             template = template.replace("#SETOR_FILTER_BLOCK#", setorFilter);
         } else {
-            template = template.replace("#SETOR_FILTER_BLOCK#", "?S1 P7 ?label . \n FILTER(REGEX(STR(?label), \"#ENTIDADE_NOME#\", \"i\"))");
+            template = template.replace("#SETOR_FILTER_BLOCK#", "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"#ENTIDADE_NOME#\", \"i\"))");
         }
         
-        template = template.replace("#ENTIDADE_NOME#", entities.path("ENTIDADE_NOME").asText(""));
-        template = template.replace("#DATA#", entities.path("DATA").asText(""));
+        if (entities.has("ENTIDADE_NOME")) template = template.replace("#ENTIDADE_NOME#", entities.get("ENTIDADE_NOME").asText());
+        if (entities.has("DATA")) template = template.replace("#DATA#", entities.get("DATA").asText());
+        
         template = template.replace("#ORDEM#", entities.path("ORDEM").asText("DESC"));
         template = template.replace("#LIMITE#", entities.path("LIMITE").asText("1"));
         

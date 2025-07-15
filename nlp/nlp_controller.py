@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO DE DADOS ---
+# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -31,7 +31,7 @@ ref_questions = list(reference_templates.values())
 vectorizer = TfidfVectorizer()
 tfidf_matrix_ref = vectorizer.fit_transform(ref_questions) if ref_questions else None
 
-# --- FUNÇÕES AUXILIARES ---
+# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -62,38 +62,46 @@ def extrair_todas_entidades_e_parametros(pergunta_lower):
     if match_data:
         dia, mes, ano = match_data.groups(); entidades['data'] = f"{ano}-{mes}-{dia}"
     
-    # 4. Extrai Métricas e Cálculos
+    # 4. Extrai Métrica ou Cálculos
     
-    # Primeiro, procura por cálculos de ranking
-    if any(s in pergunta_sem_acento for s in ["alta percentual", "percentual de alta"]):
-        entidades['calculo_ranking'] = 'variacao_perc'; entidades['ordem_ranking'] = 'DESC'
-    elif any(s in pergunta_sem_acento for s in ["baixa percentual", "percentual de baixa"]):
-        entidades['calculo_ranking'] = 'variacao_perc'; entidades['ordem_ranking'] = 'ASC'
-    elif "menor variacao" in pergunta_sem_acento:
-        entidades['calculo_ranking'] = 'variacao_abs_abs'; entidades['ordem_ranking'] = 'ASC'
-        
-    # Depois, procura pelo cálculo principal (o resultado final desejado)
-    if "variacao intradiaria absoluta" in pergunta_sem_acento:
-        entidades['calculo_principal'] = 'variacao_abs'
-    elif "intervalo intradiario percentual" in pergunta_sem_acento:
-        entidades['calculo_principal'] = 'intervalo_perc'
+    # Mapeamento de frases para chaves de cálculo/métrica
+    mapa_metricas = {
+        'calculo_principal_variacao_abs': ['variacao intradiaria absoluta'],
+        'calculo_principal_intervalo_perc': ['intervalo intradiario percentual'],
+        'calculo_ranking_variacao_perc_asc': ['baixa percentual', 'percentual de baixa'],
+        'calculo_ranking_variacao_perc_desc': ['alta percentual', 'percentual de alta'],
+        'calculo_ranking_variacao_abs_abs_asc': ['menor variacao'],
+        'metrica.preco_maximo': ['preço máximo', 'preco maximo'],
+        'metrica.preco_minimo': ['preço mínimo', 'preco minimo'],
+        'metrica.preco_fechamento': ['preço de fechamento', 'fechamento'],
+        'metrica.preco_abertura': ['preço de abertura', 'abertura'],
+        'metrica.preco_medio': ['preço médio', 'preco medio'],
+        'metrica.quantidade': ['quantidade'],
+        'metrica.volume': ['volume']
+    }
+
+    for chave, sinonimos in mapa_metricas.items():
+        if any(remover_acentos(s) in pergunta_sem_acento for s in sinonimos):
+            if chave.startswith('calculo_principal'):
+                entidades['calculo_principal'] = chave.split('_')[-1]
+            elif chave.startswith('calculo_ranking'):
+                parts = chave.split('_')
+                entidades['calculo_ranking'] = parts[2]
+                entidades['ordem_ranking'] = parts[3].upper()
+            else:
+                entidades['valor_desejado'] = chave
+            # Não usamos break aqui para permitir que múltiplos parâmetros sejam encontrados
     
-    # Se não encontrou um cálculo, procura por uma métrica simples
-    if 'calculo_principal' not in entidades and 'calculo_ranking' not in entidades:
-        mapa_metricas = {'metrica.preco_maximo': ['preço máximo', 'preco maximo'],'metrica.preco_minimo': ['preço mínimo', 'preco minimo'],'metrica.preco_fechamento': ['preço de fechamento', 'fechamento'],'metrica.preco_abertura': ['preço de abertura', 'abertura'],'metrica.quantidade': ['quantidade'], 'metrica.volume': ['volume']}
-        for chave, sinonimos in mapa_metricas.items():
-            if any(remover_acentos(s) in pergunta_sem_acento for s in sinonimos):
-                entidades['valor_desejado'] = chave; break
-    
-    # 5. Extrai outros parâmetros
-    if "ordinaria" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
-    elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
-    elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
-        
+    # 5. Extrai Limite
     if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower:
         entidades['limite_ranking'] = "5"
     else:
         entidades['limite_ranking'] = "1"
+
+    # 6. Extrai Regex para tipo de ação
+    if "ordinaria" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
+    elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
+    elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
             
     return entidades
 
@@ -105,37 +113,16 @@ def process_question():
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # 1. Classificação do Template por Regras + Fallback
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
-    template_id_final = None
+    # Classificação por Similaridade primeiro
+    tfidf_usuario = vectorizer.transform([pergunta_lower])
+    similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+    template_id_final = ref_ids[similaridades.argmax()]
 
-    if "variacao intradiaria absoluta" in pergunta_sem_acento and ("maior alta" in pergunta_sem_acento or "maior baixa" in pergunta_sem_acento):
-        template_id_final = 'Template_8A'
-    elif "intervalo intradiario percentual" in pergunta_sem_acento and ("maior alta" in pergunta_sem_acento or "maior baixa" in pergunta_sem_acento):
-        template_id_final = 'Template_8B'
-    elif any(keyword in pergunta_lower for keyword in ["qual ação", "maior alta", "maior baixa", "menor variação", "cinco ações"]):
-        template_id_final = 'Template_7A'
-    elif "variacao intradiaria absoluta" in pergunta_sem_acento:
-        template_id_final = 'Template_6A'
-    elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
-        template_id_final = 'Template_5B'
-    elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
-        template_id_final = 'Template_1B'
-    elif "quantidade" in pergunta_lower and "negociadas" in pergunta_lower:
-        template_id_final = 'Template_4B'
-    elif "volume" in pergunta_lower and "setor" in pergunta_lower:
-        template_id_final = 'Template_4A'
-    else:
-        tfidf_usuario = vectorizer.transform([pergunta_lower])
-        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-        template_id_final = ref_ids[similaridades.argmax()]
-
-    # 2. Extrai tudo que a pergunta pode oferecer
+    # Extrai todas as entidades
     entidades_extraidas = extrair_todas_entidades_e_parametros(pergunta_lower)
     
-    # 3. Converte as chaves para maiúsculas
+    # Converte as chaves para maiúsculas para o Java
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
-
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
 if __name__ == '__main__':
