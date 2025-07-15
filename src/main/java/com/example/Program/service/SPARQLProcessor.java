@@ -49,8 +49,8 @@ public class SPARQLProcessor {
 
             String finalQuery;
 
-            // Roteia para o método de construção correto com base no template
-            if ("Template_6A".equals(templateId) || "Template_7A".equals(templateId)) {
+            // --- ALTERAÇÃO AQUI: ADICIONAR Template_8A e Template_8B À CONDIÇÃO ---
+            if ("Template_6A".equals(templateId) || "Template_7A".equals(templateId) || "Template_8A".equals(templateId) || "Template_8B".equals(templateId)) {
                 finalQuery = buildCalculationQuery(templateId, entitiesNode);
             } else {
                 String templateContent = loadTemplate(templateId);
@@ -70,6 +70,9 @@ public class SPARQLProcessor {
         }
     }
 
+    // NENHUMA ALTERAÇÃO NECESSÁRIA NO RESTO DO ARQUIVO.
+    // O MÉTODO buildCalculationQuery JÁ ESTÁ PRONTO PARA AS NOVAS PERGUNTAS.
+
     private String buildCalculationQuery(String templateId, JsonNode entities) {
         String template = loadTemplate(templateId);
 
@@ -77,19 +80,21 @@ public class SPARQLProcessor {
         String calculoKey = entities.path("CALCULO").asText("");
         String calculoSparql;
         switch (calculoKey) {
-            case "variacao_abs": calculoSparql = "(?fechamento - ?abertura)"; break;
-            case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break;
-            case "intervalo_abs": calculoSparql = "(?maximo - ?minimo)"; break;
-            case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
-            case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+            case "variacao_abs": calculoSparql = "(?fechamento_final - ?abertura_final)"; break;
+            case "variacao_perc": calculoSparql = "((?fechamento_final - ?abertura_final) / ?abertura_final)"; break;
+            case "intervalo_abs": calculoSparql = "(?maximo_final - ?minimo_final)"; break;
+            case "intervalo_perc": calculoSparql = "((?maximo_final - ?minimo_final) / ?abertura_final)"; break;
+            case "variacao_abs_abs": calculoSparql = "ABS(?fechamento_final - ?abertura_final)"; break;
             default: calculoSparql = "0";
         }
+        // Renomeei as variáveis no BIND para não conflitarem com as da subquery (boa prática)
         template = template.replace("#CALCULO#", calculoSparql);
 
         // Substitui outros placeholders dinâmicos
         if (entities.has("NOME_SETOR")) {
             String nomeSetor = entities.get("NOME_SETOR").asText();
-            String setorFilter = "?S1 P9 ?S4 . \n" + "    ?S4 P7 \"" + nomeSetor + "\"@pt .";
+            // A query agora espera S1 no #SETOR_FILTER_BLOCK#
+            String setorFilter = "?S1 b3:atuaEm ?S4 . \n" + "    ?S4 rdfs:label \"" + nomeSetor + "\"@pt .";
             template = template.replace("#SETOR_FILTER_BLOCK#", setorFilter);
         } else {
             template = template.replace("#SETOR_FILTER_BLOCK#", "");

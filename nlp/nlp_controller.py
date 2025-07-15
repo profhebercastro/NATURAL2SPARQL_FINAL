@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS ---
+# --- CARREGAMENTO E PREPARAÇÃO DOS DADOS (sem alterações aqui) ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -49,6 +49,8 @@ def extrair_entidades_fixas(pergunta_lower):
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
                 entidades['entidade_nome'] = key; break
     
+    # --- ALTERAÇÃO: Adicionar mapeamento para 'IMAT' e outros índices se necessário ---
+    # Para o seu caso, certifique-se que o setor_map.json contém "IMAT"
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
@@ -64,16 +66,17 @@ def identificar_parametros_dinamicos(pergunta_lower):
     dados = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
 
-    # --- CORREÇÃO IMPORTANTE NESTE MAPA ---
+    # --- ALTERAÇÃO: Adicionar a nova métrica 'intervalo_perc' ---
     mapa_metricas = {
         'calculo_variacao_abs': ['variacao intradiaria absoluta'],
         'calculo_variacao_perc': ['alta percentual', 'baixa percentual', 'percentual de alta', 'percentual de baixa'],
         'calculo_variacao_abs_abs': ['menor variacao'],
+        'calculo_intervalo_perc': ['intervalo intradiario percentual'], # <-- NOVO
         'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
         'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
         'metrica.preco_fechamento': ['preco de fechamento', 'fechamento'],
         'metrica.preco_abertura': ['preco de abertura', 'abertura'],
-        'metrica.preco_medio': ['preco medio', 'preço médio'], # <-- Adicionado sinônimo com acento
+        'metrica.preco_medio': ['preco medio', 'preço médio'],
         'metrica.quantidade': ['quantidade', 'total de negocios'],
         'metrica.volume': ['volume']
     }
@@ -106,23 +109,41 @@ def process_question():
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # Lógica de Classificação por Regras + Fallback
+    # --- ALTERAÇÃO CENTRAL: LÓGICA DE CLASSIFICAÇÃO DE TEMPLATE REFEITA ---
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     template_id_final = None
 
-    ranking_keywords = ["qual ação", "maior alta", "maior baixa", "menor variacao", "cinco ações"]
-    if any(keyword in pergunta_lower for keyword in ranking_keywords):
-        template_id_final = 'Template_7A'
-    elif "variacao intradiaria absoluta" in pergunta_sem_acento:
-        template_id_final = 'Template_6A'
-    elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
-        template_id_final = 'Template_5B'
-    elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
-        template_id_final = 'Template_1B'
-    else:
-        tfidf_usuario = vectorizer.transform([pergunta_lower])
-        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-        template_id_final = ref_ids[similaridades.argmax()]
+    # Palavras-chave que indicam uma pergunta de ranking
+    ranking_keywords = ["maior alta", "maior baixa", "menor variacao", "percentual de alta", "percentual de baixa"]
+    is_ranking_question = any(keyword in pergunta_lower for keyword in ranking_keywords)
+
+    # 1. Tenta identificar as perguntas de ranking complexas primeiro (Templates 8A, 8B)
+    if is_ranking_question:
+        if "variacao intradiaria absoluta" in pergunta_sem_acento:
+            template_id_final = 'Template_8A'
+        elif "intervalo intradiario percentual" in pergunta_sem_acento:
+            template_id_final = 'Template_8B'
+        else:
+            # Se for de ranking, mas não uma das complexas, é uma de ranking simples (Template 7A)
+            template_id_final = 'Template_7A'
+            
+    # 2. Se não for uma pergunta de ranking, usa as regras antigas
+    if not template_id_final:
+        if "variacao intradiaria absoluta" in pergunta_sem_acento:
+            template_id_final = 'Template_6A'
+        elif "ordinária" in pergunta_lower or "preferencial" in pergunta_lower or "ordinaria" in pergunta_sem_acento:
+            template_id_final = 'Template_5B'
+        elif re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower):
+            template_id_final = 'Template_1B'
+
+    # 3. Se nenhuma regra se aplicar, usa a similaridade de cosseno como último recurso
+    if not template_id_final:
+        if tfidf_matrix_ref is not None:
+            tfidf_usuario = vectorizer.transform([pergunta_lower])
+            similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
+            template_id_final = ref_ids[similaridades.argmax()]
+        else:
+            return jsonify({"error": "Nenhum template de referência carregado."}), 500
         
     entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
     parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)

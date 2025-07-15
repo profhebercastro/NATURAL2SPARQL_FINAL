@@ -23,3 +23,6 @@ Template_7A;Qual ação do setor de consumo não cíclico que a menor variação
 Template_7A;Qual a ação com o maior percentual de alta no pregão de 08/05/2023?
 Template_7A;Quais as cinco ações de maior percentual de alta no pregão de 08/05/2023?
 Template_7A;Quais as cinco ações de maior percentual de baixa no pregão de 08/05/2023?
+
+Template_8A;Qual foi a variação intradiária absoluta da ação com maior alta percentual?
+Template_8B;Qual foi o intervalo intradiário percentual da ação com maior baixa entre as ações do IMAT?
