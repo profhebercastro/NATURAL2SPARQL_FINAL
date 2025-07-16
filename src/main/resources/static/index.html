@@ -189,21 +189,19 @@
                         const headerLower = header.toLowerCase();
                         const numericValue = parseFloat(cellValue);
 
-                        if (!isNaN(numericValue)) { // Verifica se é um número
-                            if (headerLower.includes('abs') && !headerLower.includes('perc')) {
-                                 // Formata como Moeda (R$)
-                                 cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
-                            }
-                            else if (headerLower.includes('perc') || (headerLower.includes('calculado') && Math.abs(numericValue) <= 1)) {
-                                // Formata como Percentual
+                        if (!isNaN(numericValue)) {
+                            // **LÓGICA CORRIGIDA E EXPANDIDA**
+                            // A condição `headerLower.includes('calculado')` agora captura 'resultadoCalculado'
+                            if (headerLower.includes('perc') || headerLower.includes('calculado')) {
                                 cellValue = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericValue);
                             }
+                            else if (headerLower.includes('abs')) {
+                                 cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
+                            }
                             else if (headerLower.includes('volume') || headerLower.includes('quantidade')) {
-                                // Formata como número com separador de milhar
                                 cellValue = new Intl.NumberFormat('pt-BR').format(numericValue);
                             }
                             else if (headerLower.includes('valor')) {
-                                 // Fallback para outros "valores": formata com 2 casas decimais
                                  cellValue = numericValue.toFixed(2).replace('.', ',');
                             }
                         }
