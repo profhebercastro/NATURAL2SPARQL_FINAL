@@ -13,7 +13,7 @@ WHERE {
     ?SO2 b3:precoMaximo ?maximo .
     ?SO2 b3:precoMinimo ?minimo .
     FILTER(?abertura > 0)
-    BIND((#CALCULO#) AS ?resultadoCalculado)
+    BIND(ROUND(((((#CALCULO#) * 100)) * 100) / 100) AS ?resultadoCalculado)
 }
 ORDER BY #ORDEM#(?resultadoCalculado)
 LIMIT #LIMITE#
