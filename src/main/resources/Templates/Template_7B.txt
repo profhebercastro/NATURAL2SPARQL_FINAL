@@ -1,4 +1,4 @@
-SELECT ?ticker ?Resultado%
+SELECT ?ticker ?Resultado_em_Porcentagem
 WHERE {
     #FILTER_BLOCK_SETOR#
     ?S1 P1 ?SO1 .
@@ -13,7 +13,7 @@ WHERE {
     ?SO2 b3:precoMaximo ?maximo .
     ?SO2 b3:precoMinimo ?minimo .
     FILTER(?abertura > 0)
-    BIND(ROUND(((((#CALCULO#) * 100)) * 100) / 100) AS ?Resultado%)
+    BIND(ROUND(((((#CALCULO#) * 100)) * 100) / 100) AS ?Resultado_em_Porcentagem)
 }
-ORDER BY #ORDEM#(?Resultado%)
+ORDER BY #ORDEM#(?Resultado_em_Porcentagem)
 LIMIT #LIMITE#
