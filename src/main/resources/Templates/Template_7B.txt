@@ -1,4 +1,4 @@
-SELECT ?ticker ?resultadoCalculado
+SELECT ?ticker ?Resultado%
 WHERE {
     #FILTER_BLOCK_SETOR#
     ?S1 P1 ?SO1 .
@@ -13,7 +13,7 @@ WHERE {
     ?SO2 b3:precoMaximo ?maximo .
     ?SO2 b3:precoMinimo ?minimo .
     FILTER(?abertura > 0)
-    BIND(ROUND(((((#CALCULO#) * 100)) * 100) / 100) AS ?resultadoCalculado)
+    BIND(ROUND(((((#CALCULO#) * 100)) * 100) / 100) AS ?Resultado%)
 }
-ORDER BY #ORDEM#(?resultadoCalculado)
+ORDER BY #ORDEM#(?Resultado%)
 LIMIT #LIMITE#
