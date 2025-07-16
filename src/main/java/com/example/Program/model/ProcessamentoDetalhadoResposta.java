@@ -1,36 +1,45 @@
-private String sparqlQuery;
-private String resposta;
-private String erro;
-private String templateId; 
+package com.example.Programa_heber.model;
 
-public String getSparqlQuery() {
-    return sparqlQuery;
-}
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-public void setSparqlQuery(String sparqlQuery) {
-    this.sparqlQuery = sparqlQuery;
-}
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ProcessamentoDetalhadoResposta {
 
-public String getResposta() {
-    return resposta;
-}
+    private String sparqlQuery;
+    private String resposta;
+    private String erro;
+    private String templateId; 
 
-public void setResposta(String resposta) {
-    this.resposta = resposta;
-}
+    // Getters e Setters
+    public String getSparqlQuery() {
+        return sparqlQuery;
+    }
 
-public String getErro() {
-    return erro;
-}
+    public void setSparqlQuery(String sparqlQuery) {
+        this.sparqlQuery = sparqlQuery;
+    }
 
-public void setErro(String erro) {
-    this.erro = erro;
-}
+    public String getResposta() {
+        return resposta;
+    }
 
-public String getTemplateId() {
-    return templateId;
-}
+    public void setResposta(String resposta) {
+        this.resposta = resposta;
+    }
 
-public void setTemplateId(String templateId) {
-    this.templateId = templateId;
+    public String getErro() {
+        return erro;
+    }
+
+    public void setErro(String erro) {
+        this.erro = erro;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
+    }
 }

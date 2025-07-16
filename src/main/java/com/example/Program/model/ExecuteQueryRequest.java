@@ -1,11 +1,11 @@
 package com.example.Programa_heber.model;
 
 public class ExecuteQueryRequest {
-    // O nome da variável foi corrigido para "query" para corresponder ao JavaScript
+    // Corrigido para "query" para corresponder ao que o JavaScript envia
     private String query;
     private String templateId;
 
-    // Getters e Setters atualizados
+    // Getters e Setters
     public String getQuery() {
         return query;
     }
