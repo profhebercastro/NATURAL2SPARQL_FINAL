@@ -103,7 +103,7 @@
                 sparqlQueryOutput.classList.remove('error-message');
 
                 try {
-                    const response = await fetch('/api/processar', {
+                    const response = await fetch('/api/processar', { // URL CORRETA
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ pergunta: question })
@@ -133,19 +133,23 @@
                 resultOutputDiv.innerHTML = '<div class="loader"></div>';
 
                 try {
-                    const response = await fetch('/api/executar', {
+                    const response = await fetch('/api/executar', { // URL CORRETA
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ query: sparqlQuery })
                     });
                     
+                    const resultText = await response.text();
                     if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || `Erro do Servidor: ${response.status}`);
+                        try { // Tenta parsear como JSON para pegar a mensagem de erro
+                           const errorJson = JSON.parse(resultText);
+                           throw new Error(errorJson.error || `Erro do Servidor: ${response.status}`);
+                        } catch(e) {
+                           throw new Error(resultText || `Erro do Servidor: ${response.status}`);
+                        }
                     }
 
-                    const resultJson = await response.text();
-                    const data = JSON.parse(resultJson);
+                    const data = JSON.parse(resultText);
                     displayResults(data);
 
                 } catch (error) {

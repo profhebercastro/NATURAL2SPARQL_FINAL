@@ -1,8 +1,7 @@
 package com.example.Programa_heber.model;
 
 public class ExecuteQueryRequest {
-    // Corrigido para "query" para corresponder ao que o JavaScript envia
-    private String query;
+    private String query; // Nome CORRETO
     private String templateId;
 
     // Getters e Setters
