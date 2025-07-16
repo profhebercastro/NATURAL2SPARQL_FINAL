@@ -2,7 +2,6 @@
 SELECT ?ticker ?valor
 WHERE {
     {
-        # Bloco 1: Retorna os valores individuais
         SELECT ?ticker ?valor
         WHERE {
             #FILTER_BLOCK#
@@ -18,10 +17,8 @@ WHERE {
     }
     UNION
     {
-        # Bloco 2: Retorna a SOMA total
         SELECT ("TOTAL" AS ?ticker) (SUM(?soma_valor) AS ?valor)
         WHERE {
-            # O filtro deve ser idêntico ao bloco acima
             #FILTER_BLOCK#
             ?S1 P1 ?SO1 .
             ?SO1 P1 ?intermediario .

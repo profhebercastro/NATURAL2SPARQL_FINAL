@@ -125,7 +125,6 @@ public class SPARQLProcessor {
                     case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
                     case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break;
                     case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
-                    // --- CORREÇÃO APLICADA AQUI ---
                     case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
                     case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
                     default: calculoSparql = "0";

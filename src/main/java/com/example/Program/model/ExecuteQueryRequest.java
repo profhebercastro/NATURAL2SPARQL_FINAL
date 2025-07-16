@@ -1,7 +1,7 @@
 package com.example.Programa_heber.model;
 
 public class ExecuteQueryRequest {
-    private String query; // Nome CORRETO
+    private String query; 
     private String templateId;
 
     // Getters e Setters

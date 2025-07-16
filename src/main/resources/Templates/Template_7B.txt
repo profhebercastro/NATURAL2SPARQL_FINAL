@@ -1,3 +1,4 @@
+# TEMPLATE 7B -- Ranking COM SETOR ---
 SELECT ?ticker ?resultadoCalculado
 WHERE {
     #FILTER_BLOCK_SETOR#

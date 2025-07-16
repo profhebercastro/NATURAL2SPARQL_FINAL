@@ -1,3 +1,4 @@
+# TEMPLATE 5B -- Busca de métrica com filtro de tipo de ação
 SELECT ?ticker ?ANS
 WHERE {
     #FILTER_BLOCK_ENTIDADE#

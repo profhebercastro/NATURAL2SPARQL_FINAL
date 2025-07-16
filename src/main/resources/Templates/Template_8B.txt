@@ -1,6 +1,7 @@
+# TEMPLATE 8B -- Ranking Complexo (2 etapas) ---
 SELECT ?O1 ?ANS
 WHERE {
-    # PARTE PRINCIPAL
+
     ?SO1 P2 ?codigoNode .
     ?codigoNode P8 ?O1 .
     ?SO1 P3 ?SO2 .
@@ -14,8 +15,6 @@ WHERE {
     FILTER(?abertura > 0)
 
     BIND((#CALCULO#) AS ?ANS)
-
-    # SUBQUERY
     {
         SELECT ?SO1
         WHERE {

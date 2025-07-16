@@ -1,3 +1,4 @@
+# TEMPLATE 6A -- Cálculo para uma empresa específica
 SELECT ?ticker ?ANS
 WHERE {
     #FILTER_BLOCK_ENTIDADE#

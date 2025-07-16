@@ -1,4 +1,4 @@
-# Ranking GERAL de ações (sem filtro de setor)
+# TEMPLATE 4C -- Ranking GERAL de ações (sem filtro de setor)
 SELECT ?ticker ?resultadoCalculado
 WHERE {
     ?S1 P1 ?SO1 .

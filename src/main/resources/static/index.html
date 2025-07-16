@@ -185,13 +185,12 @@
                         const cell = row[header];
                         let cellValue = cell ? cell.value : ''; 
                         
-                        // --- INÍCIO DA CORREÇÃO PARA FORMATAÇÃO NUMÉRICA ---
+                      
                         const headerLower = header.toLowerCase();
                         const numericValue = parseFloat(cellValue);
 
                         if (!isNaN(numericValue)) {
-                            // **LÓGICA CORRIGIDA E EXPANDIDA**
-                            // A condição `headerLower.includes('calculado')` agora captura 'resultadoCalculado'
+                 
                             if (headerLower.includes('perc') || headerLower.includes('calculado')) {
                                 cellValue = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericValue);
                             }
@@ -205,8 +204,7 @@
                                  cellValue = numericValue.toFixed(2).replace('.', ',');
                             }
                         }
-                        // --- FIM DA CORREÇÃO ---
-
+                        
                         tableHTML += `<td>${cellValue}</td>`;
                     });
                     tableHTML += '</tr>';
