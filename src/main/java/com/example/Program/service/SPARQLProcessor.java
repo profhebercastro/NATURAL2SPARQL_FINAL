@@ -123,15 +123,23 @@ public class SPARQLProcessor {
                 String calculoSparql;
                 // --- INÍCIO DA CORREÇÃO ---
                 // As fórmulas de percentual agora retornam o valor decimal bruto (sem multiplicar por 100)
-                switch (value) {
-                    case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
-                    case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break; 
-                    case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
-                    case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
-                    case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                    default: calculoSparql = "0";
-                }
+				switch (value) {
+					case "variacao_abs":calculoSparql = "(?fechamento - ?abertura)";break;
+					// Apenas a diferença entre fechamento e abertura (não é percentual)
+					case "variacao_perc":calculoSparql = "ROUND((((?fechamento - ?abertura) / ?abertura) * 10000)) / 100";break;
+					// Variação percentual entre fechamento e abertura
+					case "intervalo_abs":calculoSparql = "(?maximo - ?minimo)";break;
+					// Diferença entre máximo e mínimo (não é percentual)
+					case "intervalo_perc":calculoSparql = "ROUND((((?maximo - ?minimo) / ?abertura) * 10000)) / 100";break;
+					// Variação percentual do intervalo intradiário
+					case "variacao_abs_abs":calculoSparql = "ABS(?fechamento - ?abertura)";break;
+					// Valor absoluto da diferença entre fechamento e abertura (não é percentual)
+					default:calculoSparql = "0";
+				}
                 // --- FIM DA CORREÇÃO ---
+				
+				
+				
                 query = query.replace(placeholder, calculoSparql);
             } else {
                 query = query.replace(placeholder, value);
