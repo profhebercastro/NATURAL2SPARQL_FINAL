@@ -159,21 +159,16 @@
                 }
             }
 
-            // *** FUNÇÃO displayResults CORRIGIDA E COMPLETA ***
             function displayResults(data) {
                 resultOutputDiv.innerHTML = ''; 
-
                 if (data.error) {
                     resultOutputDiv.innerHTML = `<div class="error-message">${data.error}</div>`;
                     return;
                 }
-
-                // Verifica a estrutura correta da resposta SPARQL JSON
                 if (!data.results || !data.results.bindings) {
                     resultOutputDiv.innerHTML = '<p>Formato de resultado inesperado.</p>';
                     return;
                 }
-                
                 if (data.results.bindings.length === 0) {
                     resultOutputDiv.innerHTML = '<p>Nenhum resultado encontrado.</p>';
                     return;
@@ -188,8 +183,32 @@
                     tableHTML += '<tr>';
                     headers.forEach(header => {
                         const cell = row[header];
-                        // Adiciona um valor padrão se a célula estiver vazia
-                        const cellValue = cell ? cell.value : ''; 
+                        let cellValue = cell ? cell.value : ''; 
+                        
+                        // --- INÍCIO DA CORREÇÃO PARA FORMATAÇÃO NUMÉRICA ---
+                        const headerLower = header.toLowerCase();
+                        const numericValue = parseFloat(cellValue);
+
+                        if (!isNaN(numericValue)) { // Verifica se é um número
+                            if (headerLower.includes('abs') && !headerLower.includes('perc')) {
+                                 // Formata como Moeda (R$)
+                                 cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
+                            }
+                            else if (headerLower.includes('perc') || (headerLower.includes('calculado') && Math.abs(numericValue) <= 1)) {
+                                // Formata como Percentual
+                                cellValue = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericValue);
+                            }
+                            else if (headerLower.includes('volume') || headerLower.includes('quantidade')) {
+                                // Formata como número com separador de milhar
+                                cellValue = new Intl.NumberFormat('pt-BR').format(numericValue);
+                            }
+                            else if (headerLower.includes('valor')) {
+                                 // Fallback para outros "valores": formata com 2 casas decimais
+                                 cellValue = numericValue.toFixed(2).replace('.', ',');
+                            }
+                        }
+                        // --- FIM DA CORREÇÃO ---
+
                         tableHTML += `<td>${cellValue}</td>`;
                     });
                     tableHTML += '</tr>';
