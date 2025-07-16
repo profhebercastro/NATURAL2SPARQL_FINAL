@@ -18,14 +18,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// --- INÍCIO DAS IMPORTAÇÕES CORRIGIDAS ---
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList; 
-// --- FIM DAS IMPORTAÇÕES CORRIGIDAS ---
-
 
 @SpringBootApplication
 @RestController
@@ -120,15 +117,4 @@ public class Main {
             return ResponseEntity.status(500).body("{\"error\": \"Erro interno ao executar a consulta: " + e.getMessage() + "\"}");
         }
     }
-}```
-
-### **O Que Foi Corrigido**
-
-Adicionei as seguintes linhas no topo do arquivo `Main.java`, logo após a declaração `package`:
-
-```java
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList; 
+}
