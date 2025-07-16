@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* Seus estilos CSS originais (sem alterações) */
+        /* Estilos Base (sem alterações) */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #e9ecef; display: flex; flex-direction: column; min-height: 100vh; }
         header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -30,10 +30,55 @@
         .results-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
         @media (min-width: 768px) { .results-grid { grid-template-columns: 1fr 1fr; } }
         textarea.output { height: 250px; resize: vertical; background-color: #f8f9fa; color: #495057; font-family: 'Courier New', monospace; }
-        .error-text { color: #dc3545 !important; font-weight: bold; }
+        .error-message { color: #dc3545 !important; font-weight: bold; }
         footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; }
-        .spinner { display: none; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
+        .loader { border: 4px solid rgba(0,0,0,0.1); border-top-color: #0d6efd; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- INÍCIO DAS NOVAS ALTERAÇÕES E AJUSTES DE ESTILO --- */
+
+        /* Adiciona espaço abaixo dos títulos */
+        label.card-title, h3.card-title {
+            margin-bottom: 1rem; /* Aumenta o espaço abaixo dos títulos */
+        }
+
+        /* Caixa de resultado aprimorada */
+        .result-box {
+            height: 250px;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 10px;
+            overflow-y: auto; /* Adiciona scroll se o conteúdo for grande */
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem; /* Aumenta a letra do resultado */
+            color: #495057;
+        }
+
+        /* Estilos da tabela de resultados */
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .result-table th, .result-table td {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+            vertical-align: top;
+        }
+        .result-table thead th {
+            background-color: #e9ecef;
+            font-weight: 600;
+        }
+        .result-table tbody tr:nth-child(even) {
+            background-color: #fff;
+        }
+        /* Estilo para a linha de TOTAL */
+        .total-row {
+            background-color: #d1ecf1 !important; /* Cor de fundo de destaque */
+            font-weight: bold;
+        }
+        
     </style>
 </head>
 <body>
@@ -43,7 +88,6 @@
             <span>Natural2SPARQL</span>
         </div>
         <div class="header-actions">
-            <!-- Ícones de download restaurados -->
             <button id="downloadQueryBtn" class="icon-btn" title="Baixar Consulta SPARQL"><i class="fa-solid fa-cloud-arrow-down"></i></button>
             <button id="downloadResultBtn" class="icon-btn" title="Baixar Resultado"><i class="fa-solid fa-download"></i></button>
         </div>
@@ -51,11 +95,12 @@
 
     <main class="container">
         <div class="card">
+            <!-- Título com margem inferior para espaçamento -->
             <label for="userQuestion" class="card-title">Digite sua pergunta</label>
             <input type="text" id="userQuestion" class="form-control" placeholder="Ex: Qual o preço de fechamento da CSN em 08/05/2023?">
             <div class="button-group">
                 <button id="generateBtn" class="btn btn-success">
-                    <span class="btn-text">GERAR CONSULTA</span><i class="fas fa-arrow-right"></i><div class="spinner"></div>
+                    <span class="btn-text">GERAR CONSULTA</span><i class="fas fa-arrow-right"></i>
                 </button>
                 <button id="clearBtn" class="btn btn-danger"><i class="fas fa-sync-alt"></i><span>LIMPAR</span></button>
             </div>
@@ -64,15 +109,19 @@
             <div class="card">
                 <div class="card-title-container">
                     <h3 class="card-title">Consulta SPARQL</h3>
-                    <button id="executeQueryBtn" class="btn btn-info btn-sm" style="display: none;">
-                        <span class="btn-text">Executar</span><i class="fas fa-play"></i><div class="spinner" style="border-top-color: #333;"></div>
+                    <button id="executeQueryBtn" class="btn btn-info btn-sm">
+                        <span class="btn-text">Executar</span><i class="fas fa-play"></i>
                     </button>
                 </div>
                 <textarea id="sparqlQueryOutput" class="form-control output" readonly>A consulta SPARQL aparecerá aqui...</textarea>
             </div>
             <div class="card">
+                <!-- Título com margem inferior para espaçamento -->
                 <h3 class="card-title">Resultado</h3>
-                <textarea id="resultOutput" class="form-control output" readonly>O resultado aparece aqui...</textarea>
+                <!-- Caixa de resultado agora é uma DIV para renderizar HTML -->
+                <div id="resultOutput" class="result-box">
+                    <p style="color: #6c757d;">O resultado aparece aqui...</p>
+                </div>
             </div>
         </div>
     </main>
@@ -86,26 +135,25 @@
             const clearBtn = document.getElementById('clearBtn');
             const userQuestionInput = document.getElementById('userQuestion');
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
-            const resultOutput = document.getElementById('resultOutput');
+            const resultOutputDiv = document.getElementById('resultOutput'); // Agora é uma DIV
             const downloadQueryBtn = document.getElementById('downloadQueryBtn');
             const downloadResultBtn = document.getElementById('downloadResultBtn');
             
-            let currentTemplateId = null;
+            let lastResults = null; // Armazena os últimos resultados para download
 
             generateBtn.addEventListener('click', handleGenerateQuery);
             executeQueryBtn.addEventListener('click', handleExecuteQuery);
             clearBtn.addEventListener('click', clearAllFields);
-            downloadQueryBtn.addEventListener('click', () => downloadText('consulta.txt', sparqlQueryOutput.value));
-            downloadResultBtn.addEventListener('click', () => downloadText('resultado.txt', resultOutput.value));
+            downloadQueryBtn.addEventListener('click', () => downloadText('consulta.sparql', sparqlQueryOutput.value));
+            downloadResultBtn.addEventListener('click', () => downloadTableAsText('resultado.txt', lastResults));
             userQuestionInput.addEventListener('keypress', e => e.key === 'Enter' && (e.preventDefault(), handleGenerateQuery()));
 
             function clearAllFields() {
                 userQuestionInput.value = '';
                 sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
-                resultOutput.value = 'O resultado aparece aqui...';
-                resultOutput.classList.remove('error-text');
-                executeQueryBtn.style.display = 'none';
-                currentTemplateId = null;
+                sparqlQueryOutput.classList.remove('error-message');
+                resultOutputDiv.innerHTML = '<p style="color: #6c757d;">O resultado aparece aqui...</p>';
+                lastResults = null;
             }
 
             async function handleGenerateQuery() {
@@ -114,12 +162,11 @@
                 
                 toggleLoading(generateBtn, true);
                 sparqlQueryOutput.value = 'Gerando consulta...';
-                resultOutput.value = 'Aguarde a geração da consulta...';
-                executeQueryBtn.style.display = 'none';
-                sparqlQueryOutput.classList.remove('error-text');
+                resultOutputDiv.innerHTML = '<div class="loader"></div>';
+                sparqlQueryOutput.classList.remove('error-message');
 
                 try {
-                    const response = await fetch('/gerar_consulta', {
+                    const response = await fetch('/api/processar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ pergunta: question })
@@ -129,62 +176,113 @@
                     if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
                     sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
-                    currentTemplateId = data.templateId;
 
-                    if (data.sparqlQuery) {
-                        executeQueryBtn.style.display = 'inline-flex';
-                    }
                 } catch (error) {
                     sparqlQueryOutput.value = `Erro: ${error.message}`;
-                    sparqlQueryOutput.classList.add('error-text');
+                    sparqlQueryOutput.classList.add('error-message');
                 } finally {
                     toggleLoading(generateBtn, false);
+                    resultOutputDiv.innerHTML = '<p style="color: #6c757d;">Clique em "Executar" para ver o resultado.</p>';
                 }
             }
 
             async function handleExecuteQuery() {
                 const sparqlQuery = sparqlQueryOutput.value;
-                if (!sparqlQuery || !currentTemplateId || sparqlQuery.startsWith("Erro:")) {
+                if (!sparqlQuery || sparqlQuery.startsWith("Erro:") || sparqlQuery.startsWith("Gerando")) {
                     alert("Não há uma consulta válida para executar."); return;
                 }
 
                 toggleLoading(executeQueryBtn, true);
-                resultOutput.value = "Executando...";
-                resultOutput.classList.remove('error-text');
+                resultOutputDiv.innerHTML = '<div class="loader"></div>';
 
                 try {
-                    const response = await fetch('/executar_query', {
+                    const response = await fetch('/api/executar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sparqlQuery, templateId: currentTemplateId })
+                        body: JSON.stringify({ query: sparqlQuery })
                     });
                     
                     const data = await response.json();
                     if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
-
-                    resultOutput.value = data.resultado || "Nenhum resultado encontrado.";
+                    lastResults = data; // Armazena os dados para download
+                    displayResults(data);
 
                 } catch (error) {
-                    resultOutput.value = `Erro: ${error.message}`;
-                    resultOutput.classList.add('error-text');
+                    resultOutputDiv.innerHTML = `<div class="error-message">Erro: ${error.message}</div>`;
                 } finally {
                     toggleLoading(executeQueryBtn, false);
                 }
             }
+
+            function displayResults(data) {
+                resultOutputDiv.innerHTML = ''; 
+
+                if (data.error) {
+                    resultOutputDiv.innerHTML = `<div class="error-message">${data.error}</div>`;
+                    return;
+                }
+
+                if (!data.results || data.results.bindings.length === 0) {
+                    resultOutputDiv.innerHTML = '<p>Nenhum resultado encontrado.</p>';
+                    return;
+                }
+
+                const headers = data.head.vars;
+                let tableHTML = '<table class="result-table"><thead><tr>';
+                headers.forEach(header => {
+                    tableHTML += `<th>${header}</th>`;
+                });
+                tableHTML += '</tr></thead><tbody>';
+
+                data.results.bindings.forEach(row => {
+                    tableHTML += '<tr>';
+                    headers.forEach(header => {
+                        const cell = row[header];
+                        if (cell) {
+                            let formattedValue = cell.value;
+                            const headerLower = header.toLowerCase();
+                            const numericValue = parseFloat(cell.value);
+
+                            if (!isNaN(numericValue)) {
+                                if (headerLower.includes('abs') && !headerLower.includes('perc')) {
+                                     formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
+                                }
+                                else if (headerLower.includes('perc') || (headerLower.includes('calculado') && Math.abs(numericValue) <= 1)) {
+                                    formattedValue = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericValue);
+                                }
+                                else if (headerLower.includes('volume') || headerLower.includes('quantidade')) {
+                                    formattedValue = new Intl.NumberFormat('pt-BR').format(numericValue);
+                                }
+                            }
+                            
+                            const isTotalRow = cell.value.toUpperCase() === 'TOTAL';
+                            tableHTML += `<td class="${isTotalRow ? 'total-row' : ''}">`;
+                            tableHTML += isTotalRow ? `<strong>${formattedValue}</strong>` : formattedValue;
+                            tableHTML += `</td>`;
+
+                        } else {
+                            tableHTML += '<td></td>';
+                        }
+                    });
+                    tableHTML += '</tr>';
+                });
+
+                tableHTML += '</tbody></table>';
+                resultOutputDiv.innerHTML = tableHTML;
+            }
             
             function toggleLoading(button, isLoading) {
-                const textSpan = button.querySelector('.btn-text');
-                const spinner = button.querySelector('.spinner');
-                const icon = button.querySelector('i');
                 button.disabled = isLoading;
-                if (textSpan) textSpan.style.display = isLoading ? 'none' : 'inline';
-                if (icon) icon.style.display = isLoading ? 'none' : 'inline-block';
-                if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
+                if (isLoading) {
+                    button.classList.add('btn-loading');
+                } else {
+                    button.classList.remove('btn-loading');
+                }
             }
 
             function downloadText(filename, text) {
-                if (!text || text.startsWith("A consulta") || text.startsWith("O resultado")) {
+                if (!text || text.startsWith("A consulta") || text.startsWith("Gerando")) {
                     alert("Não há conteúdo para baixar.");
                     return;
                 }
@@ -195,6 +293,27 @@
                 document.body.appendChild(element);
                 element.click();
                 document.body.removeChild(element);
+            }
+
+            function downloadTableAsText(filename, data) {
+                if (!data || !data.results || data.results.bindings.length === 0) {
+                     alert("Não há resultado para baixar.");
+                     return;
+                }
+
+                const headers = data.head.vars;
+                let textContent = headers.join('\t') + '\n'; // Tab-separated headers
+                
+                data.results.bindings.forEach(row => {
+                    let rowContent = [];
+                    headers.forEach(header => {
+                         const cell = row[header];
+                         rowContent.push(cell ? cell.value : '');
+                    });
+                    textContent += rowContent.join('\t') + '\n';
+                });
+
+                downloadText(filename, textContent);
             }
         });
     </script>

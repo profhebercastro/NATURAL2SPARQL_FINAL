@@ -1,0 +1,33 @@
+# TEMPLATE 4C -- Busca métrica e SOMA o total para um setor ou empresa
+{
+    # Bloco 1: Retorna os valores individuais
+    SELECT ?ticker ?valor
+    WHERE {
+        #FILTER_BLOCK#
+        ?S1 P1 ?SO1 .
+        ?SO1 P1 ?intermediario .
+        ?intermediario P3 ?SO2 .
+        ?SO2 P5 ?S2 .
+        ?S2 P6 "#DATA#"^^xsd:date .
+        ?SO1 P2 ?codigo .
+        ?codigo P8 ?ticker .
+        ?SO2 #VALOR_DESEJADO# ?valor .
+    }
+}
+UNION
+{
+    # Bloco 2: Retorna a SOMA total
+    SELECT ("TOTAL" AS ?ticker) (SUM(?soma_valor) AS ?valor)
+    WHERE {
+        # O filtro deve ser idêntico ao bloco acima
+        #FILTER_BLOCK#
+        ?S1 P1 ?SO1 .
+        ?SO1 P1 ?intermediario .
+        ?intermediario P3 ?SO2 .
+        ?SO2 P5 ?S2 .
+        ?S2 P6 "#DATA#"^^xsd:date .
+        ?SO1 P2 ?codigo .
+        ?codigo P8 ?ticker_interno .
+        ?SO2 #VALOR_DESEJADO# ?soma_valor .
+    }
+}

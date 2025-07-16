@@ -55,76 +55,16 @@ public class SPARQLProcessor {
 
             String templateContent = loadTemplate(templateId);
             
-            // --- INÍCIO DA LÓGICA UNIFICADA E CORRIGIDA ---
-            
-            String query = templateContent;
-
-            // 1. Substituir blocos de filtro primeiro (se existirem no template)
-            if (entitiesNode.has("ENTIDADE_NOME")) {
-                String nomeEntidade = entitiesNode.get("ENTIDADE_NOME").asText();
-                String entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
-                query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+            String finalQuery;
+            if ("Template_4C".equals(templateId)) {
+                finalQuery = buildAggregationQuery(templateContent, entitiesNode);
+            } else if ("Template_5B".equals(templateId)) {
+                finalQuery = buildTypeFilteredQuery(templateContent, entitiesNode);
+            } else if (templateId.startsWith("Template_6") || templateId.startsWith("Template_7") || templateId.startsWith("Template_8")) {
+                finalQuery = buildCalculationQuery(templateContent, entitiesNode);
+            } else {
+                finalQuery = buildSimpleQuery(templateContent, entitiesNode);
             }
-            if (entitiesNode.has("NOME_SETOR")) {
-                JsonNode setorNode = entitiesNode.get("NOME_SETOR");
-                String setorFilter;
-                String subjectVariable = query.contains("?S1_rank") ? "?S1_rank" : "?S1";
-                if (setorNode.isArray()) {
-                    List<String> setores = new ArrayList<>();
-                    for (JsonNode setor : setorNode) {
-                        setores.add("\"" + setor.asText() + "\"@pt");
-                    }
-                    String inClause = String.join(", ", setores);
-                    setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label ?label . \n    FILTER(?label IN (" + inClause + "))";
-                } else {
-                    String nomeSetor = setorNode.asText();
-                    setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
-                }
-                query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
-            }
-            if (entitiesNode.has("REGEX_PATTERN")) {
-                String regexPattern = entitiesNode.get("REGEX_PATTERN").asText();
-                String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + regexPattern + "\"))";
-                query = query.replace("#REGEX_FILTER#", regexFilter);
-            }
-
-            // 2. AGORA, substituir os placeholders genéricos (P*, S*)
-            query = placeholderService.replaceGenericPlaceholders(query);
-
-            // 3. Finalmente, substituir os placeholders de valor (#DATA#, #CALCULO#, etc.)
-            // Isso inclui o VALOR_DESEJADO que estava falhando
-            Iterator<Map.Entry<String, JsonNode>> fields = entitiesNode.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
-                String placeholder = "#" + field.getKey().toUpperCase() + "#";
-                String value = field.getValue().asText();
-
-                if (placeholder.equals("#VALOR_DESEJADO#")) {
-                    // Busca o valor RDF correto (ex: b3:precoFechamento)
-                    String predicadoRDF = placeholderService.getPlaceholderValue(value);
-                    if (predicadoRDF != null) {
-                        query = query.replace(placeholder, predicadoRDF);
-                    }
-                } else if (placeholder.equals("#CALCULO#")) {
-                    String calculoSparql;
-                    switch (value) {
-                        case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
-                        case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break;
-                        case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
-                        case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
-                        case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                        default: calculoSparql = "0";
-                    }
-                    query = query.replace(placeholder, calculoSparql);
-                } else {
-                    query = query.replace(placeholder, value);
-                }
-            }
-            
-            // Limpa quaisquer placeholders que não foram substituídos
-            String finalQuery = query.replaceAll("#[A-Z_]+#", "");
-
-            // --- FIM DA LÓGICA UNIFICADA E CORRIGIDA ---
 
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
@@ -139,7 +79,116 @@ public class SPARQLProcessor {
         }
     }
     
-    // Métodos auxiliares anteriores não são mais necessários com a lógica unificada.
+    private String buildSimpleQuery(String template, JsonNode entities) {
+        String query = placeholderService.replaceGenericPlaceholders(template);
+        return replaceValuePlaceholders(query, entities);
+    }
+    
+    // NOVO MÉTODO PARA TEMPLATE 4C
+    private String buildAggregationQuery(String template, JsonNode entities) {
+        String query = template;
+        String filterBlock = "";
+
+        if (entities.has("NOME_SETOR")) {
+            filterBlock = "?S1 b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + entities.get("NOME_SETOR").asText() + "\"@pt .";
+        } else if (entities.has("ENTIDADE_NOME")) {
+            filterBlock = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
+        }
+        
+        query = query.replace("#FILTER_BLOCK#", filterBlock);
+        query = placeholderService.replaceGenericPlaceholders(query);
+
+        return replaceValuePlaceholders(query, entities);
+    }
+
+    private String buildTypeFilteredQuery(String template, JsonNode entities) {
+        String query = template;
+
+        if (entities.has("ENTIDADE_NOME")) {
+            String nomeEntidade = entities.get("ENTIDADE_NOME").asText();
+            String entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
+            query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+        } else {
+            query = query.replace("#FILTER_BLOCK_ENTIDADE#", "");
+        }
+        
+        if (entities.has("REGEX_PATTERN")) {
+            String regexPattern = entities.get("REGEX_PATTERN").asText();
+            String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + regexPattern + "\"))";
+            query = query.replace("#REGEX_FILTER#", regexFilter);
+        } else {
+            query = query.replace("#REGEX_FILTER#", "");
+        }
+
+        query = placeholderService.replaceGenericPlaceholders(query);
+        return replaceValuePlaceholders(query, entities);
+    }
+
+    private String buildCalculationQuery(String template, JsonNode entities) {
+        String query = template;
+        
+        if (entities.has("NOME_SETOR")) {
+            JsonNode setorNode = entities.get("NOME_SETOR");
+            String setorFilter;
+            String subjectVariable = template.contains("?S1_rank") ? "?S1_rank" : "?S1";
+
+            if (setorNode.isArray()) {
+                List<String> setores = new ArrayList<>();
+                for (JsonNode setor : setorNode) {
+                    setores.add("\"" + setor.asText() + "\"@pt");
+                }
+                String inClause = String.join(", ", setores);
+                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label ?label . \n    FILTER(?label IN (" + inClause + "))";
+            } else {
+                String nomeSetor = setorNode.asText();
+                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
+            }
+            query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
+        } else {
+            query = query.replace("#FILTER_BLOCK_SETOR#", "");
+        }
+        
+        if (entities.has("ENTIDADE_NOME")) {
+            String nomeEntidade = entities.get("ENTIDADE_NOME").asText();
+            String entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
+            query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+        } else {
+            query = query.replace("#FILTER_BLOCK_ENTIDADE#", "");
+        }
+        
+        query = placeholderService.replaceGenericPlaceholders(query);
+        return replaceValuePlaceholders(query, entities);
+    }
+    
+    private String replaceValuePlaceholders(String template, JsonNode entities) {
+        String finalQuery = template;
+        Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> field = fields.next();
+            String placeholder = "#" + field.getKey().toUpperCase() + "#";
+            String value = field.getValue().asText();
+
+            if (placeholder.equals("#VALOR_DESEJADO#")) {
+                String predicadoRDF = placeholderService.getPlaceholderValue(value);
+                if (predicadoRDF != null) finalQuery = finalQuery.replace(placeholder, predicadoRDF);
+            } else if (placeholder.equals("#CALCULO#")) {
+                String calculoSparql;
+                switch (value) {
+                    case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
+                    case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break;
+                    case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
+                    case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
+                    case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                    default: calculoSparql = "0";
+                }
+                finalQuery = finalQuery.replace(placeholder, calculoSparql);
+            } else {
+                finalQuery = finalQuery.replace(placeholder, value);
+            }
+        }
+        finalQuery = finalQuery.replaceAll("#[A-Z_]+#", ""); 
+        return finalQuery;
+    }
 
     private String callNlpService(String query) throws IOException, InterruptedException {
         String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
