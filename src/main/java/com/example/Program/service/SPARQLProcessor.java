@@ -54,7 +54,6 @@ public class SPARQLProcessor {
             }
 
             String templateContent = loadTemplate(templateId);
-            
             String finalQuery = buildQuery(templateContent, entitiesNode);
 
             resposta.setSparqlQuery(finalQuery);
@@ -73,13 +72,11 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
         
-        // --- INÍCIO DA LÓGICA DE SUBSTITUIÇÃO UNIFICADA ---
-
-        // 1. Monta os blocos de filtro
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
         }
+        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
 
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
@@ -97,27 +94,22 @@ public class SPARQLProcessor {
                 setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
             }
         }
-        
-        String regexFilter = "";
+        query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
+
         if (entities.has("REGEX_PATTERN")) {
-            regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
+            String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
+            query = query.replace("#REGEX_FILTER#", regexFilter);
+        } else {
+            query = query.replace("#REGEX_FILTER#", "");
         }
         
-        // 2. Substitui os blocos nos templates
-        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
-        query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
-        query = query.replace("#REGEX_FILTER#", regexFilter);
-        
-        // Tratamento especial para o Template 4C que tem dois filtros
         if (query.contains("#FILTER_BLOCK#")) {
             String filterBlock4C = !setorFilter.isEmpty() ? setorFilter : entidadeFilter;
             query = query.replace("#FILTER_BLOCK#", filterBlock4C);
         }
 
-        // 3. AGORA, substituir os placeholders genéricos (P*, S*)
         query = placeholderService.replaceGenericPlaceholders(query);
         
-        // 4. Finalmente, substituir os placeholders de valor
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -129,14 +121,17 @@ public class SPARQLProcessor {
                 if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
             } else if (placeholder.equals("#CALCULO#")) {
                 String calculoSparql;
+                // --- INÍCIO DA CORREÇÃO ---
+                // As fórmulas de percentual agora retornam o valor decimal bruto (sem multiplicar por 100)
                 switch (value) {
                     case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
-                    case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break;
+                    case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break; 
                     case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
                     case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
                     case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
                     default: calculoSparql = "0";
                 }
+                // --- FIM DA CORREÇÃO ---
                 query = query.replace(placeholder, calculoSparql);
             } else {
                 query = query.replace(placeholder, value);
