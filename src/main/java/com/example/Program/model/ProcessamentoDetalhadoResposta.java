@@ -2,18 +2,13 @@ package com.example.Programa_heber.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.util.List;
-import java.util.Map;
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProcessamentoDetalhadoResposta {
 
     private String sparqlQuery;
     private String resposta;
     private String erro;
-    private String templateId;
-
-    private List<Map<String, String>> resultados;
+    private String templateId; 
 
     // Getters e Setters
     public String getSparqlQuery() {
@@ -46,13 +41,5 @@ public class ProcessamentoDetalhadoResposta {
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
-    }
-
-    public List<Map<String, String>> getResultados() {
-        return resultados;
-    }
-
-    public void setResultados(List<Map<String, String>> resultados) {
-        this.resultados = resultados;
     }
 }

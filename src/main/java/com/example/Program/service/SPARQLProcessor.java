@@ -3,9 +3,6 @@ package com.example.Programa_heber.service;
 import com.example.Programa_heber.model.ProcessamentoDetalhadoResposta;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.jena.query.*;
-import org.apache.jena.rdf.model.Literal;
-import org.apache.jena.rdf.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +17,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,7 +31,6 @@ public class SPARQLProcessor {
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
-    private static final String SPARQL_ENDPOINT_URL = "http://localhost:3030/seu-endpoint/sparql"; // Altere conforme necessário
 
     @Autowired
     public SPARQLProcessor(PlaceholderService placeholderService) {
@@ -52,7 +50,7 @@ public class SPARQLProcessor {
             JsonNode entitiesNode = rootNode.path("entities");
 
             if (templateId == null || templateId.isEmpty()) {
-                throw new IOException("NLP não retornou um templateId.");
+                 throw new IOException("NLP não retornou um templateId.");
             }
 
             String templateContent = loadTemplate(templateId);
@@ -62,10 +60,6 @@ public class SPARQLProcessor {
             resposta.setTemplateId(templateId);
             logger.info("Consulta SPARQL final gerada:\n{}", finalQuery);
 
-            // Executa a consulta e captura os resultados formatados
-            List<Map<String, String>> resultados = executarConsulta(finalQuery);
-            resposta.setResultados(resultados);
-
             return resposta;
 
         } catch (Exception e) {
@@ -74,10 +68,10 @@ public class SPARQLProcessor {
             return resposta;
         }
     }
-
+    
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
-
+        
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
@@ -108,14 +102,14 @@ public class SPARQLProcessor {
         } else {
             query = query.replace("#REGEX_FILTER#", "");
         }
-
+        
         if (query.contains("#FILTER_BLOCK#")) {
             String filterBlock4C = !setorFilter.isEmpty() ? setorFilter : entidadeFilter;
             query = query.replace("#FILTER_BLOCK#", filterBlock4C);
         }
 
         query = placeholderService.replaceGenericPlaceholders(query);
-
+        
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -127,75 +121,37 @@ public class SPARQLProcessor {
                 if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
             } else if (placeholder.equals("#CALCULO#")) {
                 String calculoSparql;
-                switch (value) {
-                    case "variacao_abs":
-                        calculoSparql = "ROUND((?fechamento - ?abertura))";
-                        break;
-                    case "variacao_perc":
-                        calculoSparql = "ROUND((((?fechamento - ?abertura) / ?abertura) * 10000)) / 100";
-                        break;
-                    case "intervalo_abs":
-                        calculoSparql = "ROUND((?maximo - ?minimo))";
-                        break;
-                    case "intervalo_perc":
-                        calculoSparql = "ROUND((((?maximo - ?minimo) / ?abertura) * 10000)) / 100";
-                        break;
-                    case "variacao_abs_abs":
-                        calculoSparql = "ROUND(ABS(?fechamento - ?abertura))";
-                        break;
-                    default:
-                        calculoSparql = "0";
-                }
+                // --- INÍCIO DA CORREÇÃO ---
+                // As fórmulas de percentual agora retornam o valor decimal bruto (sem multiplicar por 100)
+				switch (value) {
+					case "variacao_abs":calculoSparql = "ROUND((?maximo - ?minimo))";break;
+					// Apenas a diferença entre fechamento e abertura (não é percentual)
+					case "variacao_perc":calculoSparql = "ROUND((((?fechamento - ?abertura) / ?abertura) * 10000)) / 100";break;
+					// Variação percentual entre fechamento e abertura
+					case "intervalo_abs":calculoSparql = "ROUND((?maximo - ?minimo))";break;
+					// Diferença entre máximo e mínimo (não é percentual)
+					case "intervalo_perc":calculoSparql = "ROUND((((?maximo - ?minimo) / ?abertura) * 10000)) / 100";break;
+					// Variação percentual do intervalo intradiário
+					case "variacao_abs_abs":calculoSparql = "ROUND(ABS(?fechamento - ?abertura))";break;
+					// Valor absoluto da diferença entre fechamento e abertura (não é percentual)
+					default:calculoSparql = "0";
+				}
+                // --- FIM DA CORREÇÃO ---
+				
+				
+				
                 query = query.replace(placeholder, calculoSparql);
             } else {
                 query = query.replace(placeholder, value);
             }
         }
-
-        return query.replaceAll("#[A-Z_]+#", "");
-    }
-
-    private List<Map<String, String>> executarConsulta(String queryStr) {
-        List<Map<String, String>> resultados = new ArrayList<>();
-
-        Query query = QueryFactory.create(queryStr);
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(SPARQL_ENDPOINT_URL, query)) {
-            ResultSet resultSet = qe.execSelect();
-            while (resultSet.hasNext()) {
-                QuerySolution sol = resultSet.nextSolution();
-                Map<String, String> linha = new LinkedHashMap<>();
-
-                for (Iterator<String> varNames = sol.varNames(); varNames.hasNext(); ) {
-                    String var = varNames.next();
-                    if (sol.get(var).isLiteral()) {
-                        Literal literal = sol.getLiteral(var);
-                        if (literal.getDatatypeURI() != null &&
-                            literal.getDatatypeURI().contains("double")) {
-                            double valor = literal.getDouble();
-                            linha.put(var, String.format("%.2f", valor));
-                        } else {
-                            linha.put(var, literal.getString());
-                        }
-                    } else if (sol.get(var).isResource()) {
-                        Resource res = sol.getResource(var);
-                        linha.put(var, res.getLocalName());
-                    } else {
-                        linha.put(var, sol.get(var).toString());
-                    }
-                }
-                resultados.add(linha);
-            }
-        }
-        return resultados;
+        
+        return query.replaceAll("#[A-Z_]+#", ""); 
     }
 
     private String callNlpService(String query) throws IOException, InterruptedException {
         String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(NLP_SERVICE_URL))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(NLP_SERVICE_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody)).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) {
             throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body());
@@ -210,7 +166,8 @@ public class SPARQLProcessor {
                 throw new IOException("Arquivo de template não encontrado: " + path);
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                return reader.lines().collect(Collectors.joining(System.lineSeparator()));
+                return reader.lines()
+                             .collect(Collectors.joining(System.lineSeparator()));
             }
         } catch (IOException e) {
             throw new RuntimeException("Falha ao carregar template: " + path, e);
