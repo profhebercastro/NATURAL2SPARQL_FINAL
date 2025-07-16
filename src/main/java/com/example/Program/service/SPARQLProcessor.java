@@ -54,6 +54,7 @@ public class SPARQLProcessor {
             }
 
             String templateContent = loadTemplate(templateId);
+            
             String finalQuery = buildQuery(templateContent, entitiesNode);
 
             resposta.setSparqlQuery(finalQuery);
@@ -71,21 +72,18 @@ public class SPARQLProcessor {
     
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
-
+        
         // --- INÍCIO DA LÓGICA DE SUBSTITUIÇÃO UNIFICADA ---
 
-        // 1. Substituir blocos de filtro primeiro
+        // 1. Monta os blocos de filtro
+        String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
-            String nomeEntidade = entities.get("ENTIDADE_NOME").asText();
-            String entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + nomeEntidade + "\", \"i\"))";
-            query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
-        } else {
-            query = query.replace("#FILTER_BLOCK_ENTIDADE#", "");
+            entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
         }
-        
+
+        String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
             JsonNode setorNode = entities.get("NOME_SETOR");
-            String setorFilter;
             String subjectVariable = query.contains("?S1_rank") ? "?S1_rank" : "?S1";
             if (setorNode.isArray()) {
                 List<String> setores = new ArrayList<>();
@@ -98,23 +96,28 @@ public class SPARQLProcessor {
                 String nomeSetor = setorNode.asText();
                 setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
             }
-            query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
-        } else {
-            query = query.replace("#FILTER_BLOCK_SETOR#", "");
         }
-
+        
+        String regexFilter = "";
         if (entities.has("REGEX_PATTERN")) {
-            String regexPattern = entities.get("REGEX_PATTERN").asText();
-            String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + regexPattern + "\"))";
-            query = query.replace("#REGEX_FILTER#", regexFilter);
-        } else {
-            query = query.replace("#REGEX_FILTER#", "");
+            regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
+        }
+        
+        // 2. Substitui os blocos nos templates
+        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+        query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
+        query = query.replace("#REGEX_FILTER#", regexFilter);
+        
+        // Tratamento especial para o Template 4C que tem dois filtros
+        if (query.contains("#FILTER_BLOCK#")) {
+            String filterBlock4C = !setorFilter.isEmpty() ? setorFilter : entidadeFilter;
+            query = query.replace("#FILTER_BLOCK#", filterBlock4C);
         }
 
-        // 2. AGORA, substituir os placeholders genéricos (P*, S*)
+        // 3. AGORA, substituir os placeholders genéricos (P*, S*)
         query = placeholderService.replaceGenericPlaceholders(query);
-
-        // 3. Finalmente, substituir os placeholders de valor
+        
+        // 4. Finalmente, substituir os placeholders de valor
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -140,7 +143,7 @@ public class SPARQLProcessor {
             }
         }
         
-        return query.replaceAll("#[A-Z_]+#", ""); // Limpa placeholders não usados
+        return query.replaceAll("#[A-Z_]+#", ""); 
     }
 
     private String callNlpService(String query) throws IOException, InterruptedException {
