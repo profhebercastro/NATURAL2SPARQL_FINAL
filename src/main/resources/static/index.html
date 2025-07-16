@@ -7,66 +7,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* Estilos Base */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #e9ecef; display: flex; flex-direction: column; min-height: 100vh; }
         header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
         .logo img { height: 32px; width: auto; }
-        .header-actions { display: flex; align-items: center; gap: 15px; }
-        .header-actions .icon-btn { background: none; border: 1px solid rgba(255,255,255,0.5); color: white; border-radius: 5px; padding: 5px 8px; cursor: pointer; font-size: 1rem; }
         main.container { width: 100%; max-width: 960px; margin: 40px auto; padding: 0 20px; flex-grow: 1; }
-        .card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; position: relative; }
+        .card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 1.25rem; font-weight: 500; margin: 0; display: block; margin-bottom: 0.75rem; }
+        .card-title-container { display: flex; justify-content: space-between; align-items: center; }
         .form-control { width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ced4da; border-radius: 4px; }
         .button-group { display: flex; gap: 10px; margin-top: 1rem; }
-        .btn { padding: 10px 15px; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500;}
-        .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
+        .btn { padding: 10px 15px; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; }
+        .btn:disabled { opacity: 0.65; cursor: not-allowed; }
         .btn-success { background-color: #198754; color: white; }
         .btn-danger { background-color: #dc3545; color: white; }
         .btn-info { background-color: #0dcaf0; color: white; }
-        .btn:disabled { opacity: 0.65; cursor: not-allowed; }
         .results-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
         @media (min-width: 768px) { .results-grid { grid-template-columns: 1fr 1fr; } }
         textarea.output { height: 250px; resize: vertical; background-color: #f8f9fa; color: #495057; font-family: 'Courier New', monospace; }
+        .result-box { height: 250px; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: 4px; padding: 10px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 1.1rem; color: #495057; }
+        .result-table { width: 100%; border-collapse: collapse; }
+        .result-table th, .result-table td { padding: 8px 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: top; }
+        .result-table thead th { background-color: #e9ecef; font-weight: 600; }
         .error-message { color: #dc3545 !important; font-weight: bold; }
         footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; margin-top: auto; }
         .loader { border: 4px solid rgba(0,0,0,0.1); border-top-color: #0d6efd; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* --- INÍCIO DOS AJUSTES DE LAYOUT E ESTILO --- */
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 500;
-            margin: 0;
-            display: block; /* Garante que seja um bloco para margem funcionar */
-            margin-bottom: 0.75rem; /* *** CORREÇÃO: Adiciona espaço abaixo dos títulos *** */
-        }
-        .card-title-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        /* Caixa de resultado aprimorada */
-        .result-box {
-            height: 250px;
-            background-color: #f8f9fa;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            padding: 10px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 1.1rem;
-            color: #495057;
-        }
-
-        /* Estilos da tabela de resultados */
-        .result-table { width: 100%; border-collapse: collapse; }
-        .result-table th, .result-table td { padding: 8px 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: top; }
-        .result-table thead th { background-color: #e9ecef; font-weight: 600; }
-        .result-table tbody tr:nth-child(odd) { background-color: #f8f9fa; }
-        .total-row { background-color: #cfe2ff !important; font-weight: bold; }
-        
     </style>
 </head>
 <body>
@@ -75,31 +42,22 @@
             <img src="https://cygri.github.io/rdf-logos/svg/sparql.svg" alt="SPARQL Logo">
             <span>Natural2SPARQL</span>
         </div>
-        <div class="header-actions">
-            <button id="downloadQueryBtn" class="icon-btn" title="Baixar Consulta SPARQL"><i class="fa-solid fa-cloud-arrow-down"></i></button>
-            <button id="downloadResultBtn" class="icon-btn" title="Baixar Resultado"><i class="fa-solid fa-download"></i></button>
-        </div>
     </header>
 
     <main class="container">
         <div class="card">
-            <!-- Título com margem inferior para espaçamento -->
             <label for="userQuestion" class="card-title">Digite sua pergunta</label>
             <input type="text" id="userQuestion" class="form-control" placeholder="Ex: Qual o preço de fechamento da CSN em 08/05/2023?">
             <div class="button-group">
-                <button id="generateBtn" class="btn btn-success">
-                    <span class="btn-text">GERAR CONSULTA</span><i class="fas fa-arrow-right"></i>
-                </button>
-                <button id="clearBtn" class="btn btn-danger"><i class="fas fa-sync-alt"></i><span>LIMPAR</span></button>
+                <button id="generateBtn" class="btn btn-success">GERAR CONSULTA</button>
+                <button id="clearBtn" class="btn btn-danger">LIMPAR</button>
             </div>
         </div>
         <div class="results-grid">
             <div class="card">
                 <div class="card-title-container">
                     <h3 class="card-title">Consulta SPARQL</h3>
-                    <button id="executeQueryBtn" class="btn btn-info btn-sm">
-                        <span class="btn-text">Executar</span><i class="fas fa-play"></i>
-                    </button>
+                    <button id="executeQueryBtn" class="btn btn-info">Executar</button>
                 </div>
                 <textarea id="sparqlQueryOutput" class="form-control output" readonly>A consulta SPARQL aparecerá aqui...</textarea>
             </div>
@@ -122,24 +80,17 @@
             const userQuestionInput = document.getElementById('userQuestion');
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
             const resultOutputDiv = document.getElementById('resultOutput');
-            const downloadQueryBtn = document.getElementById('downloadQueryBtn');
-            const downloadResultBtn = document.getElementById('downloadResultBtn');
             
-            let lastResults = null;
-
             generateBtn.addEventListener('click', handleGenerateQuery);
             executeQueryBtn.addEventListener('click', handleExecuteQuery);
             clearBtn.addEventListener('click', clearAllFields);
-            downloadQueryBtn.addEventListener('click', () => downloadText('consulta.sparql', sparqlQueryOutput.value));
-            downloadResultBtn.addEventListener('click', () => downloadTableAsText('resultado.txt', lastResults));
-            userQuestionInput.addEventListener('keypress', e => e.key === 'Enter' && (e.preventDefault(), handleGenerateQuery()));
+            userQuestionInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleGenerateQuery(); });
 
             function clearAllFields() {
                 userQuestionInput.value = '';
                 sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
                 sparqlQueryOutput.classList.remove('error-message');
                 resultOutputDiv.innerHTML = '<p style="color: #6c757d;">O resultado aparece aqui...</p>';
-                lastResults = null;
             }
 
             async function handleGenerateQuery() {
@@ -152,7 +103,6 @@
                 sparqlQueryOutput.classList.remove('error-message');
 
                 try {
-                    // *** CORREÇÃO DO ENDPOINT AQUI ***
                     const response = await fetch('/api/processar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -160,7 +110,7 @@
                     });
                     
                     const data = await response.json();
-                    if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
+                    if (!response.ok) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
                     sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
 
@@ -183,17 +133,19 @@
                 resultOutputDiv.innerHTML = '<div class="loader"></div>';
 
                 try {
-                    // *** CORREÇÃO DO ENDPOINT AQUI ***
                     const response = await fetch('/api/executar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ query: sparqlQuery })
                     });
                     
-                    const data = await response.json();
-                    if (!response.ok || data.erro) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
-                    
-                    lastResults = data;
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Erro do Servidor: ${response.status}`);
+                    }
+
+                    const resultJson = await response.text();
+                    const data = JSON.parse(resultJson);
                     displayResults(data);
 
                 } catch (error) {
@@ -204,61 +156,27 @@
             }
 
             function displayResults(data) {
-                resultOutputDiv.innerHTML = ''; 
-
+                 resultOutputDiv.innerHTML = ''; 
                 if (data.error) {
                     resultOutputDiv.innerHTML = `<div class="error-message">${data.error}</div>`;
                     return;
                 }
-
-                if (!data.results || data.results.bindings.length === 0) {
+                if (!data.results || !data.results.bindings || data.results.bindings.length === 0) {
                     resultOutputDiv.innerHTML = '<p>Nenhum resultado encontrado.</p>';
                     return;
                 }
-
                 const headers = data.head.vars;
                 let tableHTML = '<table class="result-table"><thead><tr>';
-                headers.forEach(header => {
-                    tableHTML += `<th>${header}</th>`;
-                });
+                headers.forEach(header => { tableHTML += `<th>${header}</th>`; });
                 tableHTML += '</tr></thead><tbody>';
-
                 data.results.bindings.forEach(row => {
                     tableHTML += '<tr>';
                     headers.forEach(header => {
                         const cell = row[header];
-                        if (cell) {
-                            let formattedValue = cell.value;
-                            const headerLower = header.toLowerCase();
-                            const isTotalRow = cell.value.toUpperCase() === 'TOTAL';
-                            
-                            // Tenta formatar apenas se não for a célula "TOTAL"
-                            if (!isTotalRow) {
-                                const numericValue = parseFloat(cell.value);
-                                if (!isNaN(numericValue)) {
-                                    if (headerLower.includes('abs') && !headerLower.includes('perc')) {
-                                         formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
-                                    }
-                                    else if (headerLower.includes('perc') || (headerLower.includes('calculado') && Math.abs(numericValue) <= 1)) {
-                                        formattedValue = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericValue);
-                                    }
-                                    else if (headerLower.includes('volume') || headerLower.includes('quantidade')) {
-                                        formattedValue = new Intl.NumberFormat('pt-BR').format(numericValue);
-                                    }
-                                }
-                            }
-                            
-                            tableHTML += `<td class="${isTotalRow ? 'total-row' : ''}">`;
-                            tableHTML += isTotalRow ? `<strong>${formattedValue}</strong>` : formattedValue;
-                            tableHTML += `</td>`;
-
-                        } else {
-                            tableHTML += '<td></td>';
-                        }
+                        tableHTML += `<td>${cell ? cell.value : ''}</td>`;
                     });
                     tableHTML += '</tr>';
                 });
-
                 tableHTML += '</tbody></table>';
                 resultOutputDiv.innerHTML = tableHTML;
             }
@@ -267,41 +185,6 @@
                 button.disabled = isLoading;
                 button.style.cursor = isLoading ? 'wait' : 'pointer';
                 button.style.opacity = isLoading ? '0.7' : '1';
-            }
-
-            function downloadText(filename, text) {
-                if (!text || text.startsWith("A consulta") || text.startsWith("Gerando")) {
-                    alert("Não há conteúdo para baixar.");
-                    return;
-                }
-                const element = document.createElement('a');
-                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-                element.setAttribute('download', filename);
-                element.style.display = 'none';
-                document.body.appendChild(element);
-                element.click();
-                document.body.removeChild(element);
-            }
-
-            function downloadTableAsText(filename, data) {
-                if (!data || !data.results || data.results.bindings.length === 0) {
-                     alert("Não há resultado para baixar.");
-                     return;
-                }
-
-                const headers = data.head.vars;
-                let textContent = headers.join('\t') + '\n';
-                
-                data.results.bindings.forEach(row => {
-                    let rowContent = [];
-                    headers.forEach(header => {
-                         const cell = row[header];
-                         rowContent.push(cell ? cell.value : '');
-                    });
-                    textContent += rowContent.join('\t') + '\n';
-                });
-
-                downloadText(filename, textContent);
             }
         });
     </script>

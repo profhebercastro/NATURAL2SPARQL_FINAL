@@ -1,16 +1,17 @@
 package com.example.Programa_heber.model;
 
 public class ExecuteQueryRequest {
-    private String sparqlQuery;
+    // O nome da variável foi corrigido para "query" para corresponder ao JavaScript
+    private String query;
     private String templateId;
 
-    // Getters e Setters
-    public String getSparqlQuery() {
-        return sparqlQuery;
+    // Getters e Setters atualizados
+    public String getQuery() {
+        return query;
     }
 
-    public void setSparqlQuery(String sparqlQuery) {
-        this.sparqlQuery = sparqlQuery;
+    public void setQuery(String query) {
+        this.query = query;
     }
 
     public String getTemplateId() {

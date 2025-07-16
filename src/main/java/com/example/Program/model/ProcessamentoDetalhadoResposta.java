@@ -1,44 +1,36 @@
-package com.example.Programa_heber.model;
+private String sparqlQuery;
+private String resposta;
+private String erro;
+private String templateId; 
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+public String getSparqlQuery() {
+    return sparqlQuery;
+}
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class ProcessamentoDetalhadoResposta {
+public void setSparqlQuery(String sparqlQuery) {
+    this.sparqlQuery = sparqlQuery;
+}
 
-    private String sparqlQuery;
-    private String resposta;
-    private String erro;
-    private String templateId; 
+public String getResposta() {
+    return resposta;
+}
 
-    public String getSparqlQuery() {
-        return sparqlQuery;
-    }
+public void setResposta(String resposta) {
+    this.resposta = resposta;
+}
 
-    public void setSparqlQuery(String sparqlQuery) {
-        this.sparqlQuery = sparqlQuery;
-    }
+public String getErro() {
+    return erro;
+}
 
-    public String getResposta() {
-        return resposta;
-    }
+public void setErro(String erro) {
+    this.erro = erro;
+}
 
-    public void setResposta(String resposta) {
-        this.resposta = resposta;
-    }
+public String getTemplateId() {
+    return templateId;
+}
 
-    public String getErro() {
-        return erro;
-    }
-
-    public void setErro(String erro) {
-        this.erro = erro;
-    }
-
-    public String getTemplateId() {
-        return templateId;
-    }
-
-    public void setTemplateId(String templateId) {
-        this.templateId = templateId;
-    }
+public void setTemplateId(String templateId) {
+    this.templateId = templateId;
 }
