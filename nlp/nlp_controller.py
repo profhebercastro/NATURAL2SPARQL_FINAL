@@ -14,7 +14,8 @@ def carregar_arquivo_json(nome_arquivo):
         with open(caminho_completo, 'r', encoding='utf-8') as f: return json.load(f)
     except FileNotFoundError: return {}
 
-empresa_map = carregar_arquivo_json('empresa_nome_map.json')
+# --- ALTERAÇÃO AQUI: Carregando o arquivo com o novo nome ---
+empresa_map = carregar_arquivo_json('Named_entity_dictionary.json')
 setor_map = carregar_arquivo_json('setor_map.json')
 
 reference_templates = {}
@@ -25,7 +26,6 @@ try:
                 parts = line.split(';', 1)
                 if len(parts) == 2:
                     template_id, question_text = parts
-                    # Permite múltiplas perguntas para o mesmo template
                     if template_id.strip() not in reference_templates:
                         reference_templates[template_id.strip()] = []
                     reference_templates[template_id.strip()].append(question_text.strip())
@@ -63,7 +63,7 @@ def extrair_entidades_fixas(pergunta_lower):
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-                entidades['entidade_nome'] = key
+                entidades['entidade_nome'] = empresa_map[key]
                 break
     
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
@@ -132,12 +132,10 @@ def process_question():
     if not pergunta_lower.strip(): 
         return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    # LÓGICA DE SELEÇÃO BASEADA EM SIMILARIDADE
     if tfidf_matrix_ref is not None:
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
         if similaridades.any():
-            # Pega o ID do template correspondente à pergunta mais similar
             template_id_final = ref_ids_flat[similaridades.argmax()]
         else:
             return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
