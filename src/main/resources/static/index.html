@@ -189,21 +189,26 @@
                         const numericValue = parseFloat(cellValue);
 
                         if (!isNaN(numericValue)) {
-                            // --- LÓGICA DE FORMATAÇÃO FINAL E CORRIGIDA ---
-                            if (headerLower.includes('perc') || headerLower.includes('calculado') || headerLower.includes('ans')) {
+                            // --- INÍCIO DA LÓGICA DE FORMATAÇÃO FINAL ---
+                            // A ordem agora é do mais específico para o mais geral
+
+                            if (headerLower.includes('volume') || headerLower.includes('quantidade')) {
+                                // 1. Trata casos de números grandes primeiro
+                                cellValue = new Intl.NumberFormat('pt-BR').format(Math.round(numericValue));
+                            }
+                            else if (headerLower.includes('perc') || headerLower.includes('calculado') || headerLower.includes('ans')) {
+                                // 2. Trata os casos de percentual
                                 cellValue = numericValue.toFixed(2).replace('.', ',') + '%';
                             }
                             else if (headerLower.includes('abs')) {
+                                // 3. Trata os casos de variação absoluta como moeda
                                  cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
-                            }
-                            else if (headerLower.includes('volume') || headerLower.includes('quantidade')) {
-                                // Formata como número inteiro com separador de milhar
-                                cellValue = new Intl.NumberFormat('pt-BR').format(Math.round(numericValue));
                             }
                             else if (headerLower.includes('valor')) {
-                                 // Para outros "valores" (como preço da ação), formata como moeda
+                                 // 4. Por último, trata "valor" genérico como moeda
                                  cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
                             }
+                            // --- FIM DA LÓGICA DE FORMATAÇÃO FINAL ---
                         }
                         
                         tableHTML += `<td>${cellValue}</td>`;
