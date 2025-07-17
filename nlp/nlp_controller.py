@@ -61,9 +61,9 @@ def extrair_entidades_fixas(pergunta_lower):
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-                # --- CORREÇÃO APLICADA ---
-                # Sempre enviamos a CHAVE (o apelido), que é mais genérico para o REGEX.
-                entidades['entidade_nome'] = key
+                # --- CORREÇÃO FINAL APLICADA ---
+                # Agora ele envia o VALOR do dicionário, que foi desambiguado
+                entidades['entidade_nome'] = empresa_map[key]
                 break
     
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
