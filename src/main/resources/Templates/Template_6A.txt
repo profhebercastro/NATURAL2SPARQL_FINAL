@@ -1,10 +1,8 @@
 # TEMPLATE 6A -- Cálculo para uma empresa específica
 SELECT ?ticker ?ANS
 WHERE {
-    # 1. Encontra a empresa pelo nome
     #FILTER_BLOCK_ENTIDADE#
     
-    # 2. Segue o caminho para os dados
     ?S1 P1 ?SO1 .
     ?SO1 P2 ?codigoNode .
     ?codigoNode P8 ?ticker .
