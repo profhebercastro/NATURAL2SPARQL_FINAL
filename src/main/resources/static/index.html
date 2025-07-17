@@ -189,10 +189,9 @@
                         const numericValue = parseFloat(cellValue);
 
                         if (!isNaN(numericValue)) {
-                            // --- INÍCIO DA LÓGICA DE FORMATAÇÃO AJUSTADA ---
-                            if (headerLower.includes('perc') || headerLower.includes('calculado')) {
-                                // Agora que o backend multiplica por 100, apenas formatamos como um número decimal.
-                                // Adicionamos o '%' manualmente para clareza.
+                            // --- LÓGICA DE FORMATAÇÃO FINAL E CORRIGIDA ---
+                            if (headerLower.includes('perc') || headerLower.includes('calculado') || headerLower.includes('ans')) {
+                                // Se o backend já multiplicou por 100, apenas formatamos e adicionamos o símbolo '%'
                                 cellValue = numericValue.toFixed(2).replace('.', ',') + '%';
                             }
                             else if (headerLower.includes('abs')) {
@@ -202,9 +201,9 @@
                                 cellValue = new Intl.NumberFormat('pt-BR').format(numericValue);
                             }
                             else if (headerLower.includes('valor')) {
-                                 cellValue = numericValue.toFixed(2).replace('.', ',');
+                                 // Usando a formatação de moeda para "valor" para consistência
+                                 cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
                             }
-                            // --- FIM DA LÓGICA DE FORMATAÇÃO AJUSTADA ---
                         }
                         
                         tableHTML += `<td>${cellValue}</td>`;
