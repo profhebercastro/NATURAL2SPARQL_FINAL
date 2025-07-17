@@ -9,8 +9,9 @@ public class ProcessamentoDetalhadoResposta {
     private String resposta;
     private String erro;
     private String templateId; 
+    private String tipoMetrica; // NOVO CAMPO
 
-    // Getters e Setters
+    // Getters e Setters existentes
     public String getSparqlQuery() {
         return sparqlQuery;
     }
@@ -41,5 +42,14 @@ public class ProcessamentoDetalhadoResposta {
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
+    }
+
+    // GETTER E SETTER PARA O NOVO CAMPO
+    public String getTipoMetrica() {
+        return tipoMetrica;
+    }
+
+    public void setTipoMetrica(String tipoMetrica) {
+        this.tipoMetrica = tipoMetrica;
     }
 }
