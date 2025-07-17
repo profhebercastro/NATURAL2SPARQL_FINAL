@@ -14,7 +14,6 @@ def carregar_arquivo_json(nome_arquivo):
         with open(caminho_completo, 'r', encoding='utf-8') as f: return json.load(f)
     except FileNotFoundError: return {}
 
-# --- ALTERAÇÃO AQUI: Carregando o arquivo com o novo nome ---
 empresa_map = carregar_arquivo_json('Named_entity_dictionary.json')
 setor_map = carregar_arquivo_json('setor_map.json')
 
@@ -32,7 +31,6 @@ try:
 except FileNotFoundError:
     reference_templates = {}
 
-# Achata a lista de perguntas para o vetorizador
 ref_questions_flat = []
 ref_ids_flat = []
 for template_id, questions in reference_templates.items():
@@ -47,7 +45,7 @@ else:
     vectorizer = None
     tfidf_matrix_ref = None
 
-# --- FUNÇÕES AUXILIARES (sem alterações) ---
+# --- FUNÇÕES AUXILIARES ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -63,7 +61,9 @@ def extrair_entidades_fixas(pergunta_lower):
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-                entidades['entidade_nome'] = empresa_map[key]
+                # --- CORREÇÃO APLICADA ---
+                # Sempre enviamos a CHAVE (o apelido), que é mais genérico para o REGEX.
+                entidades['entidade_nome'] = key
                 break
     
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
