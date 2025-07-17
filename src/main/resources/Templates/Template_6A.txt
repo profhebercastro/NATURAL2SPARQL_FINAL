@@ -1,17 +1,23 @@
 # TEMPLATE 6A -- Cálculo para uma empresa específica
 SELECT ?ticker ?ANS
 WHERE {
+    # 1. Encontra a empresa pelo nome
     #FILTER_BLOCK_ENTIDADE#
+    
+    # 2. Segue o caminho para os dados
     ?S1 P1 ?SO1 .
     ?SO1 P2 ?codigoNode .
     ?codigoNode P8 ?ticker .
-    ?SO1 P3 ?SO2 .
+    ?SO1 P1 ?intermediario .
+    ?intermediario P3 ?SO2 .
     ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
+    
     ?SO2 b3:precoAbertura ?abertura .
     ?SO2 b3:precoFechamento ?fechamento .
     ?SO2 b3:precoMaximo ?maximo .
     ?SO2 b3:precoMinimo ?minimo .
+    
     BIND((#CALCULO#) AS ?ANS)
 }
 LIMIT 1

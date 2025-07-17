@@ -1,7 +1,11 @@
 # TEMPLATE 1A -- Busca métrica de uma empresa por nome
-SELECT ?ANS WHERE {
-    ?S1 P7 ?label .
+SELECT ?ANS
+WHERE {
+    # 1. Encontra a empresa pelo nome
+    ?S1 rdfs:label ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
+
+    # 2. Segue o caminho da empresa para os dados de negociação
     ?S1 P1 ?SO1 .
     ?SO1 P1 ?intermediario .
     ?intermediario P3 ?SO2 .
