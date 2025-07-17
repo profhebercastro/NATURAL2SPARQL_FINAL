@@ -191,17 +191,17 @@
                         if (!isNaN(numericValue)) {
                             // --- LÓGICA DE FORMATAÇÃO FINAL E CORRIGIDA ---
                             if (headerLower.includes('perc') || headerLower.includes('calculado') || headerLower.includes('ans')) {
-                                // Se o backend já multiplicou por 100, apenas formatamos e adicionamos o símbolo '%'
                                 cellValue = numericValue.toFixed(2).replace('.', ',') + '%';
                             }
                             else if (headerLower.includes('abs')) {
                                  cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
                             }
                             else if (headerLower.includes('volume') || headerLower.includes('quantidade')) {
-                                cellValue = new Intl.NumberFormat('pt-BR').format(numericValue);
+                                // Formata como número inteiro com separador de milhar
+                                cellValue = new Intl.NumberFormat('pt-BR').format(Math.round(numericValue));
                             }
                             else if (headerLower.includes('valor')) {
-                                 // Usando a formatação de moeda para "valor" para consistência
+                                 // Para outros "valores" (como preço da ação), formata como moeda
                                  cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
                             }
                         }
