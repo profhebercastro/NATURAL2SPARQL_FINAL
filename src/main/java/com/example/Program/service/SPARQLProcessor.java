@@ -58,12 +58,15 @@ public class SPARQLProcessor {
 
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
-            
+
+            // --- INÍCIO DA CORREÇÃO ---
+            // Passa o tipo da métrica para o objeto de resposta, dando prioridade ao cálculo se existir.
             if (entitiesNode.has("CALCULO")) {
                 resposta.setTipoMetrica(entitiesNode.get("CALCULO").asText());
             } else if (entitiesNode.has("VALOR_DESEJADO")) {
                 resposta.setTipoMetrica(entitiesNode.get("VALOR_DESEJADO").asText());
             }
+            // --- FIM DA CORREÇÃO ---
 
             logger.info("Consulta SPARQL final gerada:\n{}", finalQuery);
             return resposta;
@@ -128,12 +131,11 @@ public class SPARQLProcessor {
             } else if (placeholder.equals("#CALCULO#")) {
                 String calculoSparql;
                 switch (value) {
-                    case "variacao_abs":
-                    case "variacao_abs_abs":
-                        calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                    case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
                     case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
-                    case "intervalo_abs":  calculoSparql = "ABS(?maximo - ?minimo)"; break;
+                    case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
                     case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
+                    case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
                     default: calculoSparql = "0";
                 }
                 query = query.replace(placeholder, calculoSparql);
