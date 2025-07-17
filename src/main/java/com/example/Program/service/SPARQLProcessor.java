@@ -121,14 +121,17 @@ public class SPARQLProcessor {
                 if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
             } else if (placeholder.equals("#CALCULO#")) {
                 String calculoSparql;
+                // --- INÍCIO DA ALTERAÇÃO ---
+                // Agora, as fórmulas de percentual são multiplicadas por 100
                 switch (value) {
                     case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
-                    case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura)"; break;
+                    case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
                     case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
-                    case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura)"; break;
+                    case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
                     case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
                     default: calculoSparql = "0";
                 }
+                // --- FIM DA ALTERAÇÃO ---
                 query = query.replace(placeholder, calculoSparql);
             } else {
                 query = query.replace(placeholder, value);

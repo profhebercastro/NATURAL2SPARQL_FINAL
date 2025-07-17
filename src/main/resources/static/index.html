@@ -185,14 +185,15 @@
                         const cell = row[header];
                         let cellValue = cell ? cell.value : ''; 
                         
-                      
                         const headerLower = header.toLowerCase();
                         const numericValue = parseFloat(cellValue);
 
                         if (!isNaN(numericValue)) {
-                 
+                            // --- INÍCIO DA LÓGICA DE FORMATAÇÃO AJUSTADA ---
                             if (headerLower.includes('perc') || headerLower.includes('calculado')) {
-                                cellValue = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericValue);
+                                // Agora que o backend multiplica por 100, apenas formatamos como um número decimal.
+                                // Adicionamos o '%' manualmente para clareza.
+                                cellValue = numericValue.toFixed(2).replace('.', ',') + '%';
                             }
                             else if (headerLower.includes('abs')) {
                                  cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
@@ -203,6 +204,7 @@
                             else if (headerLower.includes('valor')) {
                                  cellValue = numericValue.toFixed(2).replace('.', ',');
                             }
+                            // --- FIM DA LÓGICA DE FORMATAÇÃO AJUSTADA ---
                         }
                         
                         tableHTML += `<td>${cellValue}</td>`;
