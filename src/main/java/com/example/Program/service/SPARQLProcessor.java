@@ -59,7 +59,7 @@ public class SPARQLProcessor {
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
             
-            // Passa o tipo da métrica para o objeto de resposta
+            // Passa o tipo da métrica para o objeto de resposta, dando prioridade ao cálculo se existir.
             if (entitiesNode.has("CALCULO")) {
                 resposta.setTipoMetrica(entitiesNode.get("CALCULO").asText());
             } else if (entitiesNode.has("VALOR_DESEJADO")) {
@@ -79,12 +79,14 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
         
+        // --- LÓGICA DE SUBSTITUIÇÃO UNIFICADA E CORRIGIDA ---
+
+        // 1. Monta os blocos de filtro
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
         }
-        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
-
+        
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
             JsonNode setorNode = entities.get("NOME_SETOR");
@@ -101,22 +103,27 @@ public class SPARQLProcessor {
                 setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
             }
         }
-        query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
-
+        
+        String regexFilter = "";
         if (entities.has("REGEX_PATTERN")) {
-            String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
-            query = query.replace("#REGEX_FILTER#", regexFilter);
-        } else {
-            query = query.replace("#REGEX_FILTER#", "");
+            regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
         }
         
+        // 2. Substitui os blocos nos templates
+        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+        query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
+        query = query.replace("#REGEX_FILTER#", regexFilter);
+        
+        // Tratamento especial para o Template 4C
         if (query.contains("#FILTER_BLOCK#")) {
             String filterBlock4C = !setorFilter.isEmpty() ? setorFilter : entidadeFilter;
             query = query.replace("#FILTER_BLOCK#", filterBlock4C);
         }
 
+        // 3. Substitui os placeholders genéricos (P*, S*)
         query = placeholderService.replaceGenericPlaceholders(query);
         
+        // 4. Substitui os placeholders de valor
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -128,22 +135,21 @@ public class SPARQLProcessor {
                 if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
             } else if (placeholder.equals("#CALCULO#")) {
                 String calculoSparql;
-                // --- INÍCIO DA CORREÇÃO DAS FÓRMULAS ---
+                // --- FÓRMULAS FINAIS E CORRIGIDAS ---
                 switch (value) {
-                    // Variação é Fechamento - Abertura
-                    case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
+                    // Unificado: variação absoluta sempre usa ABS()
+                    case "variacao_abs":
+                    case "variacao_abs_abs":
+                        calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+
                     case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
                     
                     // Intervalo é Máximo - Mínimo
-                    case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
+                    case "intervalo_abs":  calculoSparql = "ABS(?maximo - ?minimo)"; break;
                     case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
-
-                    // Variação absoluta (sem sinal) para "menor variação"
-                    case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
                     
                     default: calculoSparql = "0";
                 }
-                // --- FIM DA CORREÇÃO DAS FÓRMULAS ---
                 query = query.replace(placeholder, calculoSparql);
             } else {
                 query = query.replace(placeholder, value);
