@@ -4,54 +4,32 @@
 # Formato: Template_ID;Texto da Pergunta de Exemplo
 # ==========================================================
 
-# --- TEMPLATES DE BUSCA SIMPLES ---
-
-# Template 1A: Busca métrica de uma empresa por nome
+# --- Templates de Busca Simples ---
 Template_1A;Qual foi o preço de fechamento da ação da CSN em 08/05/2023?
-
-# Template 1B: Busca métrica de uma empresa por ticker
 Template_1B;Qual foi o preço de abertura da CBAV3 em 08/05/2023?
-
-# Template 2A: Busca ticker de uma empresa
 Template_2A;Qual o código de negociação da empresa Vale?
-
-# Template 3A: Lista todas as ações de um setor
 Template_3A;Quais são todas as ações do setor de mineração?
 
-# --- TEMPLATE DE AGREGAÇÃO (SOMA) ---
-
-# Template 4C: Busca métrica e soma o total para um setor ou empresa
+# --- Template de Agregação (SOMA) ---
 Template_4C;Qual foi o volume negociado nas ações do setor bancário em 05/05/2023?
 Template_4C;Qual foi a quantidade de ações do Itau negociadas no pregão de 05/05/2023?
-Template_4C;Qual foi o volume negociado nas ações de bancos em 05/05/2023?
 
-Template_5C;Qual foi o preço mínimo da ação da Vale em 08/05/2023? 
-
-# --- TEMPLATE COM FILTRO DE TIPO DE AÇÃO (ON/PN) ---
-
-# Template 5B: Busca métrica com filtro de tipo de ação
+# --- Template com Filtro de Tipo de Ação (ON/PN) ---
+# *** CORREÇÃO AQUI: As perguntas foram associadas ao Template_5B existente ***
+Template_5B;Qual foi o preço máximo da ação ordinária da Gerdau em 08/05/2023?
 Template_5B;Qual foi o preço mínimo da ação preferencial do Itau em 05/05/2023?
-Template_5C;Qual foi o preço mínimo da ação da Vale em 08/05/2023? 
+# Adicionando a pergunta da Vale ao template correto
+Template_5B;Qual foi o preço mínimo da ação da Vale em 08/05/2023?
 
-# --- TEMPLATES DE CÁLCULO E RANKING ---
 
-# Template 6A: Cálculo para uma empresa específica
+# --- Templates de Cálculo e Ranking ---
 Template_6A;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 08/05/2023?
-
-# Template 7A: Ranking GERAL (sem filtro de setor)
 Template_7A;Qual a ação com o maior percentual de alta no pregão de 08/05/2023?
 Template_7A;Quais as cinco ações de maior percentual de baixa no pregão de 08/05/2023?
-Template_7A;Quais as cinco ações de maior percentual de alta no pregão de 08/05/2023?
-
-# Template 7B: Ranking COM FILTRO DE SETOR
 Template_7B;Qual ação do setor de mineração que teve a maior alta percentual no pregão do dia 08/05/2023?
 Template_7B;Qual ação do setor de bancário que teve a baixa percentual no pregão do dia 08/05/2023?
 Template_7B;Qual ação do setor de consumo não cíclico que a menor variação no dia 08/05/2023?
 
-# --- TEMPLATES DE CÁLCULO COMPLEXO (SUBQUERY) ---
-
-# Template 8A: Ranking complexo (sem filtro de setor)
-Template_8A;Qual foi a variação intradiária absoluta da ação com o maior percentual de alta?
-
-# Template 8B: Ranking complexo (com filtro de setor/índice)
+# --- Templates de Cálculo Complexo (SUBQUERY) ---
+Template_8A;Qual foi a variação intradiária absoluta da ação com o maior alta percentual?
 Template_8B;Qual foi o intervalo intradiário percentual da ação com maior baixa entre as ações do IMAT?
