@@ -58,15 +58,13 @@ public class SPARQLProcessor {
 
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
-
-            // --- INÍCIO DA CORREÇÃO ---
-            // Passa o tipo da métrica para o objeto de resposta, dando prioridade ao cálculo se existir.
+            
+            // Passa o tipo da métrica para o objeto de resposta
             if (entitiesNode.has("CALCULO")) {
                 resposta.setTipoMetrica(entitiesNode.get("CALCULO").asText());
             } else if (entitiesNode.has("VALOR_DESEJADO")) {
                 resposta.setTipoMetrica(entitiesNode.get("VALOR_DESEJADO").asText());
             }
-            // --- FIM DA CORREÇÃO ---
 
             logger.info("Consulta SPARQL final gerada:\n{}", finalQuery);
             return resposta;
@@ -130,14 +128,22 @@ public class SPARQLProcessor {
                 if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
             } else if (placeholder.equals("#CALCULO#")) {
                 String calculoSparql;
+                // --- INÍCIO DA CORREÇÃO DAS FÓRMULAS ---
                 switch (value) {
+                    // Variação é Fechamento - Abertura
                     case "variacao_abs":   calculoSparql = "(?fechamento - ?abertura)"; break;
                     case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
+                    
+                    // Intervalo é Máximo - Mínimo
                     case "intervalo_abs":  calculoSparql = "(?maximo - ?minimo)"; break;
                     case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
+
+                    // Variação absoluta (sem sinal) para "menor variação"
                     case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                    
                     default: calculoSparql = "0";
                 }
+                // --- FIM DA CORREÇÃO DAS FÓRMULAS ---
                 query = query.replace(placeholder, calculoSparql);
             } else {
                 query = query.replace(placeholder, value);

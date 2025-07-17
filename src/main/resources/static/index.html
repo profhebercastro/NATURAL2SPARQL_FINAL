@@ -81,7 +81,7 @@
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
             const resultOutputDiv = document.getElementById('resultOutput');
             
-            let currentMetricType = null; // Armazena o tipo de métrica da última consulta gerada
+            let currentMetricType = null;
 
             generateBtn.addEventListener('click', handleGenerateQuery);
             executeQueryBtn.addEventListener('click', handleExecuteQuery);
@@ -116,7 +116,6 @@
                     if (!response.ok) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
                     sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
-                    // ARMAZENA O CONTEXTO DA MÉTRICA
                     currentMetricType = data.tipoMetrica || null;
 
                 } catch (error) {
@@ -193,18 +192,19 @@
                         const numericValue = parseFloat(cellValue);
 
                         if (!isNaN(numericValue)) {
-                            // --- LÓGICA DE FORMATAÇÃO BASEADA NO CONTEXTO (currentMetricType) ---
                             if (currentMetricType) {
                                 if (currentMetricType.includes('perc')) {
+                                    // Backend já multiplicou por 100
                                     cellValue = numericValue.toFixed(2).replace('.', ',') + '%';
                                 } 
                                 else if (currentMetricType.includes('abs')) {
+                                    // Formata como moeda para variações e intervalos absolutos
                                     cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
                                 }
                                 else if (currentMetricType.includes('volume') || currentMetricType.includes('quantidade')) {
                                     cellValue = new Intl.NumberFormat('pt-BR').format(Math.round(numericValue));
                                 }
-                                else { // Fallback para preços (metrica.preco_...)
+                                else { // Fallback para preços (ex: metrica.preco_fechamento)
                                     cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
                                 }
                             }
