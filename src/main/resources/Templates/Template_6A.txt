@@ -1,8 +1,11 @@
-# TEMPLATE 6A -- Cálculo para uma empresa específica
+# TEMPLATE 6A -- Cálculo para uma empresa específica (Caminho Corrigido)
 SELECT ?ticker ?ANS
 WHERE {
-    #FILTER_BLOCK_ENTIDADE#
+    # 1. Encontra a empresa pelo nome
+    ?S1 rdfs:label ?label .
+    FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
     
+    # 2. Segue o caminho para os dados
     ?S1 P1 ?SO1 .
     ?SO1 P2 ?codigoNode .
     ?codigoNode P8 ?ticker .
