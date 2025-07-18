@@ -38,16 +38,14 @@ public class Ontology {
     private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String[] PREGAO_FILES = { "Datasets/dados_novos_anterior.xlsx", "Datasets/dados_novos_atual.xlsx" };
     private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx";
-    private static final String INFERENCE_OUTPUT_FILENAME = "ontology_stock market_B3.ttl";
+    private static final String INFERENCE_OUTPUT_FILENAME = "ontology_stock_market_B3.ttl";
 
     @PostConstruct
     public void init() {
         logger.info(">>> INICIANDO Inicialização do Componente Ontology (@PostConstruct)...");
         lock.writeLock().lock();
         try {
-           
             deleteInferredModelCache();
-
             this.model = loadOrCreateInferredModel();
             if (this.model == null || this.model.isEmpty()) {
                 throw new IllegalStateException("FALHA CRÍTICA: O modelo RDF não pôde ser carregado ou criado.");
@@ -108,8 +106,8 @@ public class Ontology {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
-                String nomeEmpresa = getStringCellValue(row.getCell(0));
-                String ticker = getStringCellValue(row.getCell(1));
+                String nomeEmpresa = getStringCellValue(row.getCell(0)); // Coluna A
+                String ticker = getStringCellValue(row.getCell(1));      // Coluna B
                 if (nomeEmpresa == null || ticker == null || nomeEmpresa.isBlank() || ticker.isBlank()) continue;
 
                 String tickerClean = ticker.trim();
@@ -126,12 +124,14 @@ public class Ontology {
 
                 addStatement(model, empresaRes, model.createProperty(ONT_PREFIX + "temValorMobiliarioNegociado"), vmRes);
                 
+                // Colunas D, E, F para setores
                 for (int i = 3; i <= 5; i++) {
                     String setor = getStringCellValue(row.getCell(i));
                     if (setor != null && !setor.isBlank()) {
                         Resource setorRes = model.createResource(ONT_PREFIX + normalizarParaURI(setor.trim()));
                         addStatement(model, setorRes, RDF.type, model.createResource(ONT_PREFIX + "Setor_Atuacao"));
                         addStatement(model, setorRes, RDFS.label, setor.trim(), "pt");
+                        // A propriedade atuaEm deve ligar a empresa ao setor
                         addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "atuaEm"), setorRes);
                     }
                 }
@@ -147,24 +147,19 @@ public class Ontology {
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
 
-                Date dataPregao = getDateCellValue(row.getCell(2));
-                String ticker = getStringCellValue(row.getCell(4));
+                Date dataPregao = getDateCellValue(row.getCell(2));   // Coluna C
+                String ticker = getStringCellValue(row.getCell(4));     // Coluna E
                 
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
                 
                 String tickerTrim = ticker.trim();
-                
-                
                 Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
-                
                 addStatement(model, valorMobiliario, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
                 addStatement(model, valorMobiliario, RDFS.label, model.createLiteral(tickerTrim));
 
                 String dataFmt = rdfDateFormat.format(dataPregao);
                 Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
-
-               
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
 
                 Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
@@ -172,14 +167,19 @@ public class Ontology {
                 addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
                 
-            
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(11)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "temQuantidade"), getNumericCellValue(row.getCell(14)));
+                // --- INÍCIO DA CORREÇÃO ---
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));   // Coluna I
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));     // Coluna J
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));    // Coluna K
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(11)));     // Coluna L
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12))); // Coluna M
+                
+                // Mapeamento CORRETO das colunas e propriedades
+                // Quantidade (totalNegocios) vem da coluna O (índice 14)
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCellValue(row.getCell(14))); 
+                // Volume (volumeNegociacao) vem da coluna P (índice 15)
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
+                // --- FIM DA CORREÇÃO ---
             }
         }
     }
