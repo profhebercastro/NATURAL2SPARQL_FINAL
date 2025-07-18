@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# --- CARREGAMENTO ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -44,6 +45,7 @@ else:
     vectorizer = None
     tfidf_matrix_ref = None
 
+# --- FUNÇÕES AUXILIARES ---
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -59,7 +61,9 @@ def extrair_entidades_fixas(pergunta_lower):
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-                entidades['entidade_nome'] = empresa_map[key]
+                # --- CORREÇÃO APLICADA AQUI ---
+                # Sempre enviamos a CHAVE (o apelido), que é mais genérico para o REGEX.
+                entidades['entidade_nome'] = key
                 break
     
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
@@ -116,6 +120,7 @@ def identificar_parametros_dinamicos(pergunta_lower):
         
     return dados
 
+# --- API FLASK ---
 app = Flask(__name__)
 @app.route('/process_question', methods=['POST'])
 def process_question():
@@ -127,7 +132,7 @@ def process_question():
     if not pergunta_lower.strip(): 
         return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
+    if tfidf_matrix_ref is not None:
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
         if similaridades.any():
