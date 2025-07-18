@@ -1,5 +1,5 @@
 # TEMPLATE 5A -- Busca métrica de uma ticker
-SELECT ?ANS WHERE {
+SELECT DISTINCT ?ANS WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
     ?S1 P1 ?SO1 .

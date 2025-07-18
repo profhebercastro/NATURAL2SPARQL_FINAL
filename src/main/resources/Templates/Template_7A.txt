@@ -1,7 +1,7 @@
 # TEMPLATE 7A -- Ranking GERAL de ações (sem filtro de setor)
       
 # Ranking GERAL de ações (sem filtro de setor)
-SELECT ?ticker ?resultadoCalculado
+SELECT DISTINCT ?ticker ?resultadoCalculado
 WHERE {
     ?S1 P1 ?SO1 .
     ?SO1 P1 ?intermediario .
@@ -19,6 +19,5 @@ WHERE {
 }
 ORDER BY #ORDEM#(?resultadoCalculado)
 LIMIT #LIMITE#
-
     
 

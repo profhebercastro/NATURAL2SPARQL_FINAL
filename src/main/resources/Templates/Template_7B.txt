@@ -1,6 +1,6 @@
 # TEMPLATE 7B -- Ranking COM SETOR ---
 # Ranking de ações COM FILTRO DE SETOR
-SELECT ?ticker ?resultadoCalculado
+SELECT DISTINCT ?ticker ?resultadoCalculado
 WHERE {
     #FILTER_BLOCK_SETOR#
     
