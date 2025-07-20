@@ -81,6 +81,8 @@
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
             const resultOutputDiv = document.getElementById('resultOutput');
             
+            let currentMetricType = null;
+
             generateBtn.addEventListener('click', handleGenerateQuery);
             executeQueryBtn.addEventListener('click', handleExecuteQuery);
             clearBtn.addEventListener('click', clearAllFields);
@@ -91,6 +93,7 @@
                 sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
                 sparqlQueryOutput.classList.remove('error-message');
                 resultOutputDiv.innerHTML = '<p style="color: #6c757d;">O resultado aparece aqui...</p>';
+                currentMetricType = null;
             }
 
             async function handleGenerateQuery() {
@@ -113,6 +116,7 @@
                     if (!response.ok) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
                     sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
+                    currentMetricType = data.tipoMetrica || null;
 
                 } catch (error) {
                     sparqlQueryOutput.value = `Erro: ${error.message}`;
@@ -161,7 +165,7 @@
             }
 
             function displayResults(data) {
-                 resultOutputDiv.innerHTML = ''; 
+                resultOutputDiv.innerHTML = ''; 
                 if (data.error) {
                     resultOutputDiv.innerHTML = `<div class="error-message">${data.error}</div>`;
                     return;
@@ -174,18 +178,44 @@
                     resultOutputDiv.innerHTML = '<p>Nenhum resultado encontrado.</p>';
                     return;
                 }
+
                 const headers = data.head.vars;
                 let tableHTML = '<table class="result-table"><thead><tr>';
                 headers.forEach(header => { tableHTML += `<th>${header}</th>`; });
                 tableHTML += '</tr></thead><tbody>';
+
                 data.results.bindings.forEach(row => {
-                    tableHTML += '<tr>';
+                    const isTotalRow = row.ticker && row.ticker.value.toUpperCase() === 'TOTAL';
+                    tableHTML += `<tr class="${isTotalRow ? 'total-row' : ''}">`;
+
                     headers.forEach(header => {
                         const cell = row[header];
-                        tableHTML += `<td>${cell ? cell.value : ''}</td>`;
+                        let cellValue = cell ? cell.value : ''; 
+                        
+                        const numericValue = parseFloat(cellValue);
+
+                        if (!isNaN(numericValue)) {
+                            if (currentMetricType) {
+                                if (currentMetricType.includes('perc')) {
+                                    cellValue = numericValue.toFixed(2).replace('.', ',') + '%';
+                                } 
+                                else if (currentMetricType.includes('abs')) {
+                                    cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
+                                }
+                                else if (currentMetricType.includes('volume') || currentMetricType.includes('quantidade')) {
+                                    cellValue = new Intl.NumberFormat('pt-BR').format(Math.round(numericValue));
+                                }
+                                else { 
+                                    cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
+                                }
+                            }
+                        }
+                        
+                        tableHTML += `<td>${isTotalRow ? `<strong>${cellValue}</strong>` : cellValue}</td>`;
                     });
                     tableHTML += '</tr>';
                 });
+
                 tableHTML += '</tbody></table>';
                 resultOutputDiv.innerHTML = tableHTML;
             }
