@@ -147,13 +147,12 @@ public class Ontology {
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
 
-                Date dataPregao = getDateCellValue(row.getCell(2));
-                String ticker = getStringCellValue(row.getCell(4));
+                Date dataPregao = getDateCellValue(row.getCell(2)); // Coluna C
+                String ticker = getStringCellValue(row.getCell(4)); // Coluna E
                 
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
                 
                 String tickerTrim = ticker.trim();
-                
                 
                 Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
                 
@@ -164,7 +163,6 @@ public class Ontology {
                 Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
-               
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
 
                 Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
@@ -172,23 +170,23 @@ public class Ontology {
                 addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
                 
-            
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(11)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCellValue(row.getCell(14)));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));
-				
-			
-
-
-
+                // --- INÍCIO DA CORREÇÃO ---
+                // Mapeamento correto das colunas conforme sua solicitação
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));   // Coluna I
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));   // Coluna J
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));  // Coluna K
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(11)));   // Coluna L
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));// Coluna M
+                
+                // "totalNegocios" (Quantidade) agora lê da coluna O (índice 14)
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCellValue(row.getCell(14))); // Coluna O
+                
+                // "volumeNegociacao" (Volume) agora lê da coluna P (índice 15)
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));// Coluna P
+                // --- FIM DA CORREÇÃO ---
             }
         }
     }
-
 
     public List<Map<String, String>> executeQuery(String sparqlQuery) {
         lock.readLock().lock();
