@@ -32,20 +32,28 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class Ontology {
 
     private static final Logger logger = LoggerFactory.getLogger(Ontology.class);
-    private Model model; 
+    private Model model;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
-    private static final String[] PREGAO_FILES = { "Datasets/dados_novos_anterior.xlsx", "Datasets/dados_novos_atual.xlsx" };
-    private static final String INFO_EMPRESAS_FILE = "Templates/Informacoes_Empresas.xlsx";
-    private static final String INFERENCE_OUTPUT_FILENAME = "ontology_stock market_B3.ttl";
+    // <<< MUDANÇA 1: ATUALIZAÇÃO DOS NOMES DE ARQUIVO >>>
+    // A ontologia do projeto é a que esta salva na pasta resources
+    //private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
+    private static final String ONT_PREFIX = "http://www.semanticweb.org/heber/ontologies/2023/3/stock-market-B3#";
+    
+    // Removido o array de arquivos de pregão, substituído por uma única constante
+    private static final String PREGAO_FILE_CONSOLIDADO = "datasets/stock_market_june 2025.xlsx";
+    // Atualizado o nome do arquivo de informações das empresas
+    private static final String INFO_EMPRESAS_FILE = "Templates/Company_Information.xlsx";
+    
+    // Mantém a lógica de cache
+    private static final String INFERENCE_OUTPUT_FILENAME = "ontology_stock_market_B3_inferred.ttl";
 
     @PostConstruct
     public void init() {
         logger.info(">>> INICIANDO Inicialização do Componente Ontology (@PostConstruct)...");
         lock.writeLock().lock();
         try {
-           
+            // A lógica de forçar a reconstrução ao deletar o cache é muito útil durante o desenvolvimento
             deleteInferredModelCache();
 
             this.model = loadOrCreateInferredModel();
@@ -90,15 +98,16 @@ public class Ontology {
 
     private Model buildBaseModelFromSources() throws IOException {
         Model model = ModelFactory.createDefaultModel();
-        model.setNsPrefix("b3", ONT_PREFIX);
+        model.setNsPrefix("stock", ONT_PREFIX); // <<< MUDANÇA: Prefixo mais curto e intuitivo
         model.setNsPrefix("rdfs", RDFS.uri);
         model.setNsPrefix("rdf", RDF.uri);
         model.setNsPrefix("xsd", XSDDatatype.XSD + "#");
 
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
-        for (String filePath : PREGAO_FILES) {
-            loadDadosPregaoExcel(model, filePath);
-        }
+        
+        // <<< MUDANÇA 2: REMOVER O LOOP E CHAMAR A NOVA LÓGICA DE CARGA >>>
+        loadDadosPregaoConsolidados(model, PREGAO_FILE_CONSOLIDADO);
+        
         return model;
     }
 
@@ -115,18 +124,21 @@ public class Ontology {
                 String tickerClean = ticker.trim();
                 String nomeEmpresaClean = nomeEmpresa.trim();
 
-                Resource vmRes = model.createResource(ONT_PREFIX + tickerClean);
-                addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
-                addStatement(model, vmRes, RDFS.label, model.createLiteral(tickerClean));
-                addStatement(model, vmRes, model.createProperty(ONT_PREFIX, "ticker"), model.createLiteral(tickerClean));
-
+                // Usando a estrutura da sua ontologia (ex: Empresa_Capital_Aberto)
                 Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresaClean));
                 addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa_Capital_Aberto"));
                 addStatement(model, empresaRes, RDFS.label, nomeEmpresaClean, "pt");
+                // Adicionando uma propriedade para o ticker diretamente na empresa, se fizer sentido na sua ontologia
+                addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "temTicker"), model.createLiteral(tickerClean));
 
+
+                // Criando o Valor Mobiliário e linkando à empresa
+                Resource vmRes = model.createResource(ONT_PREFIX + tickerClean);
+                addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
+                addStatement(model, vmRes, RDFS.label, model.createLiteral(tickerClean));
                 addStatement(model, empresaRes, model.createProperty(ONT_PREFIX + "temValorMobiliarioNegociado"), vmRes);
-                
-                for (int i = 3; i <= 5; i++) {
+
+                for (int i = 3; i <= 5; i++) { // Colunas D, E, F
                     String setor = getStringCellValue(row.getCell(i));
                     if (setor != null && !setor.isBlank()) {
                         Resource setorRes = model.createResource(ONT_PREFIX + normalizarParaURI(setor.trim()));
@@ -139,11 +151,16 @@ public class Ontology {
         }
     }
     
-    private void loadDadosPregaoExcel(Model model, String resourcePath) throws IOException {
-         logger.info(">> Carregando Dados de Pregão de: {}", resourcePath);
+    // <<< MUDANÇA 3: NOVO MÉTODO PARA LER O ARQUIVO CONSOLIDADO >>>
+    private void loadDadosPregaoConsolidados(Model model, String resourcePath) throws IOException {
+        logger.info(">> Carregando Dados de Pregão CONSOLIDADOS de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream(); Workbook workbook = new XSSFWorkbook(excelFile)) {
             Sheet sheet = workbook.getSheetAt(0);
             SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            
+            // Mapa para reutilizar recursos de Pregão já criados e evitar duplicações
+            Map<String, Resource> pregoesCriados = new HashMap<>();
+            
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
 
@@ -153,40 +170,48 @@ public class Ontology {
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
                 
                 String tickerTrim = ticker.trim();
+                String dataFmt = rdfDateFormat.format(dataPregao);
+
+                // Lógica de "Check-or-Create" para o recurso Pregão
+                Resource pregaoResource = pregoesCriados.computeIfAbsent(dataFmt, key -> {
+                    logger.debug("Criando novo recurso Pregão para a data {}", key);
+                    Resource novoPregao = model.createResource(ONT_PREFIX + "Pregao_" + key.replace("-", ""));
+                    addStatement(model, novoPregao, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
+                    addStatement(model, novoPregao, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(key, XSDDatatype.XSDdate));
+                    return novoPregao;
+                });
                 
+                // O resto da lógica é muito similar, mas aplicada para cada linha
                 Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
                 
-                addStatement(model, valorMobiliario, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
-                addStatement(model, valorMobiliario, RDFS.label, model.createLiteral(tickerTrim));
+                // É importante garantir que o valor mobiliário exista. Pode ser criado aqui se não existir.
+                if (!model.containsResource(valorMobiliario)) {
+                    addStatement(model, valorMobiliario, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
+                    addStatement(model, valorMobiliario, RDFS.label, model.createLiteral(tickerTrim));
+                }
 
-                String dataFmt = rdfDateFormat.format(dataPregao);
                 Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
-
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
-
-                Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
-                addStatement(model, pregaoResource, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
-                addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
                 
-                // --- INÍCIO DA CORREÇÃO ---
-                // Mapeamento correto das colunas conforme sua solicitação
+                // Mapeamento das colunas de dados numéricos
                 addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));   // Coluna I
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));   // Coluna J
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));  // Coluna K
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(11)));   // Coluna L
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));// Coluna M
-                
-                // "totalNegocios" (Quantidade) agora lê da coluna O (índice 14)
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCellValue(row.getCell(14))); // Coluna O
-                
-                // "volumeNegociacao" (Volume) agora lê da coluna P (índice 15)
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15)));// Coluna P
-                // --- FIM DA CORREÇÃO ---
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));      // Coluna J
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));     // Coluna K
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(11)));      // Coluna L
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));   // Coluna M
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCellValue(row.getCell(14)));   // Coluna O
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15))); // Coluna P
             }
         }
     }
+
+    // O método antigo `loadDadosPregaoExcel` não é mais chamado, mas pode ser removido ou deixado para referência.
+    // Para limpeza, vamos removê-lo.
+
+    // O resto da classe (executeQuery, métodos auxiliares, etc.) permanece exatamente o mesmo, pois são
+    // independentes da fonte dos dados.
 
     public List<Map<String, String>> executeQuery(String sparqlQuery) {
         lock.readLock().lock();
@@ -228,7 +253,7 @@ public class Ontology {
         CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
         switch (type) {
             case STRING: return cell.getStringCellValue().trim();
-            case NUMERIC: 
+            case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) { return null; }
                 double numericValue = cell.getNumericCellValue();
                 if (numericValue == Math.floor(numericValue)) { return String.valueOf((long) numericValue); }

@@ -49,7 +49,7 @@
   "minerva": "MINERVA S.A.", "beef3": "BEEF3",
   "bemobitech": "BEMOBI TECH ESPAÇO DIGITAL S.A.", "bmob3": "BMOB3",
   "bic monark": "BICICLETAS MONARK S.A.", "bmks3": "BMKS3",
-  "biomm": "BIOMM S.A.", "biom3": "BIOM3",
+  "biomm": "BIOMM S.A.", "biom3": "BIOMM3",
   "blau": "BLAU FARMACÊUTICA S.A.", "blau3": "BLAU3",
   "merc brasil": "BANCO MERCANTIL DO BRASIL S.A.", "bmeb3": "BMEB3", "bmeb4": "BMEB4",
   "merc invest": "MERCANTIL DO BRASIL FINANCEIRA S.A. - CFI", "bmin4": "BMIN4",
@@ -152,5 +152,23 @@
   "via": "VIA S.A. - EM RECUPERAÇÃO JUDICIAL", "viia3": "VIIA3",
   "vivara": "VIVARA PARTICIPAÇÕES S.A.", "viva3": "VIVA3",
   "weg": "WEG S.A.", "wege3": "WEGE3",
-  "yduqs": "YDUQS PARTICIPAÇÕES S.A.", "yduq3": "YDUQ3"
+  "yduqs": "YDUQS PARTICIPAÇÕES S.A.", "yduq3": "YDUQ3",
+
+  "arezzo": "AREZZO INDÚSTRIA E COMÉRCIO S.A.", "// NOVO: Apelido mais curto para Arezzoco",
+  "banco do brasil": "BANCO DO BRASIL S.A.", "// NOVO: Apelido mais explícito",
+  "banco mercantil": "BANCO MERCANTIL DO BRASIL S.A.", "// NOVO: Apelido mais explícito",
+  "btg": "BANCO BTG PACTUAL S.A.", "// NOVO: Apelido mais curto",
+  "carrefour": "ATACADÃO S.A.", "// NOVO: Carrefour adquiriu Atacadão, apelido comum",
+  "atacadao": "ATACADÃO S.A.", "// NOVO: Nome principal",
+  "caixa seguridade": "CAIXA SEGURIDADE PARTICIPAÇÕES S.A.", "// NOVO: Nome completo para 'caixa seguri'",
+  "cpfl": "CPFL ENERGIA S.A.", "// NOVO: Apelido comum",
+  "engie": "ENGIE BRASIL ENERGIA S.A.", "// NOVO: Apelido comum",
+  "irb brasil": "IRB-BRASIL RESSEGUROS S.A.", "// NOVO: Apelido comum",
+  "itau unibanco": "ITAÚ UNIBANCO HOLDING S.A.", "// NOVO: Nome completo para o banco",
+  "magalu": "MAGAZINE LUIZA S.A.", "// NOVO: Apelido muito comum",
+  "metalurgica gerdau": "METALURGICA GERDAU S.A.", "// NOVO: Nome completo para 'gerdau met'",
+  "pan": "BANCO PAN S.A.", "// NOVO: Apelido comum para 'banco pan'",
+  "rede dor": "REDE D'OR SÃO LUIZ S.A.", "// NOVO: Apelido sem o apóstrofo",
+  "transmissao paulista": "ISA CTEEP - COMPANHIA DE TRANSMISSÃO DE ENERGIA ELÉTRICA PAULISTA", "// NOVO: Apelido comum",
+  "vibra energia": "VIBRA ENERGIA S.A." "// NOVO: Nome completo para 'vibra'"
 }
