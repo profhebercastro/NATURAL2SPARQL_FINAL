@@ -1,21 +1,41 @@
 package com.example.Programa_heber.ontology;
 
 import jakarta.annotation.PostConstruct;
-import org.apache.jena.query.*;
+import org.apache.jena.datatypes.xsd.XSDDatatype;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.reasoner.ReasonerRegistry;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.eventusermodel.XSSFReader;
+import org.apache.poi.xssf.model.SharedStrings;
+import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -27,6 +47,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 @Component
 public class Ontology {
@@ -35,17 +56,9 @@ public class Ontology {
     private Model model;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    // <<< MUDANÇA 1: ATUALIZAÇÃO DOS NOMES DE ARQUIVO >>>
-    // A ontologia do projeto é a que esta salva na pasta resources
-    //private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String ONT_PREFIX = "http://www.semanticweb.org/heber/ontologies/2023/3/stock-market-B3#";
-    
-    // Removido o array de arquivos de pregão, substituído por uma única constante
     private static final String PREGAO_FILE_CONSOLIDADO = "datasets/stock_market_june 2025.xlsx";
-    // Atualizado o nome do arquivo de informações das empresas
     private static final String INFO_EMPRESAS_FILE = "Templates/Company_Information.xlsx";
-    
-    // Mantém a lógica de cache
     private static final String INFERENCE_OUTPUT_FILENAME = "ontology_stock_market_B3_inferred.ttl";
 
     @PostConstruct
@@ -53,7 +66,6 @@ public class Ontology {
         logger.info(">>> INICIANDO Inicialização do Componente Ontology (@PostConstruct)...");
         lock.writeLock().lock();
         try {
-            // A lógica de forçar a reconstrução ao deletar o cache é muito útil durante o desenvolvimento
             deleteInferredModelCache();
 
             this.model = loadOrCreateInferredModel();
@@ -69,45 +81,43 @@ public class Ontology {
         }
     }
 
-    private Model loadOrCreateInferredModel() throws IOException {
+    private Model loadOrCreateInferredModel() throws Exception {
         ClassPathResource inferredResource = new ClassPathResource(INFERENCE_OUTPUT_FILENAME);
-        
+
         if (inferredResource.exists() && inferredResource.contentLength() > 0) {
             logger.info("--- Modelo inferido pré-calculado '{}' encontrado. Carregando... ---", INFERENCE_OUTPUT_FILENAME);
             Model dataModel = ModelFactory.createDefaultModel();
             try (InputStream in = inferredResource.getInputStream()) {
                 RDFDataMgr.read(dataModel, in, Lang.TURTLE);
             }
-            return dataModel; 
+            return dataModel;
         } else {
             logger.warn("--- Modelo inferido '{}' não encontrado ou vazio. Construindo do zero... ---", INFERENCE_OUTPUT_FILENAME);
             Model baseModel = buildBaseModelFromSources();
             validateBaseModelLoad(baseModel.size());
-            
+
             logger.info("--- Criando modelo de inferência (RDFS Reasoner)... ---");
             Reasoner reasoner = ReasonerRegistry.getRDFSReasoner();
             InfModel infModel = ModelFactory.createInfModel(reasoner, baseModel);
-            
+
             long inferredCount = infModel.size() - baseModel.size();
             logger.info("--- Modelo de inferência criado. Base:{}, Inferidas:{}, Total:{} ---", baseModel.size(), Math.max(0, inferredCount), infModel.size());
-            
+
             saveInferredModelToFileSystem(infModel);
             return infModel;
         }
     }
 
-    private Model buildBaseModelFromSources() throws IOException {
+    private Model buildBaseModelFromSources() throws Exception {
         Model model = ModelFactory.createDefaultModel();
-        model.setNsPrefix("stock", ONT_PREFIX); // <<< MUDANÇA: Prefixo mais curto e intuitivo
+        model.setNsPrefix("stock", ONT_PREFIX);
         model.setNsPrefix("rdfs", RDFS.uri);
         model.setNsPrefix("rdf", RDF.uri);
         model.setNsPrefix("xsd", XSDDatatype.XSD + "#");
 
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
-        
-        // <<< MUDANÇA 2: REMOVER O LOOP E CHAMAR A NOVA LÓGICA DE CARGA >>>
         loadDadosPregaoConsolidados(model, PREGAO_FILE_CONSOLIDADO);
-        
+
         return model;
     }
 
@@ -124,21 +134,17 @@ public class Ontology {
                 String tickerClean = ticker.trim();
                 String nomeEmpresaClean = nomeEmpresa.trim();
 
-                // Usando a estrutura da sua ontologia (ex: Empresa_Capital_Aberto)
                 Resource empresaRes = model.createResource(ONT_PREFIX + normalizarParaURI(nomeEmpresaClean));
                 addStatement(model, empresaRes, RDF.type, model.createResource(ONT_PREFIX + "Empresa_Capital_Aberto"));
                 addStatement(model, empresaRes, RDFS.label, nomeEmpresaClean, "pt");
-                // Adicionando uma propriedade para o ticker diretamente na empresa, se fizer sentido na sua ontologia
                 addStatement(model, empresaRes, model.createProperty(ONT_PREFIX, "temTicker"), model.createLiteral(tickerClean));
 
-
-                // Criando o Valor Mobiliário e linkando à empresa
                 Resource vmRes = model.createResource(ONT_PREFIX + tickerClean);
                 addStatement(model, vmRes, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
                 addStatement(model, vmRes, RDFS.label, model.createLiteral(tickerClean));
                 addStatement(model, empresaRes, model.createProperty(ONT_PREFIX + "temValorMobiliarioNegociado"), vmRes);
 
-                for (int i = 3; i <= 5; i++) { // Colunas D, E, F
+                for (int i = 3; i <= 5; i++) {
                     String setor = getStringCellValue(row.getCell(i));
                     if (setor != null && !setor.isBlank()) {
                         Resource setorRes = model.createResource(ONT_PREFIX + normalizarParaURI(setor.trim()));
@@ -151,68 +157,184 @@ public class Ontology {
         }
     }
     
-    // <<< MUDANÇA 3: NOVO MÉTODO PARA LER O ARQUIVO CONSOLIDADO >>>
-    private void loadDadosPregaoConsolidados(Model model, String resourcePath) throws IOException {
-        logger.info(">> Carregando Dados de Pregão CONSOLIDADOS de: {}", resourcePath);
-        try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream(); Workbook workbook = new XSSFWorkbook(excelFile)) {
-            Sheet sheet = workbook.getSheetAt(0);
-            SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            
-            // Mapa para reutilizar recursos de Pregão já criados e evitar duplicações
-            Map<String, Resource> pregoesCriados = new HashMap<>();
-            
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
+    // MÉTODO OTIMIZADO PARA STREAMING
+    private void loadDadosPregaoConsolidados(Model model, String resourcePath) throws Exception {
+        logger.info(">> Carregando Dados de Pregão CONSOLIDADOS de forma OTIMIZADA de: {}", resourcePath);
 
-                Date dataPregao = getDateCellValue(row.getCell(2)); // Coluna C
-                String ticker = getStringCellValue(row.getCell(4)); // Coluna E
-                
-                if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) continue;
-                
+        Map<String, Resource> pregoesCriados = new HashMap<>();
+
+        try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream()) {
+            OPCPackage pkg = OPCPackage.open(excelFile);
+            XSSFReader r = new XSSFReader(pkg);
+            SharedStrings sst = r.getSharedStringsTable();
+            XMLReader parser = XMLReaderFactory.createXMLReader();
+            
+            ContentHandler handler = new ExcelSheetHandler(model, sst, pregoesCriados);
+            parser.setContentHandler(handler);
+
+            Iterator<InputStream> sheets = r.getSheetsData();
+            if (sheets.hasNext()) {
+                try (InputStream sheet = sheets.next()) {
+                    InputSource sheetSource = new InputSource(sheet);
+                    parser.parse(sheetSource);
+                }
+            }
+        }
+    }
+
+    // CLASSE INTERNA PARA PROCESSAMENTO EM STREAMING
+    private static class ExcelSheetHandler extends DefaultHandler {
+        private static final Logger logger = LoggerFactory.getLogger(ExcelSheetHandler.class);
+        private final Model model;
+        private final SharedStrings sst;
+        private String lastContents;
+        private boolean nextIsString;
+
+        private final List<String> currentRow = new ArrayList<>();
+        private int rowNum = 0;
+        private int currentCol = 0;
+        private String currentCellRef;
+
+        private final Map<String, Resource> pregoesCriados;
+        private final SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        ExcelSheetHandler(Model model, SharedStrings sst, Map<String, Resource> pregoesCriados) {
+            this.model = model;
+            this.sst = sst;
+            this.pregoesCriados = pregoesCriados;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String name, Attributes attributes) {
+            if ("row".equals(name)) {
+                currentRow.clear();
+                currentCol = 0;
+            } else if ("c".equals(name)) {
+                currentCellRef = attributes.getValue("r");
+                String cellType = attributes.getValue("t");
+                nextIsString = "s".equals(cellType);
+            }
+            lastContents = "";
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String name) {
+            if (nextIsString) {
+                int idx = Integer.parseInt(lastContents);
+                lastContents = sst.getItemAt(idx).getString();
+                nextIsString = false;
+            }
+
+            if ("v".equals(name) || "t".equals(name)) { // value or inline string
+                int thisCol = getColumnIndex(currentCellRef);
+                while (currentCol < thisCol) {
+                    currentRow.add(null);
+                    currentCol++;
+                }
+                currentRow.add(lastContents);
+                currentCol++;
+            } else if ("row".equals(name)) {
+                if (rowNum > 0 && !currentRow.stream().allMatch(Objects::isNull)) {
+                    processRow(currentRow);
+                }
+                rowNum++;
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) {
+            lastContents += new String(ch, start, length);
+        }
+
+        private void processRow(List<String> rowData) {
+            try {
+                String dataPregaoStr = getCell(rowData, 2); // Coluna C
+                String ticker = getCell(rowData, 4);        // Coluna E
+
+                Date dataPregao = null;
+                if (dataPregaoStr != null && !dataPregaoStr.isBlank()) {
+                    try {
+                        double excelDate = Double.parseDouble(dataPregaoStr);
+                        dataPregao = DateUtil.getJavaDate(excelDate);
+                    } catch (NumberFormatException e) {
+                        logger.warn("Não foi possível parsear a data '{}' na linha {}. Pulando linha.", dataPregaoStr, rowNum);
+                        return;
+                    }
+                }
+
+                if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) {
+                    return;
+                }
+
                 String tickerTrim = ticker.trim();
                 String dataFmt = rdfDateFormat.format(dataPregao);
 
-                // Lógica de "Check-or-Create" para o recurso Pregão
                 Resource pregaoResource = pregoesCriados.computeIfAbsent(dataFmt, key -> {
-                    logger.debug("Criando novo recurso Pregão para a data {}", key);
                     Resource novoPregao = model.createResource(ONT_PREFIX + "Pregao_" + key.replace("-", ""));
                     addStatement(model, novoPregao, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
                     addStatement(model, novoPregao, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(key, XSDDatatype.XSDdate));
                     return novoPregao;
                 });
-                
-                // O resto da lógica é muito similar, mas aplicada para cada linha
-                Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
-                
-                // É importante garantir que o valor mobiliário exista. Pode ser criado aqui se não existir.
-                if (!model.containsResource(valorMobiliario)) {
-                    addStatement(model, valorMobiliario, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
-                    addStatement(model, valorMobiliario, RDFS.label, model.createLiteral(tickerTrim));
-                }
 
+                Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
                 Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
                 addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
-                
-                // Mapeamento das colunas de dados numéricos
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCellValue(row.getCell(8)));   // Coluna I
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCellValue(row.getCell(9)));      // Coluna J
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCellValue(row.getCell(10)));     // Coluna K
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCellValue(row.getCell(11)));      // Coluna L
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCellValue(row.getCell(12)));   // Coluna M
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCellValue(row.getCell(14)));   // Coluna O
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCellValue(row.getCell(15))); // Coluna P
+
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCell(rowData, 8));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCell(rowData, 9));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCell(rowData, 10));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCell(rowData, 11));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCell(rowData, 12));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCell(rowData, 14));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCell(rowData, 15));
+
+            } catch (Exception e) {
+                logger.error("Falha ao processar a linha {} do Excel: {}", rowNum, rowData.stream().limit(5).collect(Collectors.joining(", ")), e);
+            }
+        }
+
+        private String getCell(List<String> row, int index) {
+            return index < row.size() ? row.get(index) : null;
+        }
+
+        private double getNumericCell(List<String> row, int index) {
+            String val = getCell(row, index);
+            if (val == null || val.isBlank()) return Double.NaN;
+            try {
+                return Double.parseDouble(val.replace(",", "."));
+            } catch (NumberFormatException e) {
+                return Double.NaN;
+            }
+        }
+        
+        private int getColumnIndex(String cellReference) {
+            if (cellReference == null) return -1;
+            String ref = cellReference.replaceAll("\\d", "");
+            int col = 0;
+            for (int i = 0; i < ref.length(); i++) {
+                col = col * 26 + ref.charAt(i) - 'A' + 1;
+            }
+            return col - 1;
+        }
+
+        private void addStatement(Model model, Resource s, Property p, RDFNode o) {
+            if (s != null && p != null && o != null) {
+                model.add(s, p, o);
+            }
+        }
+
+        private void addNumericProperty(Model model, Resource s, Property p, double value) {
+            if (!Double.isNaN(value)) {
+                model.add(s, p, model.createTypedLiteral(value));
             }
         }
     }
 
-    // O método antigo `loadDadosPregaoExcel` não é mais chamado, mas pode ser removido ou deixado para referência.
-    // Para limpeza, vamos removê-lo.
 
-    // O resto da classe (executeQuery, métodos auxiliares, etc.) permanece exatamente o mesmo, pois são
-    // independentes da fonte dos dados.
-
+    // MÉTODOS EXISTENTES (QUERY E HELPERS)
+    
     public List<Map<String, String>> executeQuery(String sparqlQuery) {
         lock.readLock().lock();
         try {
@@ -253,7 +375,7 @@ public class Ontology {
         CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
         switch (type) {
             case STRING: return cell.getStringCellValue().trim();
-            case NUMERIC:
+            case NUMERIC: 
                 if (DateUtil.isCellDateFormatted(cell)) { return null; }
                 double numericValue = cell.getNumericCellValue();
                 if (numericValue == Math.floor(numericValue)) { return String.valueOf((long) numericValue); }
@@ -271,15 +393,7 @@ public class Ontology {
         }
         return null;
     }
-    private double getNumericCellValue(Cell cell) {
-        if (cell == null) return Double.NaN;
-        CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
-        if (type == CellType.NUMERIC) return cell.getNumericCellValue();
-        if (type == CellType.STRING) {
-            try { return Double.parseDouble(cell.getStringCellValue().trim().replace(",", ".")); } catch (NumberFormatException e) { return Double.NaN; }
-        }
-        return Double.NaN;
-    }
+    
     private String normalizarParaURI(String texto) {
         if (texto == null) return "";
         return Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
