@@ -30,6 +30,8 @@
         .result-table { width: 100%; border-collapse: collapse; }
         .result-table th, .result-table td { padding: 8px 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: top; }
         .result-table thead th { background-color: #e9ecef; font-weight: 600; }
+        .result-table tbody tr:nth-child(odd) { background-color: #f8f9fa; }
+        .total-row { background-color: #cfe2ff !important; font-weight: bold; }
         .error-message { color: #dc3545 !important; font-weight: bold; }
         footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; margin-top: auto; }
         .loader { border: 4px solid rgba(0,0,0,0.1); border-top-color: #0d6efd; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
@@ -184,7 +186,9 @@
                 tableHTML += '</tr></thead><tbody>';
 
                 data.results.bindings.forEach(row => {
-                    tableHTML += '<tr>';
+                    const isTotalRow = row.ticker && row.ticker.value.toUpperCase() === 'TOTAL';
+                    tableHTML += `<tr class="${isTotalRow ? 'total-row' : ''}">`;
+
                     headers.forEach(header => {
                         const cell = row[header];
                         let cellValue = cell ? cell.value : ''; 
@@ -194,11 +198,9 @@
                         if (!isNaN(numericValue)) {
                             if (currentMetricType) {
                                 if (currentMetricType.includes('perc')) {
-                                    // Backend já multiplicou por 100
                                     cellValue = numericValue.toFixed(2).replace('.', ',') + '%';
                                 } 
                                 else if (currentMetricType.includes('abs')) {
-                                    // Formata como moeda para variações e intervalos absolutos
                                     cellValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
                                 }
                                 else if (currentMetricType.includes('volume') || currentMetricType.includes('quantidade')) {
@@ -210,7 +212,7 @@
                             }
                         }
                         
-                        tableHTML += `<td>${cellValue}</td>`;
+                        tableHTML += `<td>${isTotalRow ? `<strong>${cellValue}</strong>` : cellValue}</td>`;
                     });
                     tableHTML += '</tr>';
                 });
