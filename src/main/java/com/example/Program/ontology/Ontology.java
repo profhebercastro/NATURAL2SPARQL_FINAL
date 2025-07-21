@@ -36,8 +36,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
-
 
 @Component
 public class Ontology {
@@ -49,7 +47,7 @@ public class Ontology {
     private static final String ONT_PREFIX = "https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#";
     private static final String PREGAO_FILE_CONSOLIDADO = "datasets/stock_market_june 2025.xlsx";
     private static final String INFO_EMPRESAS_FILE = "Templates/Company_Information.xlsx";
-    private static final String INFERENCE_OUTPUT_FILENAME = "ontology_stock_market_B3.ttl";
+    private static final String INFERENCE_OUTPUT_FILENAME = "ontology_stock_market_B3_inferred.ttl";
 
     @PostConstruct
     public void init() {
@@ -169,7 +167,6 @@ public class Ontology {
         try {
             if (this.model == null) { logger.error("Tentativa de executar consulta em um modelo nulo."); return Collections.emptyList(); }
             List<Map<String, String>> resultsList = new ArrayList<>();
-            logger.debug("Executando a consulta SPARQL:\n{}", sparqlQuery);
             Query query = QueryFactory.create(sparqlQuery);
             try (QueryExecution qexec = QueryExecutionFactory.create(query, this.model)) {
                 ResultSet rs = qexec.execSelect();
@@ -182,7 +179,7 @@ public class Ontology {
                         String value = "N/A";
                         if (node != null) {
                             if (node.isLiteral()) { value = node.asLiteral().getLexicalForm(); }
-                            else { value = node.isAnon() ? node.asResource().getId().toString() : node.toString(); }
+                            else { value = node.toString(); }
                         }
                         rowMap.put(varName, value);
                     }
@@ -275,10 +272,6 @@ public class Ontology {
         }
     }
 
-    // ======================================================================
-    //  CLASSE INTERNA PARA PROCESSAR O EXCEL EM STREAMING
-    //  Precisa ser 'static' para ser uma classe aninhada e não uma classe interna
-    // ======================================================================
     private static class ExcelSheetHandler extends DefaultHandler {
         private final Model model;
         private final SharedStrings sst;
@@ -313,7 +306,7 @@ public class Ontology {
                 try {
                     int idx = Integer.parseInt(lastContents);
                     lastContents = sst.getItemAt(idx).getString();
-                } catch (Exception e) { /* Ignora erros */ }
+                } catch (Exception e) { /* Ignora */ }
                 nextIsString = false;
             }
             if ("v".equals(name) || "t".equals(name)) {
@@ -338,57 +331,59 @@ public class Ontology {
         }
 
         private void processRow() {
-            try {
-                Date dataPregao = getDateCell(2);
-                String ticker = getCell(4);
-                
-                if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) return;
-                
-                String tickerTrim = ticker.trim();
-                Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
-                
-                SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                String dataFmt = rdfDateFormat.format(dataPregao);
+            Date dataPregao = getDateCell(2);
+            String ticker = getCell(4);
+            
+            if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) return;
+            
+            String tickerTrim = ticker.trim();
+            Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
+            
+            // Lógica da versão antiga para garantir consistência
+            addStatement(model, valorMobiliario, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
+            addStatement(model, valorMobiliario, RDFS.label, model.createLiteral(tickerTrim));
 
-                Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
-                addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
-                addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
+            SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            String dataFmt = rdfDateFormat.format(dataPregao);
+            Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
+            addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
-                Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
-                addStatement(model, pregaoResource, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
-                addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
-                addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
-                
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCell(8));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCell(9));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCell(10));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCell(11));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCell(12));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCell(14));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCell(15));
-            } catch (Exception e) {
-                // Logar a falha sem parar o processo
-            }
+            addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
+
+            Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
+            addStatement(model, pregaoResource, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
+            addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
+            addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
+            
+            addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCell(8));
+            addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCell(9));
+            addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCell(10));
+            addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCell(11));
+            addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCell(12));
+            addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCell(14));
+            addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCell(15));
         }
         
         private String getCell(int index) { return index < currentRow.size() ? currentRow.get(index) : null; }
+        
         private Date getDateCell(int index) {
             String val = getCell(index);
             if (val == null || val.isBlank()) return null;
-            try { 
-                if (val.contains("/") || val.contains("-")) {
-                     for (String format : new String[]{"yyyy-MM-dd", "dd/MM/yyyy"}) {
-                        try { return new SimpleDateFormat(format).parse(val); } catch (ParseException ignored) {}
-                    }
+            try { return DateUtil.getJavaDate(Double.parseDouble(val)); } catch (Exception e) {
+                // Tenta fazer parse de formatos de data em texto como fallback
+                for (String format : new String[]{"yyyy-MM-dd", "dd/MM/yyyy", "yyyyMMdd"}) {
+                    try { return new SimpleDateFormat(format).parse(val); } catch (ParseException ignored) {}
                 }
-                return DateUtil.getJavaDate(Double.parseDouble(val)); 
-            } catch (Exception e) { return null; }
+                return null;
+            }
         }
+        
         private double getNumericCell(int index) {
             String val = getCell(index);
             if (val == null || val.isBlank()) return Double.NaN;
             try { return Double.parseDouble(val.replace(",", ".")); } catch (NumberFormatException e) { return Double.NaN; }
         }
+        
         private int getColumnIndex(String cellReference) {
             if (cellReference == null) return -1;
             String ref = cellReference.replaceAll("[^A-Z]", "");
