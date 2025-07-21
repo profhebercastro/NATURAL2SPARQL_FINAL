@@ -14,7 +14,6 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.model.SharedStrings;
-import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,13 +99,13 @@ public class Ontology {
         model.setNsPrefix("rdf", RDF.uri);
         model.setNsPrefix("xsd", XSDDatatype.XSD + "#");
 
+        // Primeiro, carrega todas as empresas e cria os recursos base para os Valor_Mobiliario
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
-        // Chamando o novo método de streaming
+        // Depois, lê os dados do pregão e adiciona as informações aos Valor_Mobiliario existentes
         loadDadosPregaoConsolidados(model, PREGAO_FILE_CONSOLIDADO);
         return model;
     }
 
-    // Método original para carregar empresas, mantido igual.
     private void loadInformacoesEmpresas(Model model, String resourcePath) throws IOException {
         logger.info(">> Carregando Cadastro de Empresas de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream(); Workbook workbook = new XSSFWorkbook(excelFile)) {
@@ -144,7 +143,6 @@ public class Ontology {
         }
     }
     
-    // Novo método que usa streaming
     private void loadDadosPregaoConsolidados(Model model, String resourcePath) throws Exception {
         logger.info(">> Carregando Dados de Pregão CONSOLIDADOS de forma OTIMIZADA de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream()) {
@@ -166,14 +164,12 @@ public class Ontology {
         }
     }
 
-    // Handler de streaming que implementa a SUA LÓGICA ORIGINAL
     private static class ExcelSheetHandlerOriginalLogic extends DefaultHandler {
         private static final Logger logger = LoggerFactory.getLogger(ExcelSheetHandlerOriginalLogic.class);
         private final Model model;
         private final SharedStrings sst;
         private String lastContents;
         private boolean nextIsString;
-
         private final List<String> currentRow = new ArrayList<>();
         private int rowNum = 0;
         private int currentCol = 0;
@@ -200,11 +196,14 @@ public class Ontology {
         @Override
         public void endElement(String uri, String localName, String name) {
             if (nextIsString) {
-                int idx = Integer.parseInt(lastContents);
-                lastContents = sst.getItemAt(idx).getString();
+                try {
+                    int idx = Integer.parseInt(lastContents);
+                    lastContents = sst.getItemAtIndex(idx).getString();
+                } catch (Exception e) {
+                    // Ignora erros de parsing de índice, mantendo lastContents como está
+                }
                 nextIsString = false;
             }
-
             if ("v".equals(name) || "t".equals(name)) {
                 int thisCol = getColumnIndex(currentCellRef);
                 while (currentCol < thisCol) {
@@ -215,7 +214,6 @@ public class Ontology {
                 currentCol++;
             } else if ("row".equals(name)) {
                 if (rowNum > 0 && !currentRow.stream().allMatch(Objects::isNull)) {
-                    // Chamando o processador de linha que usa a lógica antiga
                     processRowWithOriginalLogic(currentRow);
                 }
                 rowNum++;
@@ -227,26 +225,28 @@ public class Ontology {
             lastContents += new String(ch, start, length);
         }
 
-        // <<< AQUI ESTÁ A MÁGICA: REIMPLEMENTAMOS SUA LÓGICA ANTIGA >>>
         private void processRowWithOriginalLogic(List<String> rowData) {
             try {
-                Date dataPregao = getDateCell(rowData, 2); // Coluna C
-                String ticker = getCell(rowData, 4);        // Coluna E
+                Date dataPregao = getDateCell(rowData, 2);
+                String ticker = getCell(rowData, 4);
                 
                 if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) return;
                 
                 String tickerTrim = ticker.trim();
+                
+                // <<< CORREÇÃO CRUCIAL >>>
+                // Pega o recurso que JÁ DEVE EXISTIR no modelo. 
+                // model.getResource() cria um objeto Resource sem checar se o URI existe no grafo.
+                // É o método correto para referenciar um nó que se espera que já exista.
+                Resource valorMobiliario = model.getResource(ONT_PREFIX + tickerTrim);
+                
                 SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
                 String dataFmt = rdfDateFormat.format(dataPregao);
-
-                Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
-                
-                addStatement(model, valorMobiliario, RDF.type, model.createResource(ONT_PREFIX + "Valor_Mobiliario"));
-                addStatement(model, valorMobiliario, RDFS.label, model.createLiteral(tickerTrim));
 
                 Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
+                // Adiciona a tripla que estava faltando
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
 
                 Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
@@ -254,20 +254,19 @@ public class Ontology {
                 addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
                 addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
                 
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCell(rowData, 8));   // Coluna I
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCell(rowData, 9));   // Coluna J
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCell(rowData, 10));  // Coluna K
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCell(rowData, 11));   // Coluna L
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCell(rowData, 12));// Coluna M
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCell(rowData, 14)); // Coluna O
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCell(rowData, 15));// Coluna P
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCell(rowData, 8));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCell(rowData, 9));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCell(rowData, 10));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCell(rowData, 11));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCell(rowData, 12));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCell(rowData, 14));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCell(rowData, 15));
 
             } catch (Exception e) {
                 logger.error("Falha ao processar a linha {} do Excel: {}", rowNum, rowData.stream().limit(5).collect(Collectors.joining(", ")), e);
             }
         }
         
-        // Métodos auxiliares para obter dados da linha
         private String getCell(List<String> row, int index) {
             return index < row.size() ? row.get(index) : null;
         }
@@ -278,9 +277,7 @@ public class Ontology {
             try {
                 double excelDate = Double.parseDouble(val);
                 return DateUtil.getJavaDate(excelDate);
-            } catch (NumberFormatException e) {
-                return null;
-            }
+            } catch (NumberFormatException e) { return null; }
         }
 
         private double getNumericCell(List<String> row, int index) {
@@ -288,17 +285,15 @@ public class Ontology {
             if (val == null || val.isBlank()) return Double.NaN;
             try {
                 return Double.parseDouble(val.replace(",", "."));
-            } catch (NumberFormatException e) {
-                return Double.NaN;
-            }
+            } catch (NumberFormatException e) { return Double.NaN; }
         }
         
         private int getColumnIndex(String cellReference) {
             if (cellReference == null) return -1;
-            String ref = cellReference.replaceAll("\\d", "");
+            String ref = cellReference.replaceAll("[^A-Z]", "");
             int col = 0;
-            for (int i = 0; i < ref.length(); i++) {
-                col = col * 26 + ref.charAt(i) - 'A' + 1;
+            for (char c : ref.toCharArray()) {
+                col = col * 26 + (c - 'A' + 1);
             }
             return col - 1;
         }
@@ -316,30 +311,6 @@ public class Ontology {
         }
     }
 
-
-    // Métodos auxiliares originais mantidos para loadInformacoesEmpresas
-    private String getStringCellValue(Cell cell) {
-        if (cell == null) return null;
-        CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
-        if (type == CellType.STRING) return cell.getStringCellValue().trim();
-        if (type == CellType.NUMERIC) {
-            if (DateUtil.isCellDateFormatted(cell)) return null;
-            double numericValue = cell.getNumericCellValue();
-            if (numericValue == Math.floor(numericValue)) return String.valueOf((long) numericValue);
-            return String.valueOf(numericValue);
-        }
-        return null;
-    }
-    private String normalizarParaURI(String texto) {
-        if (texto == null) return "";
-        return Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
-                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
-                .replaceAll("[^a-zA-Z0-9_ -]", "")
-                .replaceAll("\\s+", "_")
-                .replaceAll("/", "_");
-    }
-
-    // Métodos de execução de query, cache, etc., mantidos iguais.
     public List<Map<String, String>> executeQuery(String sparqlQuery) {
         lock.readLock().lock();
         try {
@@ -373,6 +344,28 @@ public class Ontology {
         } finally {
             lock.readLock().unlock();
         }
+    }
+
+    private String getStringCellValue(Cell cell) {
+        if (cell == null) return null;
+        CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
+        if (type == CellType.STRING) return cell.getStringCellValue().trim();
+        if (type == CellType.NUMERIC) {
+            if (DateUtil.isCellDateFormatted(cell)) return null;
+            double numericValue = cell.getNumericCellValue();
+            if (numericValue == Math.floor(numericValue)) return String.valueOf((long) numericValue);
+            return String.valueOf(numericValue);
+        }
+        return null;
+    }
+
+    private String normalizarParaURI(String texto) {
+        if (texto == null) return "";
+        return Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replaceAll("[^a-zA-Z0-9_ -]", "")
+                .replaceAll("\\s+", "_")
+                .replaceAll("/", "_");
     }
     
     private void deleteInferredModelCache() {
@@ -419,5 +412,4 @@ public class Ontology {
     }
 
     private void validateBaseModelLoad(long size) { if (size < 1000) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
-
 }
