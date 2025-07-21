@@ -10,21 +10,21 @@ import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
-import org.apache.poi.openxml4j.opc.OPCPackage; 
+import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.eventusermodel.XSSFReader; 
-import org.apache.poi.xssf.model.SharedStrings; 
+import org.apache.poi.xssf.eventusermodel.XSSFReader;
+import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
-import org.xml.sax.Attributes; /
-import org.xml.sax.ContentHandler; 
-import org.xml.sax.InputSource; 
-import org.xml.sax.XMLReader; 
-import org.xml.sax.helpers.DefaultHandler; 
-import org.xml.sax.helpers.XMLReaderFactory; 
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -143,9 +143,6 @@ public class Ontology {
         }
     }
     
-    // ======================================================================
-    //  SOLUÇÃO 1: MÉTODO DE LEITURA OTIMIZADO (STREAMING)
-    // ======================================================================
     private void loadDadosPregaoExcel(Model model, String resourcePath) throws Exception {
         logger.info(">> Carregando Dados de Pregão de forma OTIMIZADA de: {}", resourcePath);
         try (InputStream excelFile = new ClassPathResource(resourcePath).getInputStream()) {
@@ -166,122 +163,6 @@ public class Ontology {
             }
         }
     }
-
-    // ======================================================================
-    //  CLASSE INTERNA PARA PROCESSAR O EXCEL EM STREAMING
-    // ======================================================================
-    private static class ExcelSheetHandler extends DefaultHandler {
-        private final Model model;
-        private final SharedStrings sst;
-        private String lastContents;
-        private boolean nextIsString;
-        private final List<String> currentRow = new ArrayList<>();
-        private int rowNum = 0;
-        private int currentCol = 0;
-        private String currentCellRef;
-
-        ExcelSheetHandler(Model model, SharedStrings sst) {
-            this.model = model;
-            this.sst = sst;
-        }
-
-        @Override
-        public void startElement(String uri, String localName, String name, Attributes attributes) {
-            if ("row".equals(name)) {
-                currentRow.clear();
-                currentCol = 0;
-            } else if ("c".equals(name)) {
-                currentCellRef = attributes.getValue("r");
-                String cellType = attributes.getValue("t");
-                nextIsString = "s".equals(cellType);
-            }
-            lastContents = "";
-        }
-
-        @Override
-        public void endElement(String uri, String localName, String name) {
-            if (nextIsString) {
-                try {
-                    int idx = Integer.parseInt(lastContents);
-                    lastContents = sst.getItemAt(idx).getString();
-                } catch (Exception e) { /* Ignora erros */ }
-                nextIsString = false;
-            }
-            if ("v".equals(name) || "t".equals(name)) {
-                int thisCol = getColumnIndex(currentCellRef);
-                while (currentCol < thisCol) {
-                    currentRow.add(null);
-                    currentCol++;
-                }
-                currentRow.add(lastContents);
-                currentCol++;
-            } else if ("row".equals(name)) {
-                if (rowNum > 0 && !currentRow.stream().allMatch(Objects::isNull)) {
-                    processRow();
-                }
-                rowNum++;
-            }
-        }
-
-        @Override
-        public void characters(char[] ch, int start, int length) {
-            lastContents += new String(ch, start, length);
-        }
-
-        private void processRow() {
-            try {
-                Date dataPregao = getDateCell(2);
-                String ticker = getCell(4);
-                
-                if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) return;
-                
-                String tickerTrim = ticker.trim();
-                Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
-                
-                SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                String dataFmt = rdfDateFormat.format(dataPregao);
-
-                Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
-                addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
-                addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
-
-                Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
-                addStatement(model, pregaoResource, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
-                addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
-                addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
-                
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCell(8));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCell(9));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCell(10));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCell(11));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCell(12));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCell(14));
-                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCell(15));
-            } catch (Exception e) {
-                // Logar a falha sem parar o processo
-            }
-        }
-        
-        private String getCell(int index) { return index < currentRow.size() ? currentRow.get(index) : null; }
-        private Date getDateCell(int index) {
-            String val = getCell(index);
-            if (val == null || val.isBlank()) return null;
-            try { return DateUtil.getJavaDate(Double.parseDouble(val)); } catch (NumberFormatException e) { return null; }
-        }
-        private double getNumericCell(int index) {
-            String val = getCell(index);
-            if (val == null || val.isBlank()) return Double.NaN;
-            try { return Double.parseDouble(val.replace(",", ".")); } catch (NumberFormatException e) { return Double.NaN; }
-        }
-        private int getColumnIndex(String cellReference) {
-            if (cellReference == null) return -1;
-            String ref = cellReference.replaceAll("[^A-Z]", "");
-            int col = 0;
-            for (char c : ref.toCharArray()) { col = col * 26 + (c - 'A' + 1); }
-            return col - 1;
-        }
-    }
-
 
     public List<Map<String, String>> executeQuery(String sparqlQuery) {
         lock.readLock().lock();
@@ -391,6 +272,141 @@ public class Ontology {
             return this.model;
         } finally {
             lock.readLock().unlock();
+        }
+    }
+
+    // ======================================================================
+    //  CLASSE INTERNA PARA PROCESSAR O EXCEL EM STREAMING
+    //  Precisa ser 'static' para ser uma classe aninhada e não uma classe interna
+    // ======================================================================
+    private static class ExcelSheetHandler extends DefaultHandler {
+        private final Model model;
+        private final SharedStrings sst;
+        private String lastContents;
+        private boolean nextIsString;
+        private final List<String> currentRow = new ArrayList<>();
+        private int rowNum = 0;
+        private int currentCol = 0;
+        private String currentCellRef;
+
+        ExcelSheetHandler(Model model, SharedStrings sst) {
+            this.model = model;
+            this.sst = sst;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String name, Attributes attributes) {
+            if ("row".equals(name)) {
+                currentRow.clear();
+                currentCol = 0;
+            } else if ("c".equals(name)) {
+                currentCellRef = attributes.getValue("r");
+                String cellType = attributes.getValue("t");
+                nextIsString = "s".equals(cellType);
+            }
+            lastContents = "";
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String name) {
+            if (nextIsString) {
+                try {
+                    int idx = Integer.parseInt(lastContents);
+                    lastContents = sst.getItemAt(idx).getString();
+                } catch (Exception e) { /* Ignora erros */ }
+                nextIsString = false;
+            }
+            if ("v".equals(name) || "t".equals(name)) {
+                int thisCol = getColumnIndex(currentCellRef);
+                while (currentCol < thisCol) {
+                    currentRow.add(null);
+                    currentCol++;
+                }
+                currentRow.add(lastContents);
+                currentCol++;
+            } else if ("row".equals(name)) {
+                if (rowNum > 0 && !currentRow.stream().allMatch(Objects::isNull)) {
+                    processRow();
+                }
+                rowNum++;
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) {
+            lastContents += new String(ch, start, length);
+        }
+
+        private void processRow() {
+            try {
+                Date dataPregao = getDateCell(2);
+                String ticker = getCell(4);
+                
+                if (ticker == null || !ticker.matches("^[A-Z]{4}\\d{1,2}$") || dataPregao == null) return;
+                
+                String tickerTrim = ticker.trim();
+                Resource valorMobiliario = model.createResource(ONT_PREFIX + tickerTrim);
+                
+                SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                String dataFmt = rdfDateFormat.format(dataPregao);
+
+                Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
+                addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
+                addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
+
+                Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
+                addStatement(model, pregaoResource, RDF.type, model.createResource(ONT_PREFIX + "Pregao"));
+                addStatement(model, pregaoResource, model.createProperty(ONT_PREFIX + "ocorreEmData"), model.createTypedLiteral(dataFmt, XSDDatatype.XSDdate));
+                addStatement(model, negociadoResource, model.createProperty(ONT_PREFIX + "negociadoDurante"), pregaoResource);
+                
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoAbertura"), getNumericCell(8));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMaximo"), getNumericCell(9));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMinimo"), getNumericCell(10));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoMedio"), getNumericCell(11));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "precoFechamento"), getNumericCell(12));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "totalNegocios"), getNumericCell(14));
+                addNumericProperty(model, negociadoResource, model.createProperty(ONT_PREFIX, "volumeNegociacao"), getNumericCell(15));
+            } catch (Exception e) {
+                // Logar a falha sem parar o processo
+            }
+        }
+        
+        private String getCell(int index) { return index < currentRow.size() ? currentRow.get(index) : null; }
+        private Date getDateCell(int index) {
+            String val = getCell(index);
+            if (val == null || val.isBlank()) return null;
+            try { 
+                if (val.contains("/") || val.contains("-")) {
+                     for (String format : new String[]{"yyyy-MM-dd", "dd/MM/yyyy"}) {
+                        try { return new SimpleDateFormat(format).parse(val); } catch (ParseException ignored) {}
+                    }
+                }
+                return DateUtil.getJavaDate(Double.parseDouble(val)); 
+            } catch (Exception e) { return null; }
+        }
+        private double getNumericCell(int index) {
+            String val = getCell(index);
+            if (val == null || val.isBlank()) return Double.NaN;
+            try { return Double.parseDouble(val.replace(",", ".")); } catch (NumberFormatException e) { return Double.NaN; }
+        }
+        private int getColumnIndex(String cellReference) {
+            if (cellReference == null) return -1;
+            String ref = cellReference.replaceAll("[^A-Z]", "");
+            int col = 0;
+            for (char c : ref.toCharArray()) { col = col * 26 + (c - 'A' + 1); }
+            return col - 1;
+        }
+
+        private static void addStatement(Model model, Resource s, Property p, RDFNode o) {
+            if (s != null && p != null && o != null) {
+                model.add(s, p, o);
+            }
+        }
+
+        private static void addNumericProperty(Model model, Resource s, Property p, double value) {
+            if (!Double.isNaN(value)) {
+                model.add(s, p, model.createTypedLiteral(value));
+            }
         }
     }
 }
