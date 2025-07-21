@@ -1,15 +1,15 @@
-# TEMPLATE 1A (VERSÃO SIMPLES E DIRETA)
+# TEMPLATE 1A (VERSÃO FINAL - ADAPTADA PARA ESTRUTURA REAL DO GRAFO)
 SELECT ?ANS WHERE {
-    # 1. Encontra o nó do Valor Mobiliário (a ação) pelo ticker.
-    #    Nós não vamos mais procurar pelo nome da empresa para evitar ambiguidade.
-    ?S1 P8 "#ENTIDADE_NOME#" .  # ?valorMobiliario b3:ticker "CMIN3" .
+    # 1. Encontra o nó que tem o TICKER como seu RDFS:LABEL.
+    #    Isso contorna a falta da propriedade b3:ticker.
+    ?S1 rdfs:label "#ENTIDADE_NOME#" .
 
-    # 2. A partir do Valor Mobiliário, encontra o nó da negociação daquele dia.
-    ?S1 P3 ?SO2 . # ?valorMobiliario b3:negociado ?negociadoEmPregao .
+    # 2. A partir deste nó, encontra um dos muitos nós de negociação.
+    ?S1 P3 ?SO2 .  # ?S1 b3:negociado ?negociadoEmPregao .
 
     # 3. Filtra para encontrar a negociação na data correta.
-    ?SO2 P5 ?S2 . # ?negociadoEmPregao b3:negociadoDurante ?pregao .
-    ?S2 P6 "#DATA#"^^xsd:date . # ?pregao b3:ocorreEmData "data" .
+    ?SO2 P5 ?S2 .  # ?negociadoEmPregao b3:negociadoDurante ?pregao .
+    ?S2 P6 "#DATA#"^^xsd:date .
     
     # 4. A partir do nó de negociação correto, pega o valor desejado.
     ?SO2 #VALOR_DESEJADO# ?ANS .
