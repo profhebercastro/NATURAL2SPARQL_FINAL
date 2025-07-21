@@ -58,7 +58,9 @@ public class Ontology {
             // Força a deleção do cache para garantir que os novos dados sejam lidos a cada deploy
             deleteInferredModelCache();
 
+            // O resultado do loadOrCreateInferredModel já é o modelo inferido (InfModel)
             this.model = loadOrCreateInferredModel();
+
             if (this.model == null || this.model.isEmpty()) {
                 throw new IllegalStateException("FALHA CRÍTICA: O modelo RDF não pôde ser carregado ou criado.");
             }
@@ -74,8 +76,6 @@ public class Ontology {
     private Model loadOrCreateInferredModel() throws Exception {
         ClassPathResource inferredResource = new ClassPathResource(INFERENCE_OUTPUT_FILENAME);
         
-        // Esta verificação ainda é útil para execuções locais onde o cache pode ser reaproveitado,
-        // mas o método init() garante que no deploy do Render ele será sempre reconstruído.
         if (inferredResource.exists() && inferredResource.contentLength() > 0) {
             logger.info("--- Modelo inferido pré-calculado '{}' encontrado. Carregando... ---", INFERENCE_OUTPUT_FILENAME);
             Model dataModel = ModelFactory.createDefaultModel();
@@ -419,4 +419,17 @@ public class Ontology {
     }
 
     private void validateBaseModelLoad(long size) { if (size < 1000) logger.warn("MODELO BASE SUSPEITOSAMENTE PEQUENO ({}) APÓS CARREGAMENTO!", size); }
+
+    // =================================================================
+    //  NOVO MÉTODO GETTER - Adicione este bloco inteiro
+    //  Permite que outras classes (como o Main Controller) acessem o modelo.
+    // =================================================================
+    public Model getInferredModel() {
+        lock.readLock().lock();
+        try {
+            return this.model;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
 }

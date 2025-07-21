@@ -7,6 +7,15 @@ import com.example.Programa_heber.ontology.Ontology;
 import com.example.Programa_heber.service.SPARQLProcessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+// Novas importações necessárias para o endpoint de debug
+import org.apache.jena.rdf.model.Model;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import java.io.StringWriter;
+// Fim das novas importações
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,5 +125,39 @@ public class Main {
             logger.error("Erro no endpoint /executar: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("{\"error\": \"Erro interno ao executar a consulta: " + e.getMessage() + "\"}");
         }
+    }
+
+    // =================================================================
+    //  NOVO MÉTODO PARA DEBUG 
+    //  Este endpoint permite baixar a ontologia inferida para depuração.
+    // =================================================================
+    @GetMapping("/debug/get-inferred-ontology")
+    public ResponseEntity<String> getInferredOntology() {
+        logger.info("Recebida requisição de DEBUG para obter a ontologia inferida.");
+        
+        // Assumindo que sua classe Ontology tem um método getInferredModel()
+        Model inferredModel = ontology.getInferredModel();
+
+        if (inferredModel == null) {
+            logger.warn("Tentativa de acessar modelo inferido, mas ele é nulo.");
+            return ResponseEntity.status(500).body("Erro: O modelo inferido ainda não foi gerado ou está nulo.");
+        }
+
+        // Converte o modelo RDF para uma String no formato Turtle (.ttl)
+        StringWriter out = new StringWriter();
+        inferredModel.write(out, "TURTLE");
+        String ontologyAsString = out.toString();
+
+        // Prepara os cabeçalhos para forçar o download do arquivo pelo navegador
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ontology_inferred_from_render.ttl");
+        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE);
+
+        logger.info("Enviando ontologia inferida como anexo para download.");
+        
+        // Retorna a string da ontologia como um arquivo para download
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(ontologyAsString);
     }
 }
