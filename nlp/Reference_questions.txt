@@ -23,7 +23,7 @@ Template_5B;Qual foi o preço mínimo da ação da Vale em 17/06/2025?
 
 
 # --- Templates de Cálculo e Ranking ---
-Template_6A;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 30/06/2023?
+Template_6A;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 30/06/2025?
 Template_7A;Qual a ação com o maior percentual de alta no pregão de 30/06/2025?
 Template_7A;Quais as cinco ações de maior percentual de baixa no pregão de 30/06/2025?
 Template_7B;Qual ação do setor de mineração que teve a maior alta percentual no pregão do dia 30/06/2025?
