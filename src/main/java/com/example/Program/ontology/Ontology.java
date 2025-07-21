@@ -99,9 +99,7 @@ public class Ontology {
         model.setNsPrefix("rdf", RDF.uri);
         model.setNsPrefix("xsd", XSDDatatype.XSD + "#");
 
-        // Primeiro, carrega todas as empresas e cria os recursos base para os Valor_Mobiliario
         loadInformacoesEmpresas(model, INFO_EMPRESAS_FILE);
-        // Depois, lê os dados do pregão e adiciona as informações aos Valor_Mobiliario existentes
         loadDadosPregaoConsolidados(model, PREGAO_FILE_CONSOLIDADO);
         return model;
     }
@@ -198,9 +196,10 @@ public class Ontology {
             if (nextIsString) {
                 try {
                     int idx = Integer.parseInt(lastContents);
-                    lastContents = sst.getItemAtIndex(idx).getString();
+                    // <<< CORREÇÃO APLICADA AQUI >>>
+                    lastContents = sst.getItemAt(idx).getString();
                 } catch (Exception e) {
-                    // Ignora erros de parsing de índice, mantendo lastContents como está
+                    // Ignora erros de parsing de índice
                 }
                 nextIsString = false;
             }
@@ -234,10 +233,6 @@ public class Ontology {
                 
                 String tickerTrim = ticker.trim();
                 
-                // <<< CORREÇÃO CRUCIAL >>>
-                // Pega o recurso que JÁ DEVE EXISTIR no modelo. 
-                // model.getResource() cria um objeto Resource sem checar se o URI existe no grafo.
-                // É o método correto para referenciar um nó que se espera que já exista.
                 Resource valorMobiliario = model.getResource(ONT_PREFIX + tickerTrim);
                 
                 SimpleDateFormat rdfDateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -246,7 +241,6 @@ public class Ontology {
                 Resource negociadoResource = model.createResource(ONT_PREFIX + tickerTrim + "_Negociado_" + dataFmt.replace("-", ""));
                 addStatement(model, negociadoResource, RDF.type, model.createResource(ONT_PREFIX + "Negociado_Em_Pregao"));
 
-                // Adiciona a tripla que estava faltando
                 addStatement(model, valorMobiliario, model.createProperty(ONT_PREFIX + "negociado"), negociadoResource);
 
                 Resource pregaoResource = model.createResource(ONT_PREFIX + "Pregao_" + dataFmt.replace("-", ""));
