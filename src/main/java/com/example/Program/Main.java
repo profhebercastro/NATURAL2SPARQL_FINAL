@@ -8,13 +8,13 @@ import com.example.Programa_heber.service.SPARQLProcessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-// Novas importações necessárias para o endpoint de debug
+// Importações necessárias para o endpoint de debug
 import org.apache.jena.rdf.model.Model;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import java.io.StringWriter;
-// Fim das novas importações
+// Fim das importações de debug
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList; 
+import java.util.ArrayList;
 
 @SpringBootApplication
 @RestController
@@ -39,10 +39,10 @@ import java.util.ArrayList;
 public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
-    
+
     @Autowired
     private SPARQLProcessor sparqlProcessor;
-    
+
     @Autowired
     private Ontology ontology;
 
@@ -52,11 +52,11 @@ public class Main {
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
-    
+
     @PostMapping("/processar")
     public ResponseEntity<ProcessamentoDetalhadoResposta> gerarConsulta(@RequestBody PerguntaRequest request) {
         String pergunta = request.getPergunta();
-        
+
         if (pergunta == null || pergunta.trim().isEmpty()) {
             ProcessamentoDetalhadoResposta erro = new ProcessamentoDetalhadoResposta();
             erro.setErro("A pergunta não pode estar vazia.");
@@ -81,7 +81,7 @@ public class Main {
     @PostMapping("/executar")
     public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
-        
+
         if (sparqlQuery == null || sparqlQuery.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("{\"error\": \"A consulta SPARQL não pode estar vazia.\"}");
         }
@@ -95,7 +95,7 @@ public class Main {
             head.put("vars", vars);
 
             Map<String, Object> results = new HashMap<>();
-            
+
             List<Map<String, Object>> formattedBindings = new ArrayList<>();
             for(Map<String, String> row : bindings) {
                 Map<String, Object> newRow = new HashMap<>();
@@ -114,28 +114,23 @@ public class Main {
             finalJsonResponse.put("results", results);
 
             String resultadoJson = objectMapper.writeValueAsString(finalJsonResponse);
-            
+
             return ResponseEntity.ok(resultadoJson);
 
         } catch (JsonProcessingException e) {
-             logger.error("Erro ao serializar resultado para JSON: {}", e.getMessage(), e);
+            logger.error("Erro ao serializar resultado para JSON: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("{\"error\": \"Erro ao formatar o resultado da consulta.\"}");
-        } 
+        }
         catch (Exception e) {
             logger.error("Erro no endpoint /executar: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("{\"error\": \"Erro interno ao executar a consulta: " + e.getMessage() + "\"}");
         }
     }
 
-    // =================================================================
-    //  NOVO MÉTODO PARA DEBUG 
-    //  Este endpoint permite baixar a ontologia inferida para depuração.
-    // =================================================================
     @GetMapping("/debug/get-inferred-ontology")
     public ResponseEntity<String> getInferredOntology() {
         logger.info("Recebida requisição de DEBUG para obter a ontologia inferida.");
-        
-        // Assumindo que sua classe Ontology tem um método getInferredModel()
+
         Model inferredModel = ontology.getInferredModel();
 
         if (inferredModel == null) {
@@ -143,19 +138,16 @@ public class Main {
             return ResponseEntity.status(500).body("Erro: O modelo inferido ainda não foi gerado ou está nulo.");
         }
 
-        // Converte o modelo RDF para uma String no formato Turtle (.ttl)
         StringWriter out = new StringWriter();
         inferredModel.write(out, "TURTLE");
         String ontologyAsString = out.toString();
 
-        // Prepara os cabeçalhos para forçar o download do arquivo pelo navegador
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ontology_inferred_from_render.ttl");
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE);
 
         logger.info("Enviando ontologia inferida como anexo para download.");
-        
-        // Retorna a string da ontologia como um arquivo para download
+
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(ontologyAsString);
