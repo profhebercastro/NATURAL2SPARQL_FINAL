@@ -1,20 +1,17 @@
-# TEMPLATE 1A (CORRIGIDO) -- Busca métrica de uma empresa por nome
+# TEMPLATE 1A (VERSÃO SIMPLES E DIRETA)
 SELECT ?ANS WHERE {
-    # 1. Encontra a empresa pelo nome (label)
-    ?S1 P7 ?label .
-    FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
+    # 1. Encontra o nó do Valor Mobiliário (a ação) pelo ticker.
+    #    Nós não vamos mais procurar pelo nome da empresa para evitar ambiguidade.
+    ?S1 P8 "#ENTIDADE_NOME#" .  # ?valorMobiliario b3:ticker "CMIN3" .
 
-    # 2. A partir da empresa, encontra o nó do Valor Mobiliário
-    ?S1 P1 ?SO1 .  # ?empresa b3:temValorMobiliarioNegociado ?valorMobiliarioNode .
+    # 2. A partir do Valor Mobiliário, encontra o nó da negociação daquele dia.
+    ?S1 P3 ?SO2 . # ?valorMobiliario b3:negociado ?negociadoEmPregao .
 
-    # 3. CORREÇÃO: A partir do Valor Mobiliário, encontra o nó de negociação
-    ?SO1 P3 ?SO2 .  # ?valorMobiliarioNode b3:negociado ?negociadoEmPregao .
-
-    # 4. A partir da negociação, encontra o nó do Pregão para filtrar pela data
-    ?SO2 P5 ?S2 .  # ?negociadoEmPregao b3:negociadoDurante ?pregao .
+    # 3. Filtra para encontrar a negociação na data correta.
+    ?SO2 P5 ?S2 . # ?negociadoEmPregao b3:negociadoDurante ?pregao .
     ?S2 P6 "#DATA#"^^xsd:date . # ?pregao b3:ocorreEmData "data" .
-
-    # 5. A partir do nó de negociação, pega a métrica desejada
-    ?SO2 #VALOR_DESEJADO# ?ANS . # ?negociadoEmPregao b3:precoFechamento ?valor .
+    
+    # 4. A partir do nó de negociação correto, pega o valor desejado.
+    ?SO2 #VALOR_DESEJADO# ?ANS .
 }
 LIMIT 1
