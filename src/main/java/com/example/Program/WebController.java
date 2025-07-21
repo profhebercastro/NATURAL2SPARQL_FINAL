@@ -16,14 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-// Use @RestController para APIs que retornam JSON, não @Controller
 @RestController
 public class WebController {
 
     private static final Logger logger = LoggerFactory.getLogger(WebController.class);
 
-    // Injeta os serviços necessários que fazem o trabalho pesado
     private final SPARQLProcessor sparqlProcessor;
     private final Ontology ontology;
 
@@ -52,9 +51,14 @@ public class WebController {
             if (resposta.getSparqlQuery() != null && !resposta.getSparqlQuery().isEmpty()) {
                 logger.info("Executando a consulta gerada...");
                 List<Map<String, String>> resultados = ontology.executeQuery(resposta.getSparqlQuery());
-                resposta.setResultado(resultados);
+                
+                // Converte a lista de resultados para uma String e usa o método setResposta()
+                String respostaFormatada = formatarResultados(resultados);
+                resposta.setResposta(respostaFormatada);
+                
             } else {
                  logger.warn("Nenhuma consulta SPARQL foi gerada para a pergunta.");
+                 resposta.setResposta("Não foi possível gerar uma consulta para a sua pergunta.");
             }
             
             return ResponseEntity.ok(resposta);
@@ -83,5 +87,32 @@ public class WebController {
             logger.error("Erro na execução da consulta direta: {}", query, e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    /**
+     * Formata uma lista de resultados SPARQL em uma String legível.
+     * @param resultados A lista de mapas retornada pelo serviço de ontologia.
+     * @return Uma String formatada para ser a resposta final.
+     */
+    private String formatarResultados(List<Map<String, String>> resultados) {
+        if (resultados == null || resultados.isEmpty()) {
+            return "Nenhum resultado encontrado.";
+        }
+        
+        // Caso de uso comum: perguntas como "Qual o preço..." retornam uma única célula.
+        // Extrai o valor diretamente.
+        if (resultados.size() == 1) {
+            Map<String, String> primeiraLinha = resultados.get(0);
+            if (primeiraLinha != null && !primeiraLinha.isEmpty()) {
+                return primeiraLinha.values().iterator().next();
+            }
+        }
+
+        // Caso de uso para múltiplos resultados (ex: "Liste os tickers..."):
+        // Concatena os valores da primeira coluna de cada linha.
+        return resultados.stream()
+                         .filter(map -> map != null && !map.isEmpty())
+                         .map(map -> map.values().iterator().next())
+                         .collect(Collectors.joining(", "));
     }
 }
