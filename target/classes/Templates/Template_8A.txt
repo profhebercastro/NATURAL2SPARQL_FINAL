@@ -1,0 +1,34 @@
+# TEMPLATE 8A -- Ranking Complexo (2 etapas) ---
+SELECT ?O1 ?ANS
+WHERE {
+   
+    ?SO1 P2 ?codigoNode .
+    ?codigoNode P8 ?O1 . 
+    ?SO1 P3 ?SO2 .
+    ?SO2 P5 ?S2 .
+    ?S2 P6 "#DATA#"^^xsd:date .
+
+    ?SO2 b3:precoAbertura ?abertura .
+    ?SO2 b3:precoFechamento ?fechamento .
+    ?SO2 b3:precoMaximo ?maximo .
+    ?SO2 b3:precoMinimo ?minimo .
+
+    BIND((#CALCULO#) AS ?ANS)
+    {
+        SELECT ?SO1
+        WHERE {
+            ?S1_rank P1 ?SO1 .
+            ?SO1 P3 ?SO2_rank .
+            ?SO2_rank P5 ?S2_rank .
+            ?S2_rank P6 "#DATA#"^^xsd:date .
+            
+            ?SO2_rank b3:precoAbertura ?abertura_rank .
+            ?SO2_rank b3:precoFechamento ?fechamento_rank .
+            FILTER(?abertura_rank > 0)
+
+            BIND((((?fechamento_rank - ?abertura_rank) / ?abertura_rank)) AS ?rankingValue)
+        }
+        ORDER BY #ORDEM#(?rankingValue)
+        LIMIT 1
+    }
+}

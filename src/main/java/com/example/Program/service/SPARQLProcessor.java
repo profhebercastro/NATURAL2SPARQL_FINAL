@@ -1,6 +1,6 @@
-package com.example.Programa_heber.service;
+package com.example.Program.service;
 
-import com.example.Programa_heber.model.ProcessamentoDetalhadoResposta;
+import com.example.Program.model.ProcessamentoDetalhadoResposta;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

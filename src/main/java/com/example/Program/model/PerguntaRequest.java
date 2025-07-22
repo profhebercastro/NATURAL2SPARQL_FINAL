@@ -1,4 +1,4 @@
-package com.example.Programa_heber.model;
+package com.example.Program.model;
 
 public class PerguntaRequest {
     

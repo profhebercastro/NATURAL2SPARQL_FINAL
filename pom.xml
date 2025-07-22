@@ -14,50 +14,36 @@
     <groupId>com.example</groupId>
     <artifactId>Programa_heber</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Natural2SPARQL_V4</name> <!-- Nome atualizado para a V4 -->
+    <name>Natural2SPARQL_V4</name>
     <description>Projeto para traduzir linguagem natural para SPARQL com arquitetura flexível</description>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>17</java.version> <!-- ESTA PROPRIEDADE SERÁ USADA ABAIXO -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jena.version>4.10.0</jena.version>
         <poi.version>5.2.5</poi.version>
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Starter para criar aplicações web. -->
+        <!-- Suas dependências existentes ... -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <!-- Jackson Databind: Essencial para parsear JSON no Java. -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-
-        <!-- =================================================================== -->
-        <!--        CORREÇÃO DA DEPENDÊNCIA DO APACHE JENA                       -->
-        <!-- A dependência 'jena-fuseki-main' é a forma mais robusta de        -->
-        <!-- incluir todas as bibliotecas necessárias do Jena (core, arq, etc) -->
-        <!-- sem usar <type>pom</type> como uma dependência direta.              -->
-        <!-- =================================================================== -->
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-fuseki-main</artifactId>
             <version>${jena.version}</version>
         </dependency>
-
-
-        <!-- Apache POI: Biblioteca para ler arquivos Excel (.xlsx). -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
         </dependency>
-
-        <!-- Spring Boot Test: Para testes unitários e de integração. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -67,10 +53,26 @@
 
     <build>
         <plugins>
+            <!-- O plugin do Spring Boot permanece como está -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- =========== ADIÇÃO PARA CORRIGIR O ERRO =========== -->
+            <!-- Configura explicitamente a versão do Java para o compilador -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version> <!-- Uma versão recente do plugin -->
+                <configuration>
+                    <!-- Diz ao compilador para usar o código-fonte Java 17 -->
+                    <source>${java.version}</source>
+                    <!-- Diz ao compilador para gerar bytecode compatível com Java 17 -->
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <!-- =================================================== -->
         </plugins>
     </build>
 </project>

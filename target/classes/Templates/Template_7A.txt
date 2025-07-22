@@ -1,0 +1,23 @@
+# TEMPLATE 7A -- Ranking GERAL de ações (sem filtro de setor)
+      
+# Ranking GERAL de ações (sem filtro de setor)
+SELECT DISTINCT ?ticker ?resultadoCalculado
+WHERE {
+    ?S1 P1 ?SO1 .
+    ?SO1 P1 ?intermediario .
+    ?intermediario P3 ?SO2 .
+    ?SO2 P5 ?S2 .
+    ?S2 P6 "#DATA#"^^xsd:date .
+    ?SO1 P2 ?codigo .
+    ?codigo P8 ?ticker .
+    ?SO2 b3:precoAbertura ?abertura .
+    ?SO2 b3:precoFechamento ?fechamento .
+    ?SO2 b3:precoMaximo ?maximo .
+    ?SO2 b3:precoMinimo ?minimo .
+    FILTER(?abertura > 0)
+    BIND((#CALCULO#) AS ?resultadoCalculado)
+}
+ORDER BY #ORDEM#(?resultadoCalculado)
+LIMIT #LIMITE#
+    
+

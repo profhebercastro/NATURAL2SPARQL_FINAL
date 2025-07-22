@@ -1,43 +1,37 @@
-package com.example.Programa_heber;
+package com.example.Program; // <-- PACOTE CORRIGIDO
 
-import com.example.Programa_heber.model.ExecuteQueryRequest;
-import com.example.Programa_heber.model.PerguntaRequest;
-import com.example.Programa_heber.model.ProcessamentoDetalhadoResposta;
-import com.example.Programa_heber.ontology.Ontology;
-import com.example.Programa_heber.service.SPARQLProcessor;
+// V--- IMPORTAÇÕES CORRIGIDAS ---V
+import com.example.Program.model.ExecuteQueryRequest;
+import com.example.Program.model.PerguntaRequest;
+import com.example.Program.model.ProcessamentoDetalhadoResposta;
+import com.example.Program.ontology.Ontology;
+import com.example.Program.service.SPARQLProcessor;
+// A--- IMPORTAÇÕES CORRIGIDAS ---A
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-// Importações necessárias para o endpoint de debug
 import org.apache.jena.rdf.model.Model;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import java.io.StringWriter;
-// Fim das importações de debug
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 @SpringBootApplication
 @RestController
 @RequestMapping("/api")
 public class Main {
-
+    
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     @Autowired
@@ -52,17 +46,15 @@ public class Main {
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
-
+    
     @PostMapping("/processar")
     public ResponseEntity<ProcessamentoDetalhadoResposta> gerarConsulta(@RequestBody PerguntaRequest request) {
         String pergunta = request.getPergunta();
-
         if (pergunta == null || pergunta.trim().isEmpty()) {
             ProcessamentoDetalhadoResposta erro = new ProcessamentoDetalhadoResposta();
             erro.setErro("A pergunta não pode estar vazia.");
             return ResponseEntity.badRequest().body(erro);
         }
-
         logger.info("Recebida requisição para GERAR consulta para: '{}'", pergunta);
         try {
             ProcessamentoDetalhadoResposta resposta = sparqlProcessor.generateSparqlQuery(pergunta);
@@ -81,21 +73,16 @@ public class Main {
     @PostMapping("/executar")
     public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
-
         if (sparqlQuery == null || sparqlQuery.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("{\"error\": \"A consulta SPARQL não pode estar vazia.\"}");
         }
-
         logger.info("Recebida requisição para EXECUTAR a consulta.");
         try {
             List<Map<String, String>> bindings = ontology.executeQuery(sparqlQuery);
-
             Map<String, Object> head = new HashMap<>();
             List<String> vars = bindings.isEmpty() ? Collections.emptyList() : new ArrayList<>(bindings.get(0).keySet());
             head.put("vars", vars);
-
             Map<String, Object> results = new HashMap<>();
-
             List<Map<String, Object>> formattedBindings = new ArrayList<>();
             for(Map<String, String> row : bindings) {
                 Map<String, Object> newRow = new HashMap<>();
@@ -108,15 +95,11 @@ public class Main {
                 formattedBindings.add(newRow);
             }
             results.put("bindings", formattedBindings);
-
             Map<String, Object> finalJsonResponse = new HashMap<>();
             finalJsonResponse.put("head", head);
             finalJsonResponse.put("results", results);
-
             String resultadoJson = objectMapper.writeValueAsString(finalJsonResponse);
-
             return ResponseEntity.ok(resultadoJson);
-
         } catch (JsonProcessingException e) {
             logger.error("Erro ao serializar resultado para JSON: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("{\"error\": \"Erro ao formatar o resultado da consulta.\"}");
@@ -130,24 +113,18 @@ public class Main {
     @GetMapping("/debug/get-inferred-ontology")
     public ResponseEntity<String> getInferredOntology() {
         logger.info("Recebida requisição de DEBUG para obter a ontologia inferida.");
-
         Model inferredModel = ontology.getInferredModel();
-
         if (inferredModel == null) {
             logger.warn("Tentativa de acessar modelo inferido, mas ele é nulo.");
             return ResponseEntity.status(500).body("Erro: O modelo inferido ainda não foi gerado ou está nulo.");
         }
-
         StringWriter out = new StringWriter();
         inferredModel.write(out, "TURTLE");
         String ontologyAsString = out.toString();
-
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ontology_inferred_from_render.ttl");
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE);
-
         logger.info("Enviando ontologia inferida como anexo para download.");
-
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(ontologyAsString);

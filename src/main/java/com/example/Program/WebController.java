@@ -1,4 +1,4 @@
-package com.example.Programa_heber;
+package com.example.Program;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

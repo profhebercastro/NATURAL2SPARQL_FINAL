@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natural2SPARQL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #e9ecef; display: flex; flex-direction: column; min-height: 100vh; }
+        header { background-color: #0d6efd; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .logo img { height: 32px; width: auto; }
+        main.container { width: 100%; max-width: 960px; margin: 40px auto; padding: 0 20px; flex-grow: 1; }
+        .card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 1.25rem; font-weight: 500; margin: 0; display: block; margin-bottom: 0.75rem; }
+        .card-title-container { display: flex; justify-content: space-between; align-items: center; }
+        .form-control { width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ced4da; border-radius: 4px; }
+        .button-group { display: flex; gap: 10px; margin-top: 1rem; }
+        .btn { padding: 10px 15px; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; }
+        .btn:disabled { opacity: 0.65; cursor: not-allowed; }
+        .btn-success { background-color: #198754; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-info { background-color: #0dcaf0; color: white; }
+        .results-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media (min-width: 768px) { .results-grid { grid-template-columns: 1fr 1fr; } }
+        textarea.output { height: 250px; resize: vertical; background-color: #f8f9fa; color: #495057; font-family: 'Courier New', monospace; }
+        .result-box { height: 250px; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: 4px; padding: 10px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 1.1rem; color: #495057; }
+        .result-table { width: 100%; border-collapse: collapse; }
+        .result-table th, .result-table td { padding: 8px 12px; border: 1px solid #dee2e6; text-align: left; vertical-align: top; }
+        .result-table thead th { background-color: #e9ecef; font-weight: 600; }
+        .error-message { color: #dc3545 !important; font-weight: bold; }
+        footer { background-color: #0d6efd; color: rgba(255, 255, 255, 0.8); text-align: center; padding: 15px 0; font-size: 0.9rem; margin-top: auto; }
+        .loader { border: 4px solid rgba(0,0,0,0.1); border-top-color: #0d6efd; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="https://cygri.github.io/rdf-logos/svg/sparql.svg" alt="SPARQL Logo">
+            <span>Natural2SPARQL</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <label for="userQuestion" class="card-title">Digite sua pergunta</label>
+            <input type="text" id="userQuestion" class="form-control" placeholder="Ex: Qual o preço de fechamento da CSN em 08/05/2023?">
+            <div class="button-group">
+                <button id="generateBtn" class="btn btn-success">GERAR CONSULTA</button>
+                <button id="clearBtn" class="btn btn-danger">LIMPAR</button>
+            </div>
+        </div>
+        <div class="results-grid">
+            <div class="card">
+                <div class="card-title-container">
+                    <h3 class="card-title">Consulta SPARQL</h3>
+                    <button id="executeQueryBtn" class="btn btn-info">Executar</button>
+                </div>
+                <textarea id="sparqlQueryOutput" class="form-control output" readonly>A consulta SPARQL aparecerá aqui...</textarea>
+            </div>
+            <div class="card">
+                <h3 class="card-title">Resultado</h3>
+                <div id="resultOutput" class="result-box">
+                    <p style="color: #6c757d;">O resultado aparece aqui...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer><p>© 2025 Natural2SPARQL - Consultas SPARQL em Linguagem Natural.</p></footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generateBtn');
+            const executeQueryBtn = document.getElementById('executeQueryBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const userQuestionInput = document.getElementById('userQuestion');
+            const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
+            const resultOutputDiv = document.getElementById('resultOutput');
+            
+            generateBtn.addEventListener('click', handleGenerateQuery);
+            executeQueryBtn.addEventListener('click', handleExecuteQuery);
+            clearBtn.addEventListener('click', clearAllFields);
+            userQuestionInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleGenerateQuery(); });
+
+            function clearAllFields() {
+                userQuestionInput.value = '';
+                sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
+                sparqlQueryOutput.classList.remove('error-message');
+                resultOutputDiv.innerHTML = '<p style="color: #6c757d;">O resultado aparece aqui...</p>';
+            }
+
+            async function handleGenerateQuery() {
+                const question = userQuestionInput.value.trim();
+                if (!question) { alert("Por favor, digite uma pergunta."); return; }
+                
+                toggleLoading(generateBtn, true);
+                sparqlQueryOutput.value = 'Gerando consulta...';
+                resultOutputDiv.innerHTML = '<div class="loader"></div>';
+                sparqlQueryOutput.classList.remove('error-message');
+
+                try {
+                    const response = await fetch('/api/processar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pergunta: question })
+                    });
+                    
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
+                    
+                    sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
+
+                } catch (error) {
+                    sparqlQueryOutput.value = `Erro: ${error.message}`;
+                    sparqlQueryOutput.classList.add('error-message');
+                } finally {
+                    toggleLoading(generateBtn, false);
+                    resultOutputDiv.innerHTML = '<p style="color: #6c757d;">Clique em "Executar" para ver o resultado.</p>';
+                }
+            }
+
+            async function handleExecuteQuery() {
+                const sparqlQuery = sparqlQueryOutput.value;
+                if (!sparqlQuery || sparqlQuery.startsWith("Erro:") || sparqlQuery.startsWith("Gerando")) {
+                    alert("Não há uma consulta válida para executar."); return;
+                }
+
+                toggleLoading(executeQueryBtn, true);
+                resultOutputDiv.innerHTML = '<div class="loader"></div>';
+
+                try {
+                    const response = await fetch('/api/executar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: sparqlQuery })
+                    });
+                    
+                    // --- CORREÇÃO APLICADA AQUI ---
+                    const resultText = await response.text();
+                    if (!response.ok) {
+                        try {
+                           const errorJson = JSON.parse(resultText);
+                           throw new Error(errorJson.error || `Erro do Servidor: ${response.status}`);
+                        } catch(e) {
+                           throw new Error(resultText || `Erro do Servidor: ${response.status}`);
+                        }
+                    }
+
+                    const data = JSON.parse(resultText);
+                    displayResults(data);
+
+                } catch (error) {
+                    resultOutputDiv.innerHTML = `<div class="error-message">Erro: ${error.message}</div>`;
+                } finally {
+                    toggleLoading(executeQueryBtn, false);
+                }
+            }
+
+            function displayResults(data) {
+                 resultOutputDiv.innerHTML = ''; 
+                if (data.error) {
+                    resultOutputDiv.innerHTML = `<div class="error-message">${data.error}</div>`;
+                    return;
+                }
+                if (!data.results || !data.results.bindings) {
+                    resultOutputDiv.innerHTML = '<p>Formato de resultado inesperado.</p>';
+                    return;
+                }
+                if (data.results.bindings.length === 0) {
+                    resultOutputDiv.innerHTML = '<p>Nenhum resultado encontrado.</p>';
+                    return;
+                }
+                const headers = data.head.vars;
+                let tableHTML = '<table class="result-table"><thead><tr>';
+                headers.forEach(header => { tableHTML += `<th>${header}</th>`; });
+                tableHTML += '</tr></thead><tbody>';
+                data.results.bindings.forEach(row => {
+                    tableHTML += '<tr>';
+                    headers.forEach(header => {
+                        const cell = row[header];
+                        tableHTML += `<td>${cell ? cell.value : ''}</td>`;
+                    });
+                    tableHTML += '</tr>';
+                });
+                tableHTML += '</tbody></table>';
+                resultOutputDiv.innerHTML = tableHTML;
+            }
+            
+            function toggleLoading(button, isLoading) {
+                button.disabled = isLoading;
+                button.style.cursor = isLoading ? 'wait' : 'pointer';
+                button.style.opacity = isLoading ? '0.7' : '1';
+            }
+        });
+    </script>
+</body>
+</html>
