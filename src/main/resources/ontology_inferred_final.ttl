@@ -82260,7 +82260,7 @@ rdf:Seq  rdf:type        rdfs:Class , rdfs:Resource;
         rdfs:subClassOf  rdf:Seq , rdfs:Container .
 
 rdfs:Datatype  rdf:type  rdfs:Class , rdfs:Resource;
-        rdfs:subClassOf  rdfs:Datatype , rdfs:Resource , rdfs:Class .
+        rdfs:subClassOf  rdfs:Datatype , rdfs:Class , rdfs:Resource .
 
 rdf:Alt  rdf:type        rdfs:Class , rdfs:Resource;
         rdfs:subClassOf  rdf:Alt , rdfs:Container .
