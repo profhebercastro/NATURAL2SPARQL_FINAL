@@ -35,7 +35,7 @@ rdfs:range  rdf:type  rdf:Property , rdfs:Resource;
 rdfs:comment  rdf:type  rdf:Property , rdfs:Resource;
         rdfs:range  rdfs:Literal .
 
-rdf:XMLLiteral  rdf:type  rdfs:Datatype , rdfs:Class , rdfs:Resource .
+rdf:XMLLiteral  rdf:type  rdfs:Datatype , rdfs:Resource , rdfs:Class .
 
 rdf:subject  rdf:type       rdf:Property , rdfs:Resource;
         rdfs:domain         rdf:Statement;
@@ -70,6 +70,17 @@ rdf:rest  rdf:type          rdf:Property , rdfs:Resource;
         rdfs:domain         rdf:List;
         rdfs:range          rdf:List;
         rdfs:subPropertyOf  rdf:rest .
+
+b3:MRSA3B_Negociado_20250625
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250625;
+        b3:precoAbertura     "28.8"^^xsd:double;
+        b3:precoFechamento   "28.8"^^xsd:double;
+        b3:precoMaximo       "28.8"^^xsd:double;
+        b3:precoMedio        "28.8"^^xsd:double;
+        b3:precoMinimo       "28.8"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2880.0"^^xsd:double .
 
 b3:LJQQ3_Negociado_20250610
         rdf:type             b3:Negociado_Em_Pregao;
@@ -3453,17 +3464,6 @@ b3:ARML3_Negociado_20250612
         b3:totalNegocios     "320800.0"^^xsd:double;
         b3:volumeNegociacao  "1631599.0"^^xsd:double .
 
-b3:HYPE3_Negociado_20250616
-        rdf:type             b3:Negociado_Em_Pregao;
-        b3:negociadoDurante  b3:Pregao_20250616;
-        b3:precoAbertura     "27.95"^^xsd:double;
-        b3:precoFechamento   "28.41"^^xsd:double;
-        b3:precoMaximo       "28.87"^^xsd:double;
-        b3:precoMedio        "28.48"^^xsd:double;
-        b3:precoMinimo       "27.75"^^xsd:double;
-        b3:totalNegocios     "3477600.0"^^xsd:double;
-        b3:volumeNegociacao  9.9072487E7 .
-
 b3:GGBR4_Negociado_20250602
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250602;
@@ -3474,6 +3474,17 @@ b3:GGBR4_Negociado_20250602
         b3:precoMinimo       "15.88"^^xsd:double;
         b3:totalNegocios     1.50563E7;
         b3:volumeNegociacao  2.42286393E8 .
+
+b3:HYPE3_Negociado_20250616
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250616;
+        b3:precoAbertura     "27.95"^^xsd:double;
+        b3:precoFechamento   "28.41"^^xsd:double;
+        b3:precoMaximo       "28.87"^^xsd:double;
+        b3:precoMedio        "28.48"^^xsd:double;
+        b3:precoMinimo       "27.75"^^xsd:double;
+        b3:totalNegocios     "3477600.0"^^xsd:double;
+        b3:volumeNegociacao  9.9072487E7 .
 
 b3:PETR3_Negociado_20250620
         rdf:type             b3:Negociado_Em_Pregao;
@@ -5296,6 +5307,17 @@ b3:NEOE3_Negociado_20250609
         b3:precoMinimo       "24.02"^^xsd:double;
         b3:totalNegocios     "424200.0"^^xsd:double;
         b3:volumeNegociacao  1.0257071E7 .
+
+b3:B3SA3_Negociado_20250603
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250603;
+        b3:precoAbertura     "13.65"^^xsd:double;
+        b3:precoFechamento   "14.18"^^xsd:double;
+        b3:precoMaximo       "14.19"^^xsd:double;
+        b3:precoMedio        "13.99"^^xsd:double;
+        b3:precoMinimo       "13.65"^^xsd:double;
+        b3:totalNegocios     4.41783E7;
+        b3:volumeNegociacao  6.1841493E8 .
 
 <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#ARMAC LOCAÇÃO. LOGÍSTICA E SERVIÇOS S.A.>
         rdf:type    b3:Valor_Mobiliario;
@@ -7336,6 +7358,17 @@ b3:PFRM3_Negociado_20250604
         b3:totalNegocios     "177100.0"^^xsd:double;
         b3:volumeNegociacao  "1496934.0"^^xsd:double .
 
+b3:EQMA3B_Negociado_20250605
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250605;
+        b3:precoAbertura     "28.18"^^xsd:double;
+        b3:precoFechamento   "28.18"^^xsd:double;
+        b3:precoMaximo       "28.18"^^xsd:double;
+        b3:precoMedio        "28.18"^^xsd:double;
+        b3:precoMinimo       "28.18"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2818.0"^^xsd:double .
+
 b3:MLAS3_Negociado_20250610
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250610;
@@ -9306,6 +9339,17 @@ b3:NEOE3_Negociado_20250618
         b3:totalNegocios     "1740000.0"^^xsd:double;
         b3:volumeNegociacao  4.3970358E7 .
 
+b3:B3SA3_Negociado_20250612
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250612;
+        b3:precoAbertura     "12.87"^^xsd:double;
+        b3:precoFechamento   "12.98"^^xsd:double;
+        b3:precoMaximo       "13.09"^^xsd:double;
+        b3:precoMedio        "13.0"^^xsd:double;
+        b3:precoMinimo       "12.8"^^xsd:double;
+        b3:totalNegocios     6.63556E7;
+        b3:volumeNegociacao  8.62793977E8 .
+
 b3:NEXP3_Negociado_20250605
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250605;
@@ -9990,6 +10034,17 @@ b3:PSSA3_Negociado_20250620
         b3:precoMinimo       "52.96"^^xsd:double;
         b3:totalNegocios     "1448400.0"^^xsd:double;
         b3:volumeNegociacao  7.7299801E7 .
+
+b3:B3SA3_Negociado_20250617
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250617;
+        b3:precoAbertura     "13.59"^^xsd:double;
+        b3:precoFechamento   "13.53"^^xsd:double;
+        b3:precoMaximo       "13.63"^^xsd:double;
+        b3:precoMedio        "13.51"^^xsd:double;
+        b3:precoMinimo       "13.45"^^xsd:double;
+        b3:totalNegocios     2.93137E7;
+        b3:volumeNegociacao  3.96097352E8 .
 
 b3:BLAU3_Negociado_20250625
         rdf:type             b3:Negociado_Em_Pregao;
@@ -11048,6 +11103,17 @@ b3:CRPG5_Negociado_20250618
         b3:precoMinimo       "18.6"^^xsd:double;
         b3:totalNegocios     "6300.0"^^xsd:double;
         b3:volumeNegociacao  "117773.0"^^xsd:double .
+
+b3:MRSA3B_Negociado_20250610
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250610;
+        b3:precoAbertura     "26.26"^^xsd:double;
+        b3:precoFechamento   "26.26"^^xsd:double;
+        b3:precoMaximo       "26.26"^^xsd:double;
+        b3:precoMedio        "26.26"^^xsd:double;
+        b3:precoMinimo       "26.26"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2626.0"^^xsd:double .
 
 b3:CSNA3_Negociado_20250625
         rdf:type             b3:Negociado_Em_Pregao;
@@ -14106,6 +14172,17 @@ b3:BMGB4_Negociado_20250618
         b3:totalNegocios     "334000.0"^^xsd:double;
         b3:volumeNegociacao  "1229260.0"^^xsd:double .
 
+b3:B3SA3_Negociado_20250626
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250626;
+        b3:precoAbertura     "13.72"^^xsd:double;
+        b3:precoFechamento   "14.1"^^xsd:double;
+        b3:precoMaximo       "14.2"^^xsd:double;
+        b3:precoMedio        "14.02"^^xsd:double;
+        b3:precoMinimo       "13.6"^^xsd:double;
+        b3:totalNegocios     3.33832E7;
+        b3:volumeNegociacao  4.6806959E8 .
+
 b3:PDGR3_Negociado_20250604
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250604;
@@ -15715,6 +15792,17 @@ b3:ENGI3  rdf:type                      b3:Valor_Mobiliario , b3:Empresa_Capital
         b3:atuaEm                       b3:Energia_Eletrica , b3:Utilidade_Publica;
         b3:negociado                    b3:ENGI3_Negociado_20250625 , b3:ENGI3_Negociado_20250609 , b3:ENGI3_Negociado_20250626 , b3:ENGI3_Negociado_20250602 , b3:ENGI3_Negociado_20250627 , b3:ENGI3_Negociado_20250620 , b3:ENGI3_Negociado_20250616 , b3:ENGI3_Negociado_20250603 , b3:ENGI3_Negociado_20250617 , b3:ENGI3_Negociado_20250623 , b3:ENGI3_Negociado_20250604 , b3:ENGI3_Negociado_20250610 , b3:ENGI3_Negociado_20250618 , b3:ENGI3_Negociado_20250624 , b3:ENGI3_Negociado_20250605 , b3:ENGI3_Negociado_20250611 , b3:ENGI3_Negociado_20250606 , b3:ENGI3_Negociado_20250612 , b3:ENGI3_Negociado_20250613 , b3:ENGI3_Negociado_20250630;
         b3:temValorMobiliarioNegociado  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#ENERGISA S.A.> .
+
+b3:EQMA3B_Negociado_20250623
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250623;
+        b3:precoAbertura     "26.01"^^xsd:double;
+        b3:precoFechamento   "26.32"^^xsd:double;
+        b3:precoMaximo       "26.32"^^xsd:double;
+        b3:precoMedio        "25.94"^^xsd:double;
+        b3:precoMinimo       "25.51"^^xsd:double;
+        b3:totalNegocios     "300.0"^^xsd:double;
+        b3:volumeNegociacao  "7784.0"^^xsd:double .
 
 b3:POMO4_Negociado_20250610
         rdf:type             b3:Negociado_Em_Pregao;
@@ -17635,6 +17723,17 @@ b3:SOND6  rdf:type                      b3:Empresa_Capital_Aberto , b3:Valor_Mob
         rdfs:label  "TRONOX PIGMENTOS DO BRASIL S.A.";
         b3:ticker   "TRONOX PIGMENTOS DO BRASIL S.A." .
 
+b3:B3SA3_Negociado_20250630
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250630;
+        b3:precoAbertura     "14.06"^^xsd:double;
+        b3:precoFechamento   "14.58"^^xsd:double;
+        b3:precoMaximo       "14.6"^^xsd:double;
+        b3:precoMedio        "14.46"^^xsd:double;
+        b3:precoMinimo       "14.04"^^xsd:double;
+        b3:totalNegocios     3.41393E7;
+        b3:volumeNegociacao  4.93870114E8 .
+
 b3:NEXP3_Negociado_20250623
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250623;
@@ -19468,17 +19567,6 @@ b3:DASA3_Negociado_20250617
         b3:totalNegocios     "1312700.0"^^xsd:double;
         b3:volumeNegociacao  "1897923.0"^^xsd:double .
 
-b3:BGIP4_Negociado_20250616
-        rdf:type             b3:Negociado_Em_Pregao;
-        b3:negociadoDurante  b3:Pregao_20250616;
-        b3:precoAbertura     "27.3"^^xsd:double;
-        b3:precoFechamento   "27.5"^^xsd:double;
-        b3:precoMaximo       "28.92"^^xsd:double;
-        b3:precoMedio        "27.72"^^xsd:double;
-        b3:precoMinimo       "27.04"^^xsd:double;
-        b3:totalNegocios     "3600.0"^^xsd:double;
-        b3:volumeNegociacao  "99796.0"^^xsd:double .
-
 b3:ALOS3_Negociado_20250602
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250602;
@@ -19489,6 +19577,17 @@ b3:ALOS3_Negociado_20250602
         b3:precoMinimo       "21.92"^^xsd:double;
         b3:totalNegocios     "2309400.0"^^xsd:double;
         b3:volumeNegociacao  5.1036182E7 .
+
+b3:BGIP4_Negociado_20250616
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250616;
+        b3:precoAbertura     "27.3"^^xsd:double;
+        b3:precoFechamento   "27.5"^^xsd:double;
+        b3:precoMaximo       "28.92"^^xsd:double;
+        b3:precoMedio        "27.72"^^xsd:double;
+        b3:precoMinimo       "27.04"^^xsd:double;
+        b3:totalNegocios     "3600.0"^^xsd:double;
+        b3:volumeNegociacao  "99796.0"^^xsd:double .
 
 b3:MBLY3_Negociado_20250602
         rdf:type             b3:Negociado_Em_Pregao;
@@ -21232,6 +21331,17 @@ b3:JSLG3_Negociado_20250624
         b3:precoMinimo       "5.96"^^xsd:double;
         b3:totalNegocios     "385100.0"^^xsd:double;
         b3:volumeNegociacao  "2371367.0"^^xsd:double .
+
+b3:B3SA3_Negociado_20250602
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250602;
+        b3:precoAbertura     "14.16"^^xsd:double;
+        b3:precoFechamento   "13.71"^^xsd:double;
+        b3:precoMaximo       "14.17"^^xsd:double;
+        b3:precoMedio        "13.68"^^xsd:double;
+        b3:precoMinimo       "13.54"^^xsd:double;
+        b3:totalNegocios     4.5794E7;
+        b3:volumeNegociacao  6.26685889E8 .
 
 b3:GOAU3_Negociado_20250606
         rdf:type             b3:Negociado_Em_Pregao;
@@ -23779,6 +23889,17 @@ b3:TTEN3_Negociado_20250630
         b3:totalNegocios     "2504900.0"^^xsd:double;
         b3:volumeNegociacao  3.7773688E7 .
 
+b3:MRSA3B_Negociado_20250605
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250605;
+        b3:precoAbertura     "28.95"^^xsd:double;
+        b3:precoFechamento   "28.95"^^xsd:double;
+        b3:precoMaximo       "28.95"^^xsd:double;
+        b3:precoMedio        "28.95"^^xsd:double;
+        b3:precoMinimo       "28.95"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2895.0"^^xsd:double .
+
 b3:SMTO3_Negociado_20250623
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250623;
@@ -24192,6 +24313,17 @@ b3:ALUP11_Negociado_20250605
         b3:totalNegocios     "932000.0"^^xsd:double;
         b3:volumeNegociacao  2.8316701E7 .
 
+b3:EQMA3B_Negociado_20250609
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250609;
+        b3:precoAbertura     "26.1"^^xsd:double;
+        b3:precoFechamento   "26.1"^^xsd:double;
+        b3:precoMaximo       "26.1"^^xsd:double;
+        b3:precoMedio        "26.1"^^xsd:double;
+        b3:precoMinimo       "26.1"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2610.0"^^xsd:double .
+
 <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#METALURGICA GERDAU S.A.>
         rdf:type    b3:Valor_Mobiliario;
         rdfs:label  "METALURGICA GERDAU S.A.";
@@ -24285,6 +24417,12 @@ b3:FESA3_Negociado_20250617
         b3:totalNegocios     "300.0"^^xsd:double;
         b3:volumeNegociacao  "3653.0"^^xsd:double .
 
+b3:SAPR3  rdf:type                      b3:Valor_Mobiliario , b3:Empresa_Capital_Aberto;
+        rdfs:label                      "SAPR3"@pt , "SAPR3";
+        b3:atuaEm                       b3:Utilidade_Publica , b3:Agua_e_Saneamento;
+        b3:negociado                    b3:SAPR3_Negociado_20250605 , b3:SAPR3_Negociado_20250626 , b3:SAPR3_Negociado_20250604 , b3:SAPR3_Negociado_20250612 , b3:SAPR3_Negociado_20250617 , b3:SAPR3_Negociado_20250606 , b3:SAPR3_Negociado_20250609 , b3:SAPR3_Negociado_20250620 , b3:SAPR3_Negociado_20250623 , b3:SAPR3_Negociado_20250616 , b3:SAPR3_Negociado_20250611 , b3:SAPR3_Negociado_20250625 , b3:SAPR3_Negociado_20250618 , b3:SAPR3_Negociado_20250630 , b3:SAPR3_Negociado_20250603 , b3:SAPR3_Negociado_20250624 , b3:SAPR3_Negociado_20250613 , b3:SAPR3_Negociado_20250602 , b3:SAPR3_Negociado_20250610 , b3:SAPR3_Negociado_20250627;
+        b3:temValorMobiliarioNegociado  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#CIA SANEAMENTO DO PARANA - SANEPAR> .
+
 b3:ALOS3_Negociado_20250616
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250616;
@@ -24295,12 +24433,6 @@ b3:ALOS3_Negociado_20250616
         b3:precoMinimo       "21.6"^^xsd:double;
         b3:totalNegocios     "3775800.0"^^xsd:double;
         b3:volumeNegociacao  8.2034322E7 .
-
-b3:SAPR3  rdf:type                      b3:Valor_Mobiliario , b3:Empresa_Capital_Aberto;
-        rdfs:label                      "SAPR3"@pt , "SAPR3";
-        b3:atuaEm                       b3:Utilidade_Publica , b3:Agua_e_Saneamento;
-        b3:negociado                    b3:SAPR3_Negociado_20250605 , b3:SAPR3_Negociado_20250626 , b3:SAPR3_Negociado_20250604 , b3:SAPR3_Negociado_20250612 , b3:SAPR3_Negociado_20250617 , b3:SAPR3_Negociado_20250606 , b3:SAPR3_Negociado_20250609 , b3:SAPR3_Negociado_20250620 , b3:SAPR3_Negociado_20250623 , b3:SAPR3_Negociado_20250616 , b3:SAPR3_Negociado_20250611 , b3:SAPR3_Negociado_20250625 , b3:SAPR3_Negociado_20250618 , b3:SAPR3_Negociado_20250630 , b3:SAPR3_Negociado_20250603 , b3:SAPR3_Negociado_20250624 , b3:SAPR3_Negociado_20250613 , b3:SAPR3_Negociado_20250602 , b3:SAPR3_Negociado_20250610 , b3:SAPR3_Negociado_20250627;
-        b3:temValorMobiliarioNegociado  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#CIA SANEAMENTO DO PARANA - SANEPAR> .
 
 b3:VBBR3_Negociado_20250617
         rdf:type             b3:Negociado_Em_Pregao;
@@ -25219,9 +25351,10 @@ b3:TECN3_Negociado_20250610
         b3:totalNegocios     "57000.0"^^xsd:double;
         b3:volumeNegociacao  "376512.0"^^xsd:double .
 
-b3:MRSA6B  rdf:type                     b3:Empresa_Capital_Aberto;
-        rdfs:label                      "MRSA6B"@pt;
+b3:MRSA6B  rdf:type                     b3:Valor_Mobiliario , b3:Empresa_Capital_Aberto;
+        rdfs:label                      "MRSA6B" , "MRSA6B"@pt;
         b3:atuaEm                       b3:Transporte_Ferroviario , b3:Transporte , b3:Bens_Industriais;
+        b3:negociado                    b3:MRSA6B_Negociado_20250609;
         b3:temValorMobiliarioNegociado  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#MRS LOGISTICA S.A.> .
 
 b3:RAPT4_Negociado_20250616
@@ -25464,6 +25597,17 @@ b3:NEOE3_Negociado_20250617
         b3:precoMinimo       "25.25"^^xsd:double;
         b3:totalNegocios     "1865900.0"^^xsd:double;
         b3:volumeNegociacao  4.8154245E7 .
+
+b3:B3SA3_Negociado_20250611
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250611;
+        b3:precoAbertura     "13.07"^^xsd:double;
+        b3:precoFechamento   "13.24"^^xsd:double;
+        b3:precoMaximo       "13.43"^^xsd:double;
+        b3:precoMedio        "13.21"^^xsd:double;
+        b3:precoMinimo       "12.9"^^xsd:double;
+        b3:totalNegocios     6.19255E7;
+        b3:volumeNegociacao  8.18305781E8 .
 
 b3:NEXP3_Negociado_20250604
         rdf:type             b3:Negociado_Em_Pregao;
@@ -26169,6 +26313,17 @@ b3:ALPA3_Negociado_20250605
         b3:precoMinimo       "8.68"^^xsd:double;
         b3:totalNegocios     "3600.0"^^xsd:double;
         b3:volumeNegociacao  "31895.0"^^xsd:double .
+
+b3:B3SA3_Negociado_20250616
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250616;
+        b3:precoAbertura     "13.3"^^xsd:double;
+        b3:precoFechamento   "13.47"^^xsd:double;
+        b3:precoMaximo       "13.62"^^xsd:double;
+        b3:precoMedio        "13.51"^^xsd:double;
+        b3:precoMinimo       "13.28"^^xsd:double;
+        b3:totalNegocios     3.12351E7;
+        b3:volumeNegociacao  4.22213171E8 .
 
 b3:NEXP3_Negociado_20250609
         rdf:type             b3:Negociado_Em_Pregao;
@@ -29415,6 +29570,17 @@ b3:NEOE3_Negociado_20250626
         b3:totalNegocios     "2022700.0"^^xsd:double;
         b3:volumeNegociacao  5.0065163E7 .
 
+b3:B3SA3_Negociado_20250620
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250620;
+        b3:precoAbertura     "13.6"^^xsd:double;
+        b3:precoFechamento   "13.62"^^xsd:double;
+        b3:precoMaximo       "13.7"^^xsd:double;
+        b3:precoMedio        "13.59"^^xsd:double;
+        b3:precoMinimo       "13.44"^^xsd:double;
+        b3:totalNegocios     5.22058E7;
+        b3:volumeNegociacao  7.0972167E8 .
+
 b3:NEXP3_Negociado_20250613
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250613;
@@ -30086,6 +30252,17 @@ b3:BMOB3_Negociado_20250620
         b3:precoMinimo       "19.09"^^xsd:double;
         b3:totalNegocios     "275700.0"^^xsd:double;
         b3:volumeNegociacao  "5321801.0"^^xsd:double .
+
+b3:B3SA3_Negociado_20250625
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250625;
+        b3:precoAbertura     "13.41"^^xsd:double;
+        b3:precoFechamento   "13.61"^^xsd:double;
+        b3:precoMaximo       "13.67"^^xsd:double;
+        b3:precoMedio        "13.59"^^xsd:double;
+        b3:precoMinimo       "13.4"^^xsd:double;
+        b3:totalNegocios     2.02181E7;
+        b3:volumeNegociacao  2.74923659E8 .
 
 b3:NEXP3_Negociado_20250618
         rdf:type             b3:Negociado_Em_Pregao;
@@ -33824,6 +34001,17 @@ b3:UGPA3_Negociado_20250610
         b3:totalNegocios     "4149800.0"^^xsd:double;
         b3:volumeNegociacao  6.9215937E7 .
 
+b3:MRSA6B_Negociado_20250609
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250609;
+        b3:precoAbertura     "25.5"^^xsd:double;
+        b3:precoFechamento   "25.5"^^xsd:double;
+        b3:precoMaximo       "25.5"^^xsd:double;
+        b3:precoMedio        "25.5"^^xsd:double;
+        b3:precoMinimo       "25.5"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2550.0"^^xsd:double .
+
 b3:SAPR3_Negociado_20250627
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250627;
@@ -37151,9 +37339,10 @@ b3:PDTC3_Negociado_20250611
         rdfs:label  "CRUZEIRO DO SUL EDUCACIONAL S.A.";
         b3:ticker   "CRUZEIRO DO SUL EDUCACIONAL S.A." .
 
-b3:MRSA5B  rdf:type                     b3:Empresa_Capital_Aberto;
-        rdfs:label                      "MRSA5B"@pt;
+b3:MRSA5B  rdf:type                     b3:Valor_Mobiliario , b3:Empresa_Capital_Aberto;
+        rdfs:label                      "MRSA5B" , "MRSA5B"@pt;
         b3:atuaEm                       b3:Transporte_Ferroviario , b3:Transporte , b3:Bens_Industriais;
+        b3:negociado                    b3:MRSA5B_Negociado_20250609;
         b3:temValorMobiliarioNegociado  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#MRS LOGISTICA S.A.> .
 
 b3:LIGT3_Negociado_20250612
@@ -37966,6 +38155,17 @@ b3:AVLL3_Negociado_20250620
         b3:precoMinimo       "1.85"^^xsd:double;
         b3:totalNegocios     "900.0"^^xsd:double;
         b3:volumeNegociacao  "1667.0"^^xsd:double .
+
+b3:B3SA3_Negociado_20250606
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250606;
+        b3:precoAbertura     "13.53"^^xsd:double;
+        b3:precoFechamento   "13.57"^^xsd:double;
+        b3:precoMaximo       "13.66"^^xsd:double;
+        b3:precoMedio        "13.59"^^xsd:double;
+        b3:precoMinimo       "13.53"^^xsd:double;
+        b3:totalNegocios     2.49363E7;
+        b3:volumeNegociacao  3.39010414E8 .
 
 b3:BEEF9_Negociado_20250603
         rdf:type             b3:Negociado_Em_Pregao;
@@ -39354,6 +39554,17 @@ b3:PFRM3_Negociado_20250602
         b3:totalNegocios     "156200.0"^^xsd:double;
         b3:volumeNegociacao  "1331264.0"^^xsd:double .
 
+b3:EQMA3B_Negociado_20250603
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250603;
+        b3:precoAbertura     "25.4"^^xsd:double;
+        b3:precoFechamento   "26.99"^^xsd:double;
+        b3:precoMaximo       "26.99"^^xsd:double;
+        b3:precoMedio        "25.99"^^xsd:double;
+        b3:precoMinimo       "25.4"^^xsd:double;
+        b3:totalNegocios     "400.0"^^xsd:double;
+        b3:volumeNegociacao  "10398.0"^^xsd:double .
+
 b3:WLMM4_Negociado_20250612
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250612;
@@ -40484,6 +40695,17 @@ b3:DOTZ3_Negociado_20250605
         b3:totalNegocios     "26100.0"^^xsd:double;
         b3:volumeNegociacao  "204108.0"^^xsd:double .
 
+b3:MRSA3B_Negociado_20250609
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250609;
+        b3:precoAbertura     "26.19"^^xsd:double;
+        b3:precoFechamento   "26.19"^^xsd:double;
+        b3:precoMaximo       "26.19"^^xsd:double;
+        b3:precoMedio        "26.19"^^xsd:double;
+        b3:precoMinimo       "26.19"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2619.0"^^xsd:double .
+
 b3:SMTO3_Negociado_20250627
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250627;
@@ -41399,6 +41621,17 @@ b3:NEOE3_Negociado_20250616
         b3:precoMinimo       "24.4"^^xsd:double;
         b3:totalNegocios     "2258700.0"^^xsd:double;
         b3:volumeNegociacao  5.7470184E7 .
+
+b3:B3SA3_Negociado_20250610
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250610;
+        b3:precoAbertura     "13.3"^^xsd:double;
+        b3:precoFechamento   "13.14"^^xsd:double;
+        b3:precoMaximo       "13.4"^^xsd:double;
+        b3:precoMedio        "13.19"^^xsd:double;
+        b3:precoMinimo       "13.05"^^xsd:double;
+        b3:totalNegocios     3.22553E7;
+        b3:volumeNegociacao  4.25635293E8 .
 
 b3:NEXP3_Negociado_20250603
         rdf:type             b3:Negociado_Em_Pregao;
@@ -46390,16 +46623,16 @@ b3:ALPA3_Negociado_20250613
         b3:totalNegocios     "148500.0"^^xsd:double;
         b3:volumeNegociacao  "1332496.0"^^xsd:double .
 
-b3:NEXP3_Negociado_20250617
+b3:B3SA3_Negociado_20250624
         rdf:type             b3:Negociado_Em_Pregao;
-        b3:negociadoDurante  b3:Pregao_20250617;
-        b3:precoAbertura     "3.8"^^xsd:double;
-        b3:precoFechamento   "3.88"^^xsd:double;
-        b3:precoMaximo       "3.88"^^xsd:double;
-        b3:precoMedio        "3.85"^^xsd:double;
-        b3:precoMinimo       "3.8"^^xsd:double;
-        b3:totalNegocios     "700.0"^^xsd:double;
-        b3:volumeNegociacao  "2700.0"^^xsd:double .
+        b3:negociadoDurante  b3:Pregao_20250624;
+        b3:precoAbertura     "13.48"^^xsd:double;
+        b3:precoFechamento   "13.52"^^xsd:double;
+        b3:precoMaximo       "13.68"^^xsd:double;
+        b3:precoMedio        "13.55"^^xsd:double;
+        b3:precoMinimo       "13.36"^^xsd:double;
+        b3:totalNegocios     2.35738E7;
+        b3:volumeNegociacao  3.19632557E8 .
 
 b3:RCSL4_Negociado_20250605
         rdf:type             b3:Negociado_Em_Pregao;
@@ -46433,6 +46666,17 @@ b3:CLSC4_Negociado_20250612
         b3:precoMinimo       "98.35"^^xsd:double;
         b3:totalNegocios     "8700.0"^^xsd:double;
         b3:volumeNegociacao  "860472.0"^^xsd:double .
+
+b3:NEXP3_Negociado_20250617
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250617;
+        b3:precoAbertura     "3.8"^^xsd:double;
+        b3:precoFechamento   "3.88"^^xsd:double;
+        b3:precoMaximo       "3.88"^^xsd:double;
+        b3:precoMedio        "3.85"^^xsd:double;
+        b3:precoMinimo       "3.8"^^xsd:double;
+        b3:totalNegocios     "700.0"^^xsd:double;
+        b3:volumeNegociacao  "2700.0"^^xsd:double .
 
 b3:OIBR4_Negociado_20250611
         rdf:type             b3:Negociado_Em_Pregao;
@@ -52451,6 +52695,17 @@ b3:TASA4_Negociado_20250602
         b3:totalNegocios     "286000.0"^^xsd:double;
         b3:volumeNegociacao  "2174894.0"^^xsd:double .
 
+b3:EQMA3B_Negociado_20250630
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250630;
+        b3:precoAbertura     "29.23"^^xsd:double;
+        b3:precoFechamento   "27.8"^^xsd:double;
+        b3:precoMaximo       "29.24"^^xsd:double;
+        b3:precoMedio        "28.3"^^xsd:double;
+        b3:precoMinimo       "27.51"^^xsd:double;
+        b3:totalNegocios     "900.0"^^xsd:double;
+        b3:volumeNegociacao  "25477.0"^^xsd:double .
+
 b3:BBSE3_Negociado_20250617
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250617;
@@ -54637,6 +54892,17 @@ b3:JSLG3_Negociado_20250627
         b3:totalNegocios     "554100.0"^^xsd:double;
         b3:volumeNegociacao  "3366424.0"^^xsd:double .
 
+b3:B3SA3_Negociado_20250605
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250605;
+        b3:precoAbertura     "13.82"^^xsd:double;
+        b3:precoFechamento   "13.58"^^xsd:double;
+        b3:precoMaximo       "13.95"^^xsd:double;
+        b3:precoMedio        "13.7"^^xsd:double;
+        b3:precoMinimo       "13.5"^^xsd:double;
+        b3:totalNegocios     4.45595E7;
+        b3:volumeNegociacao  6.10501815E8 .
+
 b3:BLAU3_Negociado_20250613
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250613;
@@ -56111,6 +56377,17 @@ b3:VITT3_Negociado_20250627
         b3:precoMinimo       "4.69"^^xsd:double;
         b3:totalNegocios     "98000.0"^^xsd:double;
         b3:volumeNegociacao  "468589.0"^^xsd:double .
+
+b3:EQMA3B_Negociado_20250602
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250602;
+        b3:precoAbertura     "25.21"^^xsd:double;
+        b3:precoFechamento   "25.21"^^xsd:double;
+        b3:precoMaximo       "25.21"^^xsd:double;
+        b3:precoMedio        "25.21"^^xsd:double;
+        b3:precoMinimo       "25.21"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2521.0"^^xsd:double .
 
 b3:WLMM4_Negociado_20250611
         rdf:type             b3:Negociado_Em_Pregao;
@@ -61743,9 +62020,10 @@ b3:CPFE3_Negociado_20250612
         b3:totalNegocios     "863600.0"^^xsd:double;
         b3:volumeNegociacao  3.4662591E7 .
 
-b3:MRSA3B  rdf:type                     b3:Empresa_Capital_Aberto;
-        rdfs:label                      "MRSA3B"@pt;
-        b3:atuaEm                       b3:Transporte_Ferroviario , b3:Transporte , b3:Bens_Industriais;
+b3:MRSA3B  rdf:type                     b3:Valor_Mobiliario , b3:Empresa_Capital_Aberto;
+        rdfs:label                      "MRSA3B"@pt , "MRSA3B";
+        b3:atuaEm                       b3:Transporte_Ferroviario , b3:Bens_Industriais , b3:Transporte;
+        b3:negociado                    b3:MRSA3B_Negociado_20250605 , b3:MRSA3B_Negociado_20250616 , b3:MRSA3B_Negociado_20250610 , b3:MRSA3B_Negociado_20250611 , b3:MRSA3B_Negociado_20250609 , b3:MRSA3B_Negociado_20250625;
         b3:temValorMobiliarioNegociado  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#MRS LOGISTICA S.A.> .
 
 b3:ANIM3_Negociado_20250630
@@ -62941,6 +63219,17 @@ b3:ALPA3_Negociado_20250612
         b3:precoMinimo       "8.71"^^xsd:double;
         b3:totalNegocios     "17900.0"^^xsd:double;
         b3:volumeNegociacao  "158190.0"^^xsd:double .
+
+b3:B3SA3_Negociado_20250623
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250623;
+        b3:precoAbertura     "13.62"^^xsd:double;
+        b3:precoFechamento   "13.4"^^xsd:double;
+        b3:precoMaximo       "13.63"^^xsd:double;
+        b3:precoMedio        "13.42"^^xsd:double;
+        b3:precoMinimo       "13.28"^^xsd:double;
+        b3:totalNegocios     3.29942E7;
+        b3:volumeNegociacao  4.42927091E8 .
 
 b3:RCSL4_Negociado_20250604
         rdf:type             b3:Negociado_Em_Pregao;
@@ -64492,6 +64781,17 @@ b3:CAML3_Negociado_20250609
         b3:totalNegocios     "1185100.0"^^xsd:double;
         b3:volumeNegociacao  "5590910.0"^^xsd:double .
 
+b3:EQMA3B_Negociado_20250620
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250620;
+        b3:precoAbertura     "28.14"^^xsd:double;
+        b3:precoFechamento   "28.2"^^xsd:double;
+        b3:precoMaximo       "28.2"^^xsd:double;
+        b3:precoMedio        "28.16"^^xsd:double;
+        b3:precoMinimo       "28.14"^^xsd:double;
+        b3:totalNegocios     "300.0"^^xsd:double;
+        b3:volumeNegociacao  "8449.0"^^xsd:double .
+
 b3:Exploracao_Refino_e_Distribuicao
         rdf:type    b3:Setor_Atuacao;
         rdfs:label  "Exploração. Refino e Distribuição"@pt .
@@ -65300,9 +65600,10 @@ b3:PORT3_Negociado_20250626
         b3:totalNegocios     "302600.0"^^xsd:double;
         b3:volumeNegociacao  "5290223.0"^^xsd:double .
 
-b3:B3SA3  rdf:type                      b3:Empresa_Capital_Aberto;
-        rdfs:label                      "B3SA3"@pt;
+b3:B3SA3  rdf:type                      b3:Valor_Mobiliario , b3:Empresa_Capital_Aberto;
+        rdfs:label                      "B3SA3"@pt , "B3SA3";
         b3:atuaEm                       b3:Servicos_Financeiros_Diversos , b3:Financeiro;
+        b3:negociado                    b3:B3SA3_Negociado_20250625 , b3:B3SA3_Negociado_20250612 , b3:B3SA3_Negociado_20250618 , b3:B3SA3_Negociado_20250624 , b3:B3SA3_Negociado_20250627 , b3:B3SA3_Negociado_20250604 , b3:B3SA3_Negociado_20250617 , b3:B3SA3_Negociado_20250609 , b3:B3SA3_Negociado_20250606 , b3:B3SA3_Negociado_20250611 , b3:B3SA3_Negociado_20250603 , b3:B3SA3_Negociado_20250616 , b3:B3SA3_Negociado_20250626 , b3:B3SA3_Negociado_20250613 , b3:B3SA3_Negociado_20250605 , b3:B3SA3_Negociado_20250630 , b3:B3SA3_Negociado_20250610 , b3:B3SA3_Negociado_20250602 , b3:B3SA3_Negociado_20250620 , b3:B3SA3_Negociado_20250623;
         b3:temValorMobiliarioNegociado  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#B3 S.A. - BRASIL. BOLSA. BALCÃO> .
 
 b3:ABCB4_Negociado_20250626
@@ -69939,6 +70240,17 @@ b3:CGRA4_Negociado_20250617
         b3:totalNegocios     "7400.0"^^xsd:double;
         b3:volumeNegociacao  "215312.0"^^xsd:double .
 
+b3:MRSA5B_Negociado_20250609
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250609;
+        b3:precoAbertura     "25.93"^^xsd:double;
+        b3:precoFechamento   "25.93"^^xsd:double;
+        b3:precoMaximo       "25.93"^^xsd:double;
+        b3:precoMedio        "25.93"^^xsd:double;
+        b3:precoMinimo       "25.93"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2593.0"^^xsd:double .
+
 <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#BCO ABC BRASIL S.A.>
         rdf:type    b3:Valor_Mobiliario;
         rdfs:label  "BCO ABC BRASIL S.A.";
@@ -71238,6 +71550,17 @@ b3:CPLE5_Negociado_20250626
         b3:totalNegocios     "1400.0"^^xsd:double;
         b3:volumeNegociacao  "19615.0"^^xsd:double .
 
+b3:B3SA3_Negociado_20250604
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250604;
+        b3:precoAbertura     "13.9"^^xsd:double;
+        b3:precoFechamento   "13.95"^^xsd:double;
+        b3:precoMaximo       "14.17"^^xsd:double;
+        b3:precoMedio        "14.01"^^xsd:double;
+        b3:precoMinimo       "13.88"^^xsd:double;
+        b3:totalNegocios     3.24151E7;
+        b3:volumeNegociacao  4.54285553E8 .
+
 b3:BLAU3_Negociado_20250612
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250612;
@@ -71817,6 +72140,17 @@ b3:PSSA3_Negociado_20250612
         b3:precoMinimo       "52.28"^^xsd:double;
         b3:totalNegocios     "1238300.0"^^xsd:double;
         b3:volumeNegociacao  6.5508603E7 .
+
+b3:B3SA3_Negociado_20250609
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250609;
+        b3:precoAbertura     "13.2"^^xsd:double;
+        b3:precoFechamento   "13.16"^^xsd:double;
+        b3:precoMaximo       "13.37"^^xsd:double;
+        b3:precoMedio        "13.21"^^xsd:double;
+        b3:precoMinimo       "13.07"^^xsd:double;
+        b3:totalNegocios     8.04518E7;
+        b3:volumeNegociacao  1.063244663E9 .
 
 b3:BLAU3_Negociado_20250617
         rdf:type             b3:Negociado_Em_Pregao;
@@ -75349,6 +75683,17 @@ b3:ALPA3_Negociado_20250602
         b3:totalNegocios     "2800.0"^^xsd:double;
         b3:volumeNegociacao  "23662.0"^^xsd:double .
 
+b3:B3SA3_Negociado_20250613
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250613;
+        b3:precoAbertura     "12.75"^^xsd:double;
+        b3:precoFechamento   "13.05"^^xsd:double;
+        b3:precoMaximo       "13.1"^^xsd:double;
+        b3:precoMedio        "12.92"^^xsd:double;
+        b3:precoMinimo       "12.7"^^xsd:double;
+        b3:totalNegocios     5.26541E7;
+        b3:volumeNegociacao  6.80540029E8 .
+
 b3:NEXP3_Negociado_20250606
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250606;
@@ -75969,6 +76314,17 @@ b3:BMOB3_Negociado_20250613
         b3:precoMinimo       "19.0"^^xsd:double;
         b3:totalNegocios     "166700.0"^^xsd:double;
         b3:volumeNegociacao  "3202520.0"^^xsd:double .
+
+b3:B3SA3_Negociado_20250618
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250618;
+        b3:precoAbertura     "13.49"^^xsd:double;
+        b3:precoFechamento   "13.79"^^xsd:double;
+        b3:precoMaximo       "13.8"^^xsd:double;
+        b3:precoMedio        "13.65"^^xsd:double;
+        b3:precoMinimo       "13.45"^^xsd:double;
+        b3:totalNegocios     5.54851E7;
+        b3:volumeNegociacao  7.57720366E8 .
 
 b3:BLAU3_Negociado_20250626
         rdf:type             b3:Negociado_Em_Pregao;
@@ -76654,6 +77010,17 @@ b3:RAIL3_Negociado_20250618
         b3:totalNegocios     1.31923E7;
         b3:volumeNegociacao  2.44470292E8 .
 
+b3:EQMA3B_Negociado_20250610
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250610;
+        b3:precoAbertura     "26.01"^^xsd:double;
+        b3:precoFechamento   "26.99"^^xsd:double;
+        b3:precoMaximo       "26.99"^^xsd:double;
+        b3:precoMedio        "26.5"^^xsd:double;
+        b3:precoMinimo       "26.01"^^xsd:double;
+        b3:totalNegocios     "200.0"^^xsd:double;
+        b3:volumeNegociacao  "5300.0"^^xsd:double .
+
 b3:BGIP3  rdf:type                      b3:Empresa_Capital_Aberto , b3:Valor_Mobiliario;
         rdfs:label                      "BGIP3" , "BGIP3"@pt;
         b3:atuaEm                       b3:Financeiro , b3:Bancos , b3:Intermediarios_Financeiros;
@@ -76927,10 +77294,22 @@ b3:CTAX3_Negociado_20250616
         b3:totalNegocios     "37900.0"^^xsd:double;
         b3:volumeNegociacao  "41481.0"^^xsd:double .
 
-b3:EQMA3B  rdf:type                     b3:Empresa_Capital_Aberto;
-        rdfs:label                      "EQMA3B"@pt;
-        b3:atuaEm                       b3:Energia_Eletrica , b3:Utilidade_Publica;
+b3:EQMA3B  rdf:type                     b3:Valor_Mobiliario , b3:Empresa_Capital_Aberto;
+        rdfs:label                      "EQMA3B"@pt , "EQMA3B";
+        b3:atuaEm                       b3:Utilidade_Publica , b3:Energia_Eletrica;
+        b3:negociado                    b3:EQMA3B_Negociado_20250624 , b3:EQMA3B_Negociado_20250605 , b3:EQMA3B_Negociado_20250623 , b3:EQMA3B_Negociado_20250603 , b3:EQMA3B_Negociado_20250620 , b3:EQMA3B_Negociado_20250630 , b3:EQMA3B_Negociado_20250609 , b3:EQMA3B_Negociado_20250610 , b3:EQMA3B_Negociado_20250602;
         b3:temValorMobiliarioNegociado  <https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#EQUATORIAL MARANHÃO DISTRIBUIDORA DE ENERGIA S.A.> .
+
+b3:MRSA3B_Negociado_20250611
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250611;
+        b3:precoAbertura     "26.3"^^xsd:double;
+        b3:precoFechamento   "26.3"^^xsd:double;
+        b3:precoMaximo       "26.3"^^xsd:double;
+        b3:precoMedio        "26.3"^^xsd:double;
+        b3:precoMinimo       "26.3"^^xsd:double;
+        b3:totalNegocios     "400.0"^^xsd:double;
+        b3:volumeNegociacao  "10520.0"^^xsd:double .
 
 b3:CSNA3_Negociado_20250626
         rdf:type             b3:Negociado_Em_Pregao;
@@ -77647,6 +78026,17 @@ b3:BALM4_Negociado_20250605
         b3:precoMinimo       "16.5"^^xsd:double;
         b3:totalNegocios     "500.0"^^xsd:double;
         b3:volumeNegociacao  "8281.0"^^xsd:double .
+
+b3:MRSA3B_Negociado_20250616
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250616;
+        b3:precoAbertura     "26.3"^^xsd:double;
+        b3:precoFechamento   "26.3"^^xsd:double;
+        b3:precoMaximo       "26.3"^^xsd:double;
+        b3:precoMedio        "26.3"^^xsd:double;
+        b3:precoMinimo       "26.3"^^xsd:double;
+        b3:totalNegocios     "100.0"^^xsd:double;
+        b3:volumeNegociacao  "2630.0"^^xsd:double .
 
 b3:PINE4_Negociado_20250630
         rdf:type             b3:Negociado_Em_Pregao;
@@ -80029,16 +80419,16 @@ b3:ALPA3_Negociado_20250616
 b3:Pregao_20250602  rdf:type  b3:Pregao;
         b3:ocorreEmData  "2025-06-02"^^xsd:date .
 
-b3:PSSA3_Negociado_20250630
+b3:B3SA3_Negociado_20250627
         rdf:type             b3:Negociado_Em_Pregao;
-        b3:negociadoDurante  b3:Pregao_20250630;
-        b3:precoAbertura     "54.13"^^xsd:double;
-        b3:precoFechamento   "55.2"^^xsd:double;
-        b3:precoMaximo       "55.2"^^xsd:double;
-        b3:precoMedio        "54.75"^^xsd:double;
-        b3:precoMinimo       "53.69"^^xsd:double;
-        b3:totalNegocios     "1263600.0"^^xsd:double;
-        b3:volumeNegociacao  6.9192349E7 .
+        b3:negociadoDurante  b3:Pregao_20250627;
+        b3:precoAbertura     "13.98"^^xsd:double;
+        b3:precoFechamento   "14.12"^^xsd:double;
+        b3:precoMaximo       "14.25"^^xsd:double;
+        b3:precoMedio        "14.13"^^xsd:double;
+        b3:precoMinimo       "13.95"^^xsd:double;
+        b3:totalNegocios     2.04219E7;
+        b3:volumeNegociacao  2.88626477E8 .
 
 b3:PDGR3_Negociado_20250605
         rdf:type             b3:Negociado_Em_Pregao;
@@ -80050,6 +80440,17 @@ b3:PDGR3_Negociado_20250605
         b3:precoMinimo       "0.28"^^xsd:double;
         b3:totalNegocios     "1852300.0"^^xsd:double;
         b3:volumeNegociacao  "543347.0"^^xsd:double .
+
+b3:PSSA3_Negociado_20250630
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250630;
+        b3:precoAbertura     "54.13"^^xsd:double;
+        b3:precoFechamento   "55.2"^^xsd:double;
+        b3:precoMaximo       "55.2"^^xsd:double;
+        b3:precoMedio        "54.75"^^xsd:double;
+        b3:precoMinimo       "53.69"^^xsd:double;
+        b3:totalNegocios     "1263600.0"^^xsd:double;
+        b3:volumeNegociacao  6.9192349E7 .
 
 b3:IRBR3_Negociado_20250618
         rdf:type             b3:Negociado_Em_Pregao;
@@ -81561,6 +81962,22 @@ b3:PFRM3_Negociado_20250623
         b3:totalNegocios     "131100.0"^^xsd:double;
         b3:volumeNegociacao  "1139125.0"^^xsd:double .
 
+b3:EQMA3B_Negociado_20250624
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250624;
+        b3:precoAbertura     "26.99"^^xsd:double;
+        b3:precoFechamento   "29.23"^^xsd:double;
+        b3:precoMaximo       "29.23"^^xsd:double;
+        b3:precoMedio        "27.22"^^xsd:double;
+        b3:precoMinimo       "26.6"^^xsd:double;
+        b3:totalNegocios     "800.0"^^xsd:double;
+        b3:volumeNegociacao  "21777.0"^^xsd:double .
+
+<https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#ELECTRO ACO ALTONA S.A.>
+        rdf:type    b3:Valor_Mobiliario;
+        rdfs:label  "ELECTRO ACO ALTONA S.A.";
+        b3:ticker   "ELECTRO ACO ALTONA S.A." .
+
 b3:POMO4_Negociado_20250611
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250611;
@@ -81571,22 +81988,6 @@ b3:POMO4_Negociado_20250611
         b3:precoMinimo       "7.26"^^xsd:double;
         b3:totalNegocios     "7031300.0"^^xsd:double;
         b3:volumeNegociacao  5.1922572E7 .
-
-<https://dcm.ffclrp.usp.br/lssb/stock-market-ontology#ELECTRO ACO ALTONA S.A.>
-        rdf:type    b3:Valor_Mobiliario;
-        rdfs:label  "ELECTRO ACO ALTONA S.A.";
-        b3:ticker   "ELECTRO ACO ALTONA S.A." .
-
-b3:ECOR3_Negociado_20250610
-        rdf:type             b3:Negociado_Em_Pregao;
-        b3:negociadoDurante  b3:Pregao_20250610;
-        b3:precoAbertura     "7.15"^^xsd:double;
-        b3:precoFechamento   "7.3"^^xsd:double;
-        b3:precoMaximo       "7.35"^^xsd:double;
-        b3:precoMedio        "7.23"^^xsd:double;
-        b3:precoMinimo       "7.04"^^xsd:double;
-        b3:totalNegocios     "4473400.0"^^xsd:double;
-        b3:volumeNegociacao  3.2345376E7 .
 
 b3:ITUB3_Negociado_20250602
         rdf:type             b3:Negociado_Em_Pregao;
@@ -81609,6 +82010,17 @@ b3:RANI3_Negociado_20250617
         b3:precoMinimo       "7.57"^^xsd:double;
         b3:totalNegocios     "477100.0"^^xsd:double;
         b3:volumeNegociacao  "3648303.0"^^xsd:double .
+
+b3:ECOR3_Negociado_20250610
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250610;
+        b3:precoAbertura     "7.15"^^xsd:double;
+        b3:precoFechamento   "7.3"^^xsd:double;
+        b3:precoMaximo       "7.35"^^xsd:double;
+        b3:precoMedio        "7.23"^^xsd:double;
+        b3:precoMinimo       "7.04"^^xsd:double;
+        b3:totalNegocios     "4473400.0"^^xsd:double;
+        b3:volumeNegociacao  3.2345376E7 .
 
 b3:HBRE3_Negociado_20250605
         rdf:type             b3:Negociado_Em_Pregao;
@@ -81848,7 +82260,7 @@ rdf:Seq  rdf:type        rdfs:Class , rdfs:Resource;
         rdfs:subClassOf  rdf:Seq , rdfs:Container .
 
 rdfs:Datatype  rdf:type  rdfs:Class , rdfs:Resource;
-        rdfs:subClassOf  rdfs:Datatype , rdfs:Class , rdfs:Resource .
+        rdfs:subClassOf  rdfs:Datatype , rdfs:Resource , rdfs:Class .
 
 rdf:Alt  rdf:type        rdfs:Class , rdfs:Resource;
         rdfs:subClassOf  rdf:Alt , rdfs:Container .
@@ -81858,7 +82270,7 @@ rdfs:Container  rdf:type  rdfs:Class , rdfs:Resource;
 
 rdfs:ContainerMembershipProperty
         rdf:type         rdfs:Class , rdfs:Resource;
-        rdfs:subClassOf  rdfs:ContainerMembershipProperty , rdfs:Resource , rdf:Property .
+        rdfs:subClassOf  rdfs:ContainerMembershipProperty , rdf:Property , rdfs:Resource .
 
 rdfs:isDefinedBy  rdf:type  rdf:Property , rdfs:Resource;
         rdfs:subPropertyOf  rdfs:isDefinedBy , rdfs:seeAlso .

@@ -1,4 +1,4 @@
-package com.example.Programa_heber.ontology;
+package com.example.Program.ontology;
 
 import jakarta.annotation.PostConstruct;
 import org.apache.jena.query.*;
@@ -74,7 +74,6 @@ public class Ontology {
 
     /**
      * Executa uma consulta SPARQL contra o modelo em memória.
-     * Este método não precisa de nenhuma alteração em relação à versão original.
      * @param sparqlQuery A consulta a ser executada.
      * @return Uma lista de mapas representando as linhas de resultado.
      */
