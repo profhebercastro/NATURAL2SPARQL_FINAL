@@ -54,9 +54,9 @@ def extrair_entidades_fixas(pergunta_lower):
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     
-    ticker_match = re.search(r'\b([a-zA-Z]{4}\d{1,2})\b', pergunta_lower)
+    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', pergunta_lower.upper())
     if ticker_match:
-        entidades['entidade_nome'] = ticker_match.group(1).upper()
+        entidades['entidade_nome'] = ticker_match.group(1)
     else:
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
@@ -64,15 +64,11 @@ def extrair_entidades_fixas(pergunta_lower):
                 entidades['entidade_nome'] = key
                 break
     
-    # Ordena as chaves (sinônimos) pelo comprimento para evitar correspondências parciais
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
-    
     for key in sorted_setor_keys:
-        # Procura pelo sinônimo (a chave do mapa) na pergunta
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
-            # Se encontrar, atribui o valor do mapa (o nome canônico)
             entidades['nome_setor'] = setor_map[key]
-            break # Para na primeira correspondência encontrada
+            break
 
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
@@ -86,9 +82,10 @@ def identificar_parametros_dinamicos(pergunta_lower):
     pergunta_sem_acento = remover_acentos(pergunta_lower)
 
     mapa_metricas = {
-        'calculo_intervalo_perc': ['intervalo intradiario percentual'],
-        'calculo_variacao_abs': ['variacao intradiaria absoluta'],
-        'calculo_variacao_perc': ['alta percentual', 'baixa percentual', 'percentual de alta', 'percentual de baixa'],
+        'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
+        'calculo_variacao_perc': ['variacao intradiaria percentual', 'variacao percentual'],
+        'calculo_intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
+        'calculo_intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
         'calculo_variacao_abs_abs': ['menor variacao'],
         'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
         'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
@@ -103,7 +100,7 @@ def identificar_parametros_dinamicos(pergunta_lower):
         if 'calculo' in dados or 'valor_desejado' in dados:
             break
         for s in sinonimos:
-            if remover_acentos(s) in pergunta_sem_acento:
+            if re.search(r'\b' + remover_acentos(s) + r'\b', pergunta_sem_acento):
                 if chave.startswith('calculo_'):
                     dados['calculo'] = chave.replace('calculo_', '')
                 else:
@@ -129,28 +126,21 @@ def process_question():
     data = request.get_json()
     if not data or 'question' not in data:
         return jsonify({"error": "Payload inválido."}), 400
-        
     pergunta_lower = data.get('question', '').lower()
     if not pergunta_lower.strip(): 
         return jsonify({"error": "A pergunta não pode ser vazia."}), 400
-
     if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-        if similaridades.any():
-            template_id_final = ref_ids_flat[similaridades.argmax()]
-        else:
-            return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
+        if similaridades.any(): template_id_final = ref_ids_flat[similaridades.argmax()]
+        else: return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
     else:
         return jsonify({"error": "Nenhum template de referência carregado."}), 500
-
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
-
     entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
     parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
     entidades_extraidas.update(parametros_dinamicos)
-    
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 

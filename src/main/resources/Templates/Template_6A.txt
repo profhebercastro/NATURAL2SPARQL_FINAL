@@ -1,13 +1,20 @@
-SELECT ?ticker ?resultadoCalculado WHERE {
-    BIND(b3:#ENTIDADE_NOME# AS ?SO1)
+SELECT ?ticker ?resultadoCalculado
+WHERE {
+    #FILTER_BLOCK_ENTIDADE#
+    
+    ?S1 P1 ?SO1 .
     ?SO1 P8 ?ticker .
+    
     ?SO1 P3 ?negociadoNode .
     ?negociadoNode P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
+    
     ?negociadoNode b3:precoMaximo ?maximo .
     ?negociadoNode b3:precoMinimo ?minimo .
     ?negociadoNode b3:precoAbertura ?abertura .
     ?negociadoNode b3:precoFechamento ?fechamento .
+    
+    FILTER(?abertura > 0)
     BIND((#CALCULO#) AS ?resultadoCalculado)
 }
 LIMIT 1

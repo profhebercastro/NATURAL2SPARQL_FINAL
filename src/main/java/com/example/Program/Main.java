@@ -86,9 +86,10 @@ public class Main {
 
             Map<String, Object> results = new HashMap<>();
             
+            // --- Listas para identificar os tipos de variáveis para formatação ---
             List<String> priceVarNames = List.of(
                 "precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio", 
-                "variacaoAbsoluta", "variacaoAbsolutaFinal"
+                "variacaoAbsoluta", "variacaoAbsolutaFinal", "resultadoCalculado"
             );
             List<String> largeNumberVarNames = List.of(
                 "volume", "volumeIndividual", "quantidade", "totalNegocios", "valor"
@@ -97,10 +98,12 @@ public class Main {
                 "variacaoPercentual", "intervaloPercentualFinal", "resultadoCalculado"
             );
             
+            // --- Formatadores de número ---
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
             NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
             DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(new Locale("pt", "BR")));
             
+            // Formatador personalizado para Volume: Símbolo R$ e separador de milhar com PONTO
             DecimalFormatSymbols symbols = new DecimalFormatSymbols();
             symbols.setGroupingSeparator('.');
             DecimalFormat volumeFormatter = new DecimalFormat("'R$ ' #,##0", symbols);
@@ -119,16 +122,21 @@ public class Main {
                     try {
                         double numericValue = Double.parseDouble(currentValue);
 
-                        if (priceVarNames.contains(varName)) {
+                        // A ordem é importante: primeiro verifica se é percentual
+                        if (percentageVarNames.contains(varName)) {
+                            formattedValue = percentageFormatter.format(numericValue);
+                        } else if (priceVarNames.contains(varName)) {
                             formattedValue = currencyFormatter.format(numericValue);
+                            // Garante duas casas decimais para valores absolutos que podem não ter
+                            if ((varName.equals("variacaoAbsoluta") || varName.equals("resultadoCalculado")) && !formattedValue.contains(",")) {
+                                formattedValue += ",00";
+                            }
                         } else if (largeNumberVarNames.contains(varName)) {
                             if (varName.toLowerCase().contains("volume")) {
                                 formattedValue = volumeFormatter.format(numericValue);
                             } else {
                                 formattedValue = integerFormatter.format(numericValue);
                             }
-                        } else if (percentageVarNames.contains(varName)) {
-                            formattedValue = percentageFormatter.format(numericValue);
                         }
                     } catch (NumberFormatException e) {
                         // Mantém o valor original se não for número (ex: um ticker)

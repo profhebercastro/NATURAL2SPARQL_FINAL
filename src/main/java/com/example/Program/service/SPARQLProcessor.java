@@ -42,30 +42,23 @@ public class SPARQLProcessor {
         try {
             String nlpResponseJson = callNlpService(naturalLanguageQuery);
             logger.info("Resposta do NLP: {}", nlpResponseJson);
-
             JsonNode rootNode = objectMapper.readTree(nlpResponseJson);
             String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
-
             if (templateId == null || templateId.isEmpty()) {
                  throw new IOException("NLP não retornou um templateId.");
             }
-
             String templateContent = loadTemplate(templateId);
             String finalQuery = buildQuery(templateContent, entitiesNode);
-
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
-            
             if (entitiesNode.has("CALCULO")) {
                 resposta.setTipoMetrica(entitiesNode.get("CALCULO").asText());
             } else if (entitiesNode.has("VALOR_DESEJADO")) {
                 resposta.setTipoMetrica(entitiesNode.get("VALOR_DESEJADO").asText());
             }
-
             logger.info("Consulta SPARQL final gerada:\n{}", finalQuery);
             return resposta;
-
         } catch (Exception e) {
             logger.error("Erro fatal ao gerar query para '{}': {}", naturalLanguageQuery, e.getMessage(), e);
             resposta.setErro("Erro ao processar a pergunta: " + e.getMessage());
@@ -76,7 +69,6 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
         
-        // --- 1. Renomeação Dinâmica da Variável ---
         if (entities.has("VALOR_DESEJADO") && (query.contains("?valor") || query.contains("?ANS"))) {
             String metricaKey = entities.get("VALOR_DESEJADO").asText().replace("metrica.", "");
             String varName = toCamelCase(metricaKey);
@@ -84,7 +76,6 @@ public class SPARQLProcessor {
             query = query.replace("?ANS", "?" + varName);
         }
 
-        // --- 2. Preenchimento dos Placeholders Dinâmicos (#PLACEHOLDER#) ---
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -109,21 +100,22 @@ public class SPARQLProcessor {
             }
         }
         
-        // =======================================================
-        //  !!! LÓGICA DE FILTRO CORRIGIDA AQUI !!!
-        // =======================================================
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
-            entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
+            String entidade = entities.get("ENTIDADE_NOME").asText();
+            if (entidade.matches("^[A-Z0-9]{5,6}$")) {
+                entidadeFilter = "BIND(b3:" + entidade + " AS ?tickerNode) \n    ?empresa b3:temValorMobiliarioNegociado ?tickerNode .";
+            } else {
+                entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\"))";
+            }
         }
+        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
 
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
             String nomeSetor = entities.get("NOME_SETOR").asText();
             setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
         }
-        
-        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
 
         if (query.contains("#FILTER_BLOCK#")) {
@@ -136,43 +128,14 @@ public class SPARQLProcessor {
             query = query.replace("#REGEX_FILTER#", regexFilter);
         }
         
-        // --- 4. Substituição dos Placeholders Genéricos (P*, S*) ---
         query = placeholderService.replaceGenericPlaceholders(query);
-
-        // --- 5. Adiciona os prefixos ---
         String prefixes = placeholderService.getPrefixes();
         
         return prefixes + query.replaceAll("#[A-Z_]+#", ""); 
     }
 
-    private String callNlpService(String query) throws IOException, InterruptedException {
-        String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(NLP_SERVICE_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody)).build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body());
-        }
-        return response.body();
-    }
-
-    private String loadTemplate(String templateName) {
-        String path = "/Templates/" + templateName + ".txt";
-        try (InputStream is = SPARQLProcessor.class.getResourceAsStream(path)) {
-            if (is == null) {
-                throw new IOException("Arquivo de template não encontrado: " + path);
-            }
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                return reader.lines().collect(Collectors.joining(System.lineSeparator()));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Falha ao carregar template: " + path, e);
-        }
-    }
-
     private String toCamelCase(String snakeCase) {
-        if (snakeCase == null || snakeCase.isEmpty()) {
-            return "";
-        }
+        if (snakeCase == null || snakeCase.isEmpty()) { return ""; }
         StringBuilder camelCase = new StringBuilder();
         boolean nextIsUpper = false;
         for (char c : snakeCase.toCharArray()) {
@@ -182,11 +145,27 @@ public class SPARQLProcessor {
                 if (nextIsUpper) {
                     camelCase.append(Character.toUpperCase(c));
                     nextIsUpper = false;
-                } else {
-                    camelCase.append(c);
-                }
+                } else { camelCase.append(c); }
             }
         }
         return camelCase.toString();
+    }
+    
+    private String callNlpService(String query) throws IOException, InterruptedException {
+        String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(NLP_SERVICE_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody)).build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) { throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body()); }
+        return response.body();
+    }
+
+    private String loadTemplate(String templateName) {
+        String path = "/Templates/" + templateName + ".txt";
+        try (InputStream is = SPARQLProcessor.class.getResourceAsStream(path)) {
+            if (is == null) { throw new IOException("Arquivo de template não encontrado: " + path); }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                return reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            }
+        } catch (IOException e) { throw new RuntimeException("Falha ao carregar template: " + path, e); }
     }
 }
