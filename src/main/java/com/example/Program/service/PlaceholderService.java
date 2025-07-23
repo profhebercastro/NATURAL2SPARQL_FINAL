@@ -18,12 +18,12 @@ import java.util.stream.Collectors;
 public class PlaceholderService {
     private static final Logger logger = LoggerFactory.getLogger(PlaceholderService.class);
     private static final String PROPERTIES_PATH = "placeholders.properties";
-    private Properties placeholders = new Properties();
+    private final Properties placeholders = new Properties();
 
     @PostConstruct
     public void loadProperties() {
         ClassPathResource resource = new ClassPathResource(PROPERTIES_PATH);
-        if (!resource.exists()) { throw new RuntimeException("Arquivo não encontrado: " + PROPERTIES_PATH); }
+        if (!resource.exists()) { throw new RuntimeException("Arquivo de placeholders não encontrado: " + PROPERTIES_PATH); }
         try (InputStream input = resource.getInputStream()) {
             placeholders.load(input);
             logger.info("Arquivo de placeholders '{}' carregado.", PROPERTIES_PATH);
@@ -38,6 +38,7 @@ public class PlaceholderService {
     
     public String replaceGenericPlaceholders(String query) {
         String result = query;
+        // Ordena as chaves pelo comprimento, da maior para a menor, para evitar substituições parciais (ex: S1 antes de S10)
         List<String> sortedKeys = placeholders.stringPropertyNames().stream()
                 .filter(k -> !k.startsWith("metrica.") && !k.startsWith("prefix."))
                 .sorted(Comparator.comparingInt(String::length).reversed())
@@ -45,29 +46,34 @@ public class PlaceholderService {
 
         for (String key : sortedKeys) {
             String value = placeholders.getProperty(key);
-            String placeholderToReplace = key;
-            String finalValue = value;
+            String placeholderToReplace;
+            String finalValue;
 
-
+            // Placeholders de variáveis (S*, O*, ANS) são prefixados com '?'
             if (key.matches("^(S|O|ANS).*")) {
                 placeholderToReplace = "?" + key;
                 finalValue = "?" + value;
+            } else { // Placeholders de predicados (P*) não têm '?'
+                placeholderToReplace = key;
+                finalValue = value;
             }
             
-
+            // Usar replaceAll com Pattern.quote para tratar os placeholders como texto literal
             result = result.replaceAll(Pattern.quote(placeholderToReplace), Matcher.quoteReplacement(finalValue));
         }
-        return addPrefixes() + result;
+        return result;
     }
 
-    private String addPrefixes() {
+    public String getPrefixes() {
         StringBuilder prefixHeader = new StringBuilder();
-        placeholders.stringPropertyNames().stream().filter(key -> key.startsWith("prefix.")).sorted().forEach(key -> {
-            String prefixName = key.substring("prefix.".length());
-            String prefixUri = placeholders.getProperty(key);
-            prefixHeader.append("PREFIX ").append(prefixName).append(": <").append(prefixUri).append(">\n");
-        });
-        prefixHeader.append("\n");
+        placeholders.stringPropertyNames().stream()
+            .filter(key -> key.startsWith("prefix."))
+            .sorted()
+            .forEach(key -> {
+                String prefixName = key.substring("prefix.".length());
+                String prefixUri = placeholders.getProperty(key);
+                prefixHeader.append("PREFIX ").append(prefixName).append(": <").append(prefixUri).append(">\n");
+            });
         return prefixHeader.toString();
     }
 }

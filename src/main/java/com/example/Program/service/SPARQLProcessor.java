@@ -17,9 +17,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -75,53 +73,18 @@ public class SPARQLProcessor {
         }
     }
     
-    // =======================================================
-    //  !!! MÉTODO MODIFICADO COM A LÓGICA DE RENOMEAÇÃO !!!
-    // =======================================================
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
         
-        // --- LÓGICA DE RENOMEAÇÃO DINÂMICA DA VARIÁVEL DE RESULTADO ---
+        // --- 1. Renomeação Dinâmica da Variável de Resultado ---
         if (entities.has("VALOR_DESEJADO") && (query.contains("?valor") || query.contains("?ANS"))) {
-            // Extrai o nome da métrica, ex: "preco_maximo"
             String metricaKey = entities.get("VALOR_DESEJADO").asText().replace("metrica.", "");
-            // Converte de snake_case para camelCase para ser um nome de variável válido, ex: "precoMaximo"
             String varName = toCamelCase(metricaKey);
-            // Substitui o ?valor ou ?ANS genérico pelo nome específico no template
             query = query.replace("?valor", "?" + varName);
             query = query.replace("?ANS", "?" + varName);
         }
-        // ---------------------------------------------------
 
-        String entidadeFilter = "";
-        if (entities.has("ENTIDADE_NOME")) {
-            // Usando ?empresa como variável padrão para a entidade
-            entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
-        }
-        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
-
-        String setorFilter = "";
-        if (entities.has("NOME_SETOR")) {
-            String nomeSetor = entities.get("NOME_SETOR").asText();
-            setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
-        }
-        query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
-
-        if (entities.has("REGEX_PATTERN")) {
-            String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
-            query = query.replace("#REGEX_FILTER#", regexFilter);
-        } else {
-            query = query.replace("#REGEX_FILTER#", "");
-        }
-        
-        if (query.contains("#FILTER_BLOCK#")) {
-            // O PlaceholderService poderia ser usado para uma lógica mais complexa aqui
-            String filterBlock4C = !setorFilter.isEmpty() ? setorFilter.replace("?empresa", "?S1") : entidadeFilter.replace("?empresa", "?S1");
-            query = query.replace("#FILTER_BLOCK#", filterBlock4C);
-        }
-
-        //query = placeholderService.replaceGenericPlaceholders(query);
-        
+        // --- 2. Preenchimento dos Placeholders Dinâmicos (#PLACEHOLDER#) ---
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -134,11 +97,9 @@ public class SPARQLProcessor {
             } else if (placeholder.equals("#CALCULO#")) {
                 String calculoSparql;
                 switch (value) {
-                    case "variacao_abs":
-                    case "variacao_abs_abs":
-                        calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                    case "variacao_perc":  calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
-                    case "intervalo_abs":  calculoSparql = "ABS(?maximo - ?minimo)"; break;
+                    case "variacao_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                    case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
+                    case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
                     case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
                     default: calculoSparql = "0";
                 }
@@ -148,7 +109,14 @@ public class SPARQLProcessor {
             }
         }
         
-        return query.replaceAll("#[A-Z_]+#", ""); 
+        // --- 3. Substituição dos Placeholders Genéricos (P*, S*) ---
+        query = placeholderService.replaceGenericPlaceholders(query);
+
+        // --- 4. Adiciona os prefixos ---
+        String prefixes = placeholderService.getPrefixes();
+        
+        // --- 5. Monta e retorna a query final ---
+        return prefixes + query.replaceAll("#[A-Z_]+#", ""); 
     }
 
     private String callNlpService(String query) throws IOException, InterruptedException {
@@ -168,20 +136,13 @@ public class SPARQLProcessor {
                 throw new IOException("Arquivo de template não encontrado: " + path);
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                return reader.lines()
-                             .collect(Collectors.joining(System.lineSeparator()));
+                return reader.lines().collect(Collectors.joining(System.lineSeparator()));
             }
         } catch (IOException e) {
             throw new RuntimeException("Falha ao carregar template: " + path, e);
         }
     }
 
-    /**
-     * Converte uma string em formato snake_case para camelCase.
-     * Ex: "preco_maximo" -> "precoMaximo"
-     * @param snakeCase A string de entrada.
-     * @return A string convertida para camelCase.
-     */
     private String toCamelCase(String snakeCase) {
         if (snakeCase == null || snakeCase.isEmpty()) {
             return "";
