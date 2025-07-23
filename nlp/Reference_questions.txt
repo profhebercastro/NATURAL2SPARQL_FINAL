@@ -4,32 +4,63 @@
 # Formato: Template_ID;Texto da Pergunta de Exemplo
 # ==========================================================
 
-# --- Templates de Busca Simples ---
-Template_1A;Qual foi o preço de fechamento da ação da CSN em 10/06/2025?
+# --- [GRUPO 1] Buscas de Valor Pontual ---
+
+# Template_1A: Busca uma métrica de uma empresa por NOME em uma data
+Template_1A;Qual foi o preço de fechamento da PETROBRAS no dia 10/06/2025?
+Template_1A;Me diga o volume negociado pela Vale em 12/06/2025.
+Template_1A;Quanto foi o preço máximo da Magazine Luiza em 15/06/2025?
+
+# Template_1B: Busca uma métrica de uma empresa por TICKER em uma data
 Template_1B;Qual foi o preço de abertura da CBAV3 em 17/06/2025?
+Template_1B;Mostre o preço mínimo da PETR4 em 11/06/2025.
+Template_1B;Qual a quantidade negociada para WEGE3 em 20/06/2025?
+
+# --- [GRUPO 2] Buscas de Informações da Empresa/Setor ---
+
+# Template_2A: Busca o TICKER de uma empresa por NOME
 Template_2A;Qual o código de negociação da empresa Vale?
-Template_3A;Quais são todas as ações do setor de mineração?
+Template_2A;Me diga o ticker da PETROBRAS.
+Template_2A;Quais são os tickers da empresa Gerdau?
 
-# --- Template de Agregação (SOMA) ---
-Template_4C;Qual foi o volume negociado nas ações do setor bancário em 25/06/2025?
-Template_4C;Qual foi a quantidade de ações do Itau negociadas no pregão de 26/06/2025?
+# Template_3A: Busca todos os TICKERS de um SETOR
+Template_3A;Quais são todas as ações do setor de Mineração?
+Template_3A;Liste os tickers do setor Financeiro.
+Template_3A;Mostre todas as empresas de Consumo Cíclico.
 
-# --- Template com Filtro de Tipo de Ação (ON/PN) ---
-# *** CORREÇÃO AQUI: As perguntas foram associadas ao Template_5B existente ***
+# --- [GRUPO 3] Agregações, Filtros e Cálculos ---
+
+# Template_4C: AGREGAÇÃO (SOMA) de uma métrica para um setor ou empresa
+Template_4C;Qual foi o volume total negociado para o setor bancário em 25/06/2025?
+Template_4C;Some a quantidade de ações do Itau negociadas no pregão de 26/06/2025.
+Template_4C;Qual o total de volume das empresas de Energia no dia 10/06/2025?
+
+# Template_5B: Busca de métrica com FILTRO por TIPO DE AÇÃO (ON/PN)
 Template_5B;Qual foi o preço máximo da ação ordinária da Gerdau em 10/06/2025?
-Template_5B;Qual foi o preço mínimo da ação preferencial do Itau em 10/06/2025?
-# Adicionando a pergunta da Vale ao template correto
-Template_5B;Qual foi o preço mínimo da ação da Vale em 17/06/2025?
+Template_5B;Me diga o preço mínimo da ação preferencial do Itau em 10/06/2025?
+Template_5B;Qual o volume negociado para as ações unit da Taesa em 15/06/2025?
 
-
-# --- Templates de Cálculo e Ranking ---
+# Template_6A: CÁLCULO de uma métrica derivada para uma empresa específica
 Template_6A;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 30/06/2025?
+Template_6A;Calcule o intervalo percentual da PETR4 no dia 11/06/2025.
+Template_6A;Me mostre a variação percentual da Vale em 12/06/2025.
+
+# --- [GRUPO 4] Rankings e Consultas Complexas ---
+
+# Template_7A: RANKING GERAL de ações por uma métrica calculada
 Template_7A;Qual a ação com o maior percentual de alta no pregão de 30/06/2025?
 Template_7A;Quais as cinco ações de maior percentual de baixa no pregão de 30/06/2025?
-Template_7B;Qual ação do setor de mineração que teve a maior alta percentual no pregão do dia 30/06/2025?
-Template_7B;Qual ação do setor de bancário que teve a baixa percentual no pregão do dia 30/06/2025?
-Template_7B;Qual ação do setor de consumo não cíclico que a menor variação no dia 30/06/2025?
+Template_7A;Liste as 3 ações com a menor variação intradiária em 20/06/2025.
 
-# --- Templates de Cálculo Complexo (SUBQUERY) ---
-Template_8A;Qual foi a variação intradiária absoluta da ação com o maior alta percentual?
-Template_8B;Qual foi o intervalo intradiário percentual da ação com maior baixa entre as ações do IMAT?
+# Template_7B: RANKING de ações DENTRO DE UM SETOR
+Template_7B;Qual ação do setor de Mineração que teve a maior alta percentual no pregão do dia 30/06/2025?
+Template_7B;Qual ação do setor Bancário que teve a maior baixa percentual no pregão do dia 30/06/2025?
+Template_7B;Liste a ação do setor de Consumo não Cíclico com a menor variação no dia 30/06/2025.
+
+# Template_8A: Consulta Complexa (cálculo sobre um ranking geral)
+Template_8A;Qual foi a variação intradiária absoluta da ação com a maior alta percentual no dia 13/06/2025?
+Template_8A;Me diga o volume negociado pela ação de menor variação do dia 20/06/2025.
+
+# Template_8B: Consulta Complexa (cálculo sobre um ranking de setor)
+Template_8B;Qual foi o intervalo intradiário percentual da ação com maior baixa entre as ações do setor Financeiro?
+Template_8B;Mostre o preço de fechamento da ação de maior alta do setor de Energia no dia 10/06/2025.

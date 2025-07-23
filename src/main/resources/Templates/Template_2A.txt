@@ -1,9 +1,7 @@
-# TEMPLATE_2A -- Busca ticker
-SELECT DISTINCT ?O1 WHERE {
+SELECT DISTINCT ?ticker WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
     ?S1 P1 ?SO1 .
-    ?SO1 P2 ?codigo .
-    ?codigo P8 ?O1 .
+    ?SO1 P8 ?ticker .
 }
-ORDER BY ?O1
+ORDER BY ?ticker

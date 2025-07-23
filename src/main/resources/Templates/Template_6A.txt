@@ -1,24 +1,13 @@
-# TEMPLATE 6A -- Cálculo para uma empresa específica (Caminho Corrigido)
-SELECT ?ticker ?ANS
-WHERE {
-    # 1. Encontra a empresa pelo nome
-    ?S1 rdfs:label ?label .
-    FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
-    
-    # 2. Segue o caminho para os dados
-    ?S1 P1 ?SO1 .
-    ?SO1 P2 ?codigoNode .
-    ?codigoNode P8 ?ticker .
-    ?SO1 P1 ?intermediario .
-    ?intermediario P3 ?SO2 .
-    ?SO2 P5 ?S2 .
+SELECT ?ticker ?resultadoCalculado WHERE {
+    BIND(b3:#ENTIDADE_NOME# AS ?SO1)
+    ?SO1 P8 ?ticker .
+    ?SO1 P3 ?negociadoNode .
+    ?negociadoNode P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
-    
-    ?SO2 b3:precoAbertura ?abertura .
-    ?SO2 b3:precoFechamento ?fechamento .
-    ?SO2 b3:precoMaximo ?maximo .
-    ?SO2 b3:precoMinimo ?minimo .
-    
-    BIND((#CALCULO#) AS ?ANS)
+    ?negociadoNode b3:precoMaximo ?maximo .
+    ?negociadoNode b3:precoMinimo ?minimo .
+    ?negociadoNode b3:precoAbertura ?abertura .
+    ?negociadoNode b3:precoFechamento ?fechamento .
+    BIND((#CALCULO#) AS ?resultadoCalculado)
 }
 LIMIT 1
