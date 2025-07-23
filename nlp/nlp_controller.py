@@ -15,7 +15,7 @@ def carregar_arquivo_json(nome_arquivo):
     except FileNotFoundError: return {}
 
 empresa_map = carregar_arquivo_json('Named_entity_dictionary.json')
-setor_map = carregar_arquivo_json('setor_map.json')
+# setor_map não é mais necessário para a extração principal
 
 reference_templates = {}
 try:
@@ -61,17 +61,28 @@ def extrair_entidades_fixas(pergunta_lower):
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-                # --- CORREÇÃO APLICADA AQUI ---
-                # Sempre enviamos a CHAVE (o apelido), que é mais genérico para o REGEX.
                 entidades['entidade_nome'] = key
                 break
     
-    sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
-    for key in sorted_setor_keys:
-        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
-            entidades['nome_setor'] = setor_map[key]
-            break
+    # =======================================================
+    #  !!! LÓGICA DE EXTRAÇÃO DE SETOR CORRIGIDA !!!
+    # =======================================================
+    # AÇÃO: Edite esta lista para incluir TODOS os nomes de setores
+    # exatamente como eles estão no seu arquivo Company_Information.xlsx
+    setores_conhecidos = [
+        "Mineração", "Financeiro", "Consumo Cíclico", "Bancos",
+        "Energia", "Consumo não Cíclico", "Minerais Metálicos"
+    ]
+    
+    # Ordena do maior para o menor para evitar que "Bancos" seja encontrado antes de "Bancos Múltiplos"
+    setores_conhecidos.sort(key=len, reverse=True)
 
+    for setor in setores_conhecidos:
+        # Procura pelo nome do setor (sem acento) dentro da pergunta (sem acento)
+        if re.search(r'\b' + re.escape(remover_acentos(setor.lower())) + r'\b', pergunta_sem_acento):
+            entidades['nome_setor'] = setor # Retorna o nome ORIGINAL com acentos e maiúsculas
+            break # Para na primeira correspondência encontrada
+    
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
@@ -90,23 +101,23 @@ def identificar_parametros_dinamicos(pergunta_lower):
         'calculo_variacao_abs_abs': ['menor variacao'],
         'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
         'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
-        'metrica.preco_fechamento': ['preco de fechamento'],
-        'metrica.preco_abertura': ['preco de abertura'],
+        'metrica.preco_fechamento': ['preco de fechamento', 'fechamento'],
+        'metrica.preco_abertura': ['preco de abertura', 'abertura'],
         'metrica.preco_medio': ['preco medio', 'preço médio'],
         'metrica.quantidade': ['quantidade', 'total de negocios'],
         'metrica.volume': ['volume'],
-        'metrica.preco_fechamento': ['fechamento'],
-        'metrica.preco_abertura': ['abertura']
     }
 
     for chave, sinonimos in mapa_metricas.items():
         if 'calculo' in dados or 'valor_desejado' in dados:
             break
-        if any(remover_acentos(s) in pergunta_sem_acento for s in sinonimos):
-            if chave.startswith('calculo_'):
-                dados['calculo'] = chave.replace('calculo_', '')
-            else:
-                dados['valor_desejado'] = chave
+        for s in sinonimos:
+            if remover_acentos(s) in pergunta_sem_acento:
+                if chave.startswith('calculo_'):
+                    dados['calculo'] = chave.replace('calculo_', '')
+                else:
+                    dados['valor_desejado'] = chave
+                break 
 
     if "ordinaria" in pergunta_sem_acento: dados["regex_pattern"] = "3$"
     elif "preferencial" in pergunta_sem_acento: dados["regex_pattern"] = "[456]$"
@@ -132,7 +143,7 @@ def process_question():
     if not pergunta_lower.strip(): 
         return jsonify({"error": "A pergunta não pode ser vazia."}), 400
 
-    if tfidf_matrix_ref is not None:
+    if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
         if similaridades.any():

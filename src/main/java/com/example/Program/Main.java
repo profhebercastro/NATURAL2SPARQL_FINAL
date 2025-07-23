@@ -86,7 +86,6 @@ public class Main {
 
             Map<String, Object> results = new HashMap<>();
             
-            // --- Listas para identificar os tipos de variáveis ---
             List<String> priceVarNames = List.of(
                 "precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio", 
                 "variacaoAbsoluta", "variacaoAbsolutaFinal"
@@ -98,15 +97,12 @@ public class Main {
                 "variacaoPercentual", "intervaloPercentualFinal", "resultadoCalculado"
             );
             
-            // --- Formatadores de número ---
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
             NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
             DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(new Locale("pt", "BR")));
             
-            // =======================================================
-            //  !!! FORMATADOR PERSONALIZADO PARA VOLUME !!!
-            // =======================================================
-            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US); // Usa o padrão americano (ponto para milhar)
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setGroupingSeparator('.');
             DecimalFormat volumeFormatter = new DecimalFormat("'R$ ' #,##0", symbols);
 
             List<Map<String, Object>> formattedBindings = new ArrayList<>();
