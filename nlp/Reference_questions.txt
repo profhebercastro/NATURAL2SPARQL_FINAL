@@ -10,11 +10,15 @@
 Template_1A;Qual foi o preço de fechamento da PETROBRAS no dia 10/06/2025?
 Template_1A;Me diga o volume negociado pela Vale em 12/06/2025.
 Template_1A;Quanto foi o preço máximo da Magazine Luiza em 15/06/2025?
+Template_1A;Qual o preço médio da Vale S.A. em 12/06/2025?
+Template_1A;Me informe a quantidade de negócios da CSN no pregão de 15/06/2025.
 
 # Template_1B: Busca uma métrica de uma empresa por TICKER em uma data
 Template_1B;Qual foi o preço de abertura da CBAV3 em 17/06/2025?
-Template_1B;Mostre o preço mínimo da PETR4 em 11/06/2025.
+Template_1B;Mostre o preço mínimo da PETR4 em 11/06/2025?
 Template_1B;Qual a quantidade negociada para WEGE3 em 20/06/2025?
+Template_1B;Qual foi o preço médio para PETR4 no dia 10/06/2025?
+Template_1B;Mostre o volume da MGLU3 em 20/06/2025.
 
 # --- [GRUPO 2] Buscas de Informações da Empresa/Setor ---
 

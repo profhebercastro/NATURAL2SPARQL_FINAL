@@ -1,13 +1,10 @@
-package com.example.Program; // <-- PACOTE CORRIGIDO
+package com.example.Program;
 
-// V--- IMPORTAÇÕES CORRIGIDAS ---V
 import com.example.Program.model.ExecuteQueryRequest;
 import com.example.Program.model.PerguntaRequest;
 import com.example.Program.model.ProcessamentoDetalhadoResposta;
 import com.example.Program.ontology.Ontology;
 import com.example.Program.service.SPARQLProcessor;
-// A--- IMPORTAÇÕES CORRIGIDAS ---A
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.jena.rdf.model.Model;
@@ -70,6 +67,9 @@ public class Main {
         }
     }
 
+    // =======================================================
+    //  !!! MÉTODO MODIFICADO COM A LÓGICA DE FORMATAÇÃO !!!
+    // =======================================================
     @PostMapping("/executar")
     public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
@@ -82,14 +82,35 @@ public class Main {
             Map<String, Object> head = new HashMap<>();
             List<String> vars = bindings.isEmpty() ? Collections.emptyList() : new ArrayList<>(bindings.get(0).keySet());
             head.put("vars", vars);
+
             Map<String, Object> results = new HashMap<>();
+            
+            // Lista de nomes de variáveis que representam preços
+            List<String> priceVarNames = List.of(
+                "valor", "precoMaximo", "precoMinimo", "precoAbertura", 
+                "precoFechamento", "precoMedio", "variacaoAbsoluta", 
+                "variacaoAbsolutaFinal", "intervaloPercentualFinal" // Adicionado para templates complexos
+            );
+
             List<Map<String, Object>> formattedBindings = new ArrayList<>();
             for(Map<String, String> row : bindings) {
                 Map<String, Object> newRow = new HashMap<>();
                 for(Map.Entry<String, String> entry : row.entrySet()) {
                     Map<String, String> valueMap = new HashMap<>();
                     valueMap.put("type", "literal");
-                    valueMap.put("value", entry.getValue());
+
+                    String currentValue = entry.getValue();
+                    String varName = entry.getKey();
+
+                    // Se o nome da variável está na nossa lista de preços E o valor é numérico...
+                    if (priceVarNames.contains(varName) && isNumeric(currentValue)) {
+                        // ...formata o valor com "R$ "
+                        valueMap.put("value", "R$ " + currentValue);
+                    } else {
+                        // Senão, mantém o valor original
+                        valueMap.put("value", currentValue);
+                    }
+                    
                     newRow.put(entry.getKey(), valueMap);
                 }
                 formattedBindings.add(newRow);
@@ -128,5 +149,22 @@ public class Main {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(ontologyAsString);
+    }
+
+    /**
+     * Método auxiliar para verificar se uma string é numérica.
+     * @param str A string a ser verificada.
+     * @return true se a string for um número, false caso contrário.
+     */
+    private boolean isNumeric(String str) {
+        if (str == null) {
+            return false;
+        }
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }
