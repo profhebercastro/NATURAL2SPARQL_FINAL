@@ -35,7 +35,7 @@ rdfs:range  rdf:type  rdf:Property , rdfs:Resource;
 rdfs:comment  rdf:type  rdf:Property , rdfs:Resource;
         rdfs:range  rdfs:Literal .
 
-rdf:XMLLiteral  rdf:type  rdfs:Datatype , rdfs:Resource , rdfs:Class .
+rdf:XMLLiteral  rdf:type  rdfs:Datatype , rdfs:Class , rdfs:Resource .
 
 rdf:subject  rdf:type       rdf:Property , rdfs:Resource;
         rdfs:domain         rdf:Statement;
@@ -74,6 +74,7 @@ rdf:rest  rdf:type          rdf:Property , rdfs:Resource;
 b3:SANSUY_SA_INDUSTRIA_DE_PLASTICOS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SANSUY S.A. INDUSTRIA DE PLASTICOS"@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:SNSY5 , b3:SNSY3 .
 
 b3:MRSA3B_Negociado_20250625
@@ -134,6 +135,7 @@ b3:CGRA3_Negociado_20250625
 b3:BOA_SAFRA_SEMENTES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BOA SAFRA SEMENTES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:SOJA3 .
 
 b3:REAG3_Negociado_20250616
@@ -276,6 +278,7 @@ b3:BIED3_Negociado_20250630
 b3:GPS_PARTICIPACOES_E_EMPREENDIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "GPS PARTICIPACOES E EMPREENDIMENTOS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:GGPS3 .
 
 b3:PLPL3_Negociado_20250623
@@ -336,6 +339,7 @@ b3:TGMA3_Negociado_20250611
 b3:METALURGICA_RIOSULENSE_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "METALURGICA RIOSULENSE S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:RSUL4 .
 
 b3:VVEO3_Negociado_20250611
@@ -1022,6 +1026,7 @@ b3:GOAU3_Negociado_20250630
 b3:D1000_VAREJO_FARMA_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "D1000 VAREJO FARMA PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:DMVF3 .
 
 b3:SCAR3_Negociado_20250612
@@ -1207,6 +1212,7 @@ b3:HOOT4_Negociado_20250603
 
 b3:TOTVS_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "TOTVS S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:TOTS3 .
 
 b3:WEGE3_Negociado_20250611
@@ -1650,6 +1656,7 @@ b3:BAZA3_Negociado_20250606
 
 b3:ROMI_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "ROMI S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:ROMI3 .
 
 b3:USIM3_Negociado_20250626
@@ -2106,6 +2113,9 @@ b3:NUTR3_Negociado_20250603
         b3:totalNegocios     "1900.0"^^xsd:double;
         b3:volumeNegociacao  "6663.0"^^xsd:double .
 
+b3:Bens_Industriais  rdf:type  b3:Setor_Atuacao;
+        rdfs:label  "Bens Industriais"@pt .
+
 b3:ITSA3_Negociado_20250616
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250616;
@@ -2185,6 +2195,7 @@ b3:QUAL3_Negociado_20250605
 
 b3:SERENA_ENERGIA_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "SERENA ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:SRNA3 .
 
 b3:ALPA3_Negociado_20250625
@@ -2440,6 +2451,7 @@ b3:SUZB3_Negociado_20250610
 b3:VAMOS_LOCACAO_DE_CAMINHOES_MAQUINAS_E_EQUIP_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "VAMOS LOCAÇÃO DE CAMINHÕES. MÁQUINAS E EQUIP. S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:VAMO3 .
 
 b3:OFSA3_Negociado_20250627
@@ -2637,6 +2649,7 @@ b3:HAGA3_Negociado_20250611
 b3:CIA_TECIDOS_SANTANENSE
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA TECIDOS SANTANENSE"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CTSA4 , b3:CTSA3 .
 
 b3:BBAS3_Negociado_20250613
@@ -2718,6 +2731,7 @@ b3:VITT3_Negociado_20250616
 
 b3:MELIUZ_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "MÉLIUZ S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:CASH3 .
 
 b3:MILS3_Negociado_20250624
@@ -2734,6 +2748,7 @@ b3:MILS3_Negociado_20250624
 b3:METISA_METALURGICA_TIMBOENSE_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "METISA METALURGICA TIMBOENSE S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:MTSA4 , b3:MTSA3 .
 
 b3:PLAS3_Negociado_20250610
@@ -2827,6 +2842,7 @@ b3:HYPE3_Negociado_20250611
 b3:WLM_PART_E_COMERCIO_DE_MAQUINAS_E_VEICULOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "WLM PART. E COMÉRCIO DE MÁQUINAS E VEÍCULOS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:WLMM4 , b3:WLMM3 .
 
 b3:DXCO3_Negociado_20250623
@@ -2878,6 +2894,7 @@ b3:TELB4_Negociado_20250611
 
 b3:MARCOPOLO_SA  rdf:type               b3:Empresa_Capital_Aberto;
         rdfs:label                      "MARCOPOLO S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:POMO4 , b3:POMO3 .
 
 b3:CXSE3  rdf:type    b3:Valor_Mobiliario;
@@ -2931,6 +2948,7 @@ b3:SMTO3_Negociado_20250610
 
 b3:ALFA_HOLDINGS_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "ALFA HOLDINGS S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:RPAD6 , b3:RPAD5 , b3:RPAD3 .
 
 b3:CEBR3_Negociado_20250630
@@ -3073,6 +3091,7 @@ b3:GOAU4_Negociado_20250613
 b3:GUARARAPES_CONFECCOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "GUARARAPES CONFECCOES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:GUAR3 .
 
 b3:TAEE3_Negociado_20250623
@@ -3133,6 +3152,7 @@ b3:MOTV3_Negociado_20250611
 b3:CENTRAIS_ELET_DE_SANTA_CATARINA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CENTRAIS ELET DE SANTA CATARINA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CLSC4 , b3:CLSC3 .
 
 b3:TAEE4_Negociado_20250605
@@ -3594,6 +3614,7 @@ b3:USIM5_Negociado_20250623
 b3:PETTENATI_SA_INDUSTRIA_TEXTIL
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PETTENATI S.A. INDUSTRIA TEXTIL"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:PTNT4 , b3:PTNT3 .
 
 b3:TASA3_Negociado_20250623
@@ -3610,6 +3631,7 @@ b3:TASA3_Negociado_20250623
 b3:AERIS_IND_E_COM_DE_EQUIP_GERACAO_DE_ENERGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "AERIS IND. E COM. DE EQUIP. GERACAO DE ENERGIA S/A"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:AERI3 .
 
 b3:PINE4_Negociado_20250611
@@ -3663,6 +3685,7 @@ b3:POMO4_Negociado_20250620
 
 b3:WILSON_SONS_SA  rdf:type             b3:Empresa_Capital_Aberto;
         rdfs:label                      "WILSON SONS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:PORT3 .
 
 b3:ITUB3_Negociado_20250611
@@ -3855,6 +3878,7 @@ b3:GOAU4_Negociado_20250618
 b3:INFRACOMMERCE_CXAAS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "INFRACOMMERCE CXAAS S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:IFCM3 .
 
 b3:DIRR3_Negociado_20250617
@@ -3926,6 +3950,7 @@ b3:CASH3_Negociado_20250630
 b3:SANTOS_BRASIL_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SANTOS BRASIL PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:STBP3 .
 
 b3:MDNE3_Negociado_20250612
@@ -4343,15 +4368,18 @@ b3:PPLA11_Negociado_20250624
 b3:LOCALIZA_RENT_A_CAR_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "LOCALIZA RENT A CAR S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:RENT3 .
 
 b3:B3_SA_-_BRASIL_BOLSA_BALCAO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "B3 S.A. - BRASIL. BOLSA. BALCÃO"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:B3SA3 .
 
 b3:RAIA_DROGASIL_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "RAIA DROGASIL S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:RADL3 .
 
 b3:CLSC3_Negociado_20250618
@@ -4395,6 +4423,7 @@ b3:ALLD3  rdf:type    b3:Valor_Mobiliario;
 b3:ONCOCLINICAS_DO_BRASIL_SERVICOS_MEDICOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ONCOCLINICAS DO BRASIL SERVICOS MEDICOS  S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:ONCO3 .
 
 b3:TTEN3_Negociado_20250627
@@ -4636,6 +4665,7 @@ b3:NEOE3_Negociado_20250604
 b3:CIA_ENERGETICA_DO_CEARA_-_COELCE
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA ENERGETICA DO CEARA - COELCE"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:COCE5 , b3:COCE3 .
 
 b3:GOAU3_Negociado_20250602
@@ -4651,6 +4681,7 @@ b3:GOAU3_Negociado_20250602
 
 b3:PORTO_SEGURO_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "PORTO SEGURO S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:PSSA3 .
 
 b3:TCSA3_Negociado_20250623
@@ -4754,6 +4785,7 @@ b3:PGMN3_Negociado_20250611
 
 b3:KEPLER_WEBER_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "KEPLER WEBER S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:KEPL3 .
 
 b3:NEXP3  rdf:type    b3:Valor_Mobiliario;
@@ -4796,6 +4828,7 @@ b3:LJQQ3_Negociado_20250624
 
 b3:CSN_MINERACAO_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "CSN MINERAÇÃO S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:CMIN3 .
 
 b3:TAEE11_Negociado_20250606
@@ -4966,6 +4999,7 @@ b3:SNSY3_Negociado_20250612
 b3:SAO_PAULO_TURISMO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SAO PAULO TURISMO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:AHEB5 , b3:AHEB3 .
 
 b3:RPAD5  rdf:type    b3:Valor_Mobiliario;
@@ -4976,6 +5010,7 @@ b3:RPAD5  rdf:type    b3:Valor_Mobiliario;
 b3:CIA_SANEAMENTO_DE_MINAS_GERAIS-COPASA_MG
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA SANEAMENTO DE MINAS GERAIS-COPASA MG"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CSMG3 .
 
 b3:BBDC4_Negociado_20250617
@@ -5205,6 +5240,7 @@ b3:BHIA3_Negociado_20250623
 
 b3:JSL_SA  rdf:type                     b3:Empresa_Capital_Aberto;
         rdfs:label                      "JSL S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:JSLG3 .
 
 b3:WEGE3_Negociado_20250620
@@ -5479,6 +5515,7 @@ b3:BEES4_Negociado_20250626
 b3:MONTEIRO_ARANHA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MONTEIRO ARANHA S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:MOAR3 .
 
 b3:EZTC3_Negociado_20250627
@@ -5532,6 +5569,7 @@ b3:AVLL3  rdf:type    b3:Valor_Mobiliario;
 
 b3:CM_HOSPITALAR_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "CM HOSPITALAR S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:VVEO3 .
 
 b3:ITSA3_Negociado_20250620
@@ -5965,6 +6003,7 @@ b3:FLRY3_Negociado_20250627
 b3:EQUATORIAL_PARA_DISTRIBUIDORA_DE_ENERGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EQUATORIAL PARA DISTRIBUIDORA DE ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:EQPA7 , b3:EQPA3 .
 
 b3:EGIE3_Negociado_20250604
@@ -6161,6 +6200,7 @@ b3:CBEE3_Negociado_20250620
 
 b3:MINERVA_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "MINERVA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:BEEF3 .
 
 b3:BRFS3_Negociado_20250604
@@ -6563,15 +6603,18 @@ b3:GSHP3_Negociado_20250603
 b3:ROSSI_RESIDENCIAL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ROSSI RESIDENCIAL S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:RSID3 .
 
 b3:DOTZ_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "DOTZ S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:DOTZ3 .
 
 b3:NEXPE_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "NEXPE PARTICIPAÇÕES S.A"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:NEXP3 .
 
 b3:EGIE3_Negociado_20250609
@@ -7402,6 +7445,7 @@ b3:PTNT4_Negociado_20250623
 
 b3:FLEURY_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "FLEURY S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:FLRY3 .
 
 b3:ABCB4_Negociado_20250606
@@ -7489,6 +7533,7 @@ b3:VBBR3_Negociado_20250613
 b3:JOSAPAR-JOAQUIM_OLIVEIRA_SA_-_PARTICIP
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "JOSAPAR-JOAQUIM OLIVEIRA S.A. - PARTICIP"@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:JOPA3 .
 
 b3:CGRA4_Negociado_20250620
@@ -7664,6 +7709,7 @@ b3:PETR4_Negociado_20250611
 b3:CIA_ENERGETICA_DE_BRASILIA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA ENERGETICA DE BRASILIA"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CEBR6 , b3:CEBR5 , b3:CEBR3 .
 
 b3:DOTZ3_Negociado_20250602
@@ -7817,6 +7863,7 @@ b3:CXSE3_Negociado_20250616
 b3:SEQUOIA_LOGISTICA_E_TRANSPORTES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SEQUOIA LOGISTICA E TRANSPORTES S.A"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:SEQL3 .
 
 b3:MRVE3_Negociado_20250623
@@ -7932,6 +7979,7 @@ b3:LVTC3_Negociado_20250606
 b3:BRISANET_SERVICOS_DE_TELECOMUNICACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BRISANET SERVIÇOS DE TELECOMUNICAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Comunicacoes;
         b3:temValorMobiliarioNegociado  b3:BRST3 .
 
 b3:DIRR3_Negociado_20250626
@@ -7992,6 +8040,7 @@ b3:ETER3_Negociado_20250624
 b3:DEXXOS_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "DEXXOS PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:DEXP4 , b3:DEXP3 .
 
 b3:RADL3_Negociado_20250604
@@ -8309,10 +8358,12 @@ b3:VLID3_Negociado_20250604
 b3:REDE_ENERGIA_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "REDE ENERGIA PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:REDE3 .
 
 b3:VESTE_SA_ESTILO  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "VESTE S.A. ESTILO"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:VSTE3 .
 
 b3:CRPG3_Negociado_20250616
@@ -8664,6 +8715,7 @@ b3:ZAMP3_Negociado_20250623
 b3:ALLIANCA_SAUDE_E_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ALLIANÇA SAÚDE E PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:AALR3 .
 
 b3:BRST3_Negociado_20250606
@@ -8795,6 +8847,7 @@ b3:BEES4_Negociado_20250630
 b3:TELEFONICA_BRASIL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TELEFÔNICA BRASIL S.A"@pt;
+        b3:atuaEm                       b3:Comunicacoes;
         b3:temValorMobiliarioNegociado  b3:VIVT3 .
 
 b3:HETA4_Negociado_20250626
@@ -9063,6 +9116,7 @@ b3:VLID3_Negociado_20250609
 b3:METALURGICA_GERDAU_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "METALURGICA GERDAU S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:GOAU4 , b3:GOAU3 .
 
 b3:AERI3  rdf:type    b3:Valor_Mobiliario;
@@ -9100,6 +9154,7 @@ b3:CEEB3  rdf:type    b3:Valor_Mobiliario;
 b3:ALUPAR_INVESTIMENTO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ALUPAR INVESTIMENTO S/A"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:ALUP4 , b3:ALUP3 , b3:ALUP11 .
 
 b3:TECN3_Negociado_20250611
@@ -9278,16 +9333,8 @@ b3:RCSL3_Negociado_20250611
         b3:totalNegocios     "148200.0"^^xsd:double;
         b3:volumeNegociacao  "399669.0"^^xsd:double .
 
-b3:KEPL3_Negociado_20250626
-        rdf:type             b3:Negociado_Em_Pregao;
-        b3:negociadoDurante  b3:Pregao_20250626;
-        b3:precoAbertura     "7.95"^^xsd:double;
-        b3:precoFechamento   "8.04"^^xsd:double;
-        b3:precoMaximo       "8.05"^^xsd:double;
-        b3:precoMedio        "8.0"^^xsd:double;
-        b3:precoMinimo       "7.91"^^xsd:double;
-        b3:totalNegocios     "614400.0"^^xsd:double;
-        b3:volumeNegociacao  "4919446.0"^^xsd:double .
+b3:Consumo_Ciclico  rdf:type  b3:Setor_Atuacao;
+        rdfs:label  "Consumo Cíclico"@pt .
 
 b3:INTB3_Negociado_20250602
         rdf:type             b3:Negociado_Em_Pregao;
@@ -9299,6 +9346,17 @@ b3:INTB3_Negociado_20250602
         b3:precoMinimo       "14.32"^^xsd:double;
         b3:totalNegocios     "2200500.0"^^xsd:double;
         b3:volumeNegociacao  3.171904E7 .
+
+b3:KEPL3_Negociado_20250626
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250626;
+        b3:precoAbertura     "7.95"^^xsd:double;
+        b3:precoFechamento   "8.04"^^xsd:double;
+        b3:precoMaximo       "8.05"^^xsd:double;
+        b3:precoMedio        "8.0"^^xsd:double;
+        b3:precoMinimo       "7.91"^^xsd:double;
+        b3:totalNegocios     "614400.0"^^xsd:double;
+        b3:volumeNegociacao  "4919446.0"^^xsd:double .
 
 b3:DMVF3_Negociado_20250617
         rdf:type             b3:Negociado_Em_Pregao;
@@ -9380,6 +9438,7 @@ b3:GOAU3_Negociado_20250616
 b3:BELORA_RDVC_CITY_DESENVOLVIMENTO_IMOBILIARIO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BELORA RDVC CITY DESENVOLVIMENTO IMOBILIÁRIO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CCTY3 .
 
 b3:IRBR3_Negociado_20250603
@@ -9859,6 +9918,7 @@ b3:MTSA4_Negociado_20250606
 
 b3:TUPY_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "TUPY S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:TUPY3 .
 
 b3:POMO3_Negociado_20250623
@@ -9948,6 +10008,9 @@ b3:RCSL3_Negociado_20250616
         b3:precoMinimo       "2.49"^^xsd:double;
         b3:totalNegocios     "194500.0"^^xsd:double;
         b3:volumeNegociacao  "487568.0"^^xsd:double .
+
+b3:Comunicacoes  rdf:type  b3:Setor_Atuacao;
+        rdfs:label  "Comunicações"@pt .
 
 b3:RDOR3_Negociado_20250613
         rdf:type             b3:Negociado_Em_Pregao;
@@ -10655,6 +10718,7 @@ b3:PSSA3_Negociado_20250625
 b3:MAHLE-METAL_LEVE_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MAHLE-METAL LEVE S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:LEVE3 .
 
 b3:BRAP4_Negociado_20250610
@@ -11741,6 +11805,7 @@ b3:BDLL3  rdf:type    b3:Valor_Mobiliario;
 b3:FERTILIZANTES_HERINGER_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "FERTILIZANTES HERINGER S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:FHER3 .
 
 b3:BRKM3_Negociado_20250630
@@ -11757,11 +11822,13 @@ b3:BRKM3_Negociado_20250630
 b3:ITAU_UNIBANCO_HOLDING_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ITAU UNIBANCO HOLDING S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:ITUB4 , b3:ITUB3 .
 
 b3:CIA_HABITASUL_DE_PARTICIPACOES
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA HABITASUL DE PARTICIPACOES"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:HBTS5 .
 
 b3:TASA4_Negociado_20250623
@@ -12408,6 +12475,7 @@ b3:FESA4_Negociado_20250609
 
 b3:IGUATEMI_SA  rdf:type                b3:Empresa_Capital_Aberto;
         rdfs:label                      "IGUATEMI S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:IGTI4 , b3:IGTI3 , b3:IGTI11 .
 
 b3:TCSA3_Negociado_20250604
@@ -12424,11 +12492,13 @@ b3:TCSA3_Negociado_20250604
 b3:EXCELSIOR_ALIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EXCELSIOR ALIMENTOS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:BAUH4 .
 
 b3:ENERGISA_MATO_GROSSO-DISTRIBUIDORA_DE_ENERGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ENERGISA MATO GROSSO-DISTRIBUIDORA DE ENERGIA S/A"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:ENMT3 .
 
 b3:CASH3_Negociado_20250616
@@ -12445,6 +12515,7 @@ b3:CASH3_Negociado_20250616
 b3:METALFRIO_SOLUTIONS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "METALFRIO SOLUTIONS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:FRIO3 .
 
 b3:BEES3_Negociado_20250620
@@ -12614,6 +12685,7 @@ b3:MAPT4_Negociado_20250613
 
 b3:ANIMA_HOLDING_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "ANIMA HOLDING S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ANIM3 .
 
 b3:SANB11_Negociado_20250610
@@ -12629,6 +12701,7 @@ b3:SANB11_Negociado_20250610
 
 b3:LWSA_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "LWSA S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:LWSA3 .
 
 b3:SBFG3_Negociado_20250611
@@ -12804,6 +12877,7 @@ b3:CMIG3_Negociado_20250625
 b3:AMBIPAR_PARTICIPACOES_E_EMPREENDIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "AMBIPAR PARTICIPACOES E EMPREENDIMENTOS S/A"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:AMBP3 .
 
 b3:TGMA3_Negociado_20250606
@@ -13273,6 +13347,9 @@ b3:RAPT4_Negociado_20250626
         b3:totalNegocios     "1694900.0"^^xsd:double;
         b3:volumeNegociacao  1.4687223E7 .
 
+b3:Financeiro  rdf:type  b3:Setor_Atuacao;
+        rdfs:label  "Financeiro"@pt .
+
 b3:SBFG3_Negociado_20250616
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250616;
@@ -13467,6 +13544,7 @@ b3:GOAU3_Negociado_20250625
 
 b3:RECRUSUL_SA  rdf:type                b3:Empresa_Capital_Aberto;
         rdfs:label                      "RECRUSUL S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:RCSL4 , b3:RCSL3 .
 
 b3:USIM3_Negociado_20250616
@@ -13493,6 +13571,7 @@ b3:NGRD3_Negociado_20250630
 
 b3:TRISUL_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "TRISUL S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:TRIS3 .
 
 b3:IRBR3_Negociado_20250612
@@ -14211,6 +14290,7 @@ b3:CEBR5_Negociado_20250618
 b3:ORIZON_VALORIZACAO_DE_RESIDUOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ORIZON VALORIZACAO DE RESIDUOS S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:ORVR3 .
 
 b3:EVEN3_Negociado_20250612
@@ -14304,6 +14384,7 @@ b3:CMIG4_Negociado_20250603
 b3:MINUPAR_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MINUPAR PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MNPR3 .
 
 b3:SEQL3_Negociado_20250618
@@ -14375,6 +14456,7 @@ b3:MTRE3_Negociado_20250623
 b3:NEOGRID_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "NEOGRID PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:NGRD3 .
 
 b3:ORVR3_Negociado_20250620
@@ -14604,6 +14686,7 @@ b3:RNEW4_Negociado_20250609
 b3:MOTIVA_INFRAESTRUTURA_DE_MOBILIDADE_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MOTIVA INFRAESTRUTURA DE MOBILIDADE S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:MOTV3 .
 
 b3:DASA3_Negociado_20250603
@@ -15972,6 +16055,7 @@ b3:FRAS3_Negociado_20250613
 b3:AUTOMOB_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "AUTOMOB PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:AMOB3 .
 
 b3:DOTZ3_Negociado_20250620
@@ -16065,6 +16149,7 @@ b3:ASAI3_Negociado_20250618
 b3:VIVARA_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "VIVARA PARTICIPAÇOES S.A"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:VIVA3 .
 
 b3:ROMI3_Negociado_20250604
@@ -16284,6 +16369,7 @@ b3:UNIP3  rdf:type    b3:Valor_Mobiliario;
 b3:CRUZEIRO_DO_SUL_EDUCACIONAL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CRUZEIRO DO SUL EDUCACIONAL S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CSED3 .
 
 b3:TTEN3_Negociado_20250617
@@ -16338,6 +16424,7 @@ b3:ALPA3  rdf:type    b3:Valor_Mobiliario;
 b3:ALLPARK_EMPREENDIMENTOS_PARTICIPACOES_SERVICOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ALLPARK EMPREENDIMENTOS PARTICIPACOES SERVICOS S.A"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:ALPK3 .
 
 b3:PFRM3_Negociado_20250627
@@ -16365,6 +16452,7 @@ b3:ITUB3_Negociado_20250606
 b3:DIAGNOSTICOS_DA_AMERICA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "DIAGNOSTICOS DA AMERICA S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:DASA3 .
 
 b3:HBRE3_Negociado_20250609
@@ -16681,6 +16769,7 @@ b3:BEES4_Negociado_20250611
 
 b3:TIM_SA  rdf:type                     b3:Empresa_Capital_Aberto;
         rdfs:label                      "TIM S.A."@pt;
+        b3:atuaEm                       b3:Comunicacoes;
         b3:temValorMobiliarioNegociado  b3:TIMS3 .
 
 b3:DOTZ3_Negociado_20250625
@@ -16724,6 +16813,7 @@ b3:FIQE3  rdf:type    b3:Valor_Mobiliario;
 b3:AZEVEDO_E_TRAVASSOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "AZEVEDO E TRAVASSOS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:AZEV4 , b3:AZEV3 .
 
 b3:SYNE3_Negociado_20250623
@@ -17839,6 +17929,7 @@ b3:KLBN4_Negociado_20250623
 b3:CAMIL_ALIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CAMIL ALIMENTOS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CAML3 .
 
 b3:BLAU3_Negociado_20250606
@@ -18019,6 +18110,7 @@ b3:DESK3_Negociado_20250616
 b3:CIA_SANEAMENTO_DO_PARANA_-_SANEPAR
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA SANEAMENTO DO PARANA - SANEPAR"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:SAPR4 , b3:SAPR3 , b3:SAPR11 .
 
 b3:BRAV3_Negociado_20250609
@@ -18257,6 +18349,7 @@ b3:GUAR3_Negociado_20250611
 
 b3:TECHNOS_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "TECHNOS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:TECN3 .
 
 b3:RPAD5_Negociado_20250606
@@ -18498,6 +18591,7 @@ b3:SNSY5  rdf:type    b3:Valor_Mobiliario;
 b3:BCO_SANTANDER_BRASIL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO SANTANDER (BRASIL) S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:SANB4 , b3:SANB3 , b3:SANB11 .
 
 b3:ISAE4_Negociado_20250604
@@ -18651,6 +18745,7 @@ b3:CRPG6_Negociado_20250613
 b3:ISA_ENERGIA_BRASIL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ISA ENERGIA BRASIL S.A"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:ISAE4 , b3:ISAE3 .
 
 b3:EUCA4  rdf:type    b3:Valor_Mobiliario;
@@ -19105,6 +19200,7 @@ b3:CPLE3_Negociado_20250627
 
 b3:COSAN_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "COSAN S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:CSAN3 .
 
 b3:GOAU4_Negociado_20250612
@@ -19290,11 +19386,13 @@ b3:CSMG3_Negociado_20250602
 
 b3:CPFL_ENERGIA_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "CPFL ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CPFE3 .
 
 b3:BCO_ESTADO_DO_RIO_GRANDE_DO_SUL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO ESTADO DO RIO GRANDE DO SUL S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BRSR6 , b3:BRSR5 , b3:BRSR3 .
 
 b3:WLMM4_Negociado_20250604
@@ -19531,6 +19629,7 @@ b3:AMER3_Negociado_20250609
 b3:SYN_PROP_E_TECH_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SYN PROP E TECH S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:SYNE3 .
 
 b3:SNSY5_Negociado_20250604
@@ -19551,6 +19650,7 @@ b3:CGRA3  rdf:type    b3:Valor_Mobiliario;
 
 b3:RUMO_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "RUMO S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:RAIL3 .
 
 b3:PINE4_Negociado_20250610
@@ -20721,6 +20821,7 @@ b3:CEAB3_Negociado_20250609
 b3:UNIPAR_CARBOCLORO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "UNIPAR CARBOCLORO S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:UNIP6 , b3:UNIP5 , b3:UNIP3 .
 
 b3:ROMI3_Negociado_20250618
@@ -21449,6 +21550,7 @@ b3:LREN3_Negociado_20250605
 
 b3:COGNA_EDUCACAO_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "COGNA EDUCAÇÃO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:COGN3 .
 
 b3:RCSL4_Negociado_20250620
@@ -21509,6 +21611,7 @@ b3:BRAP3_Negociado_20250627
 b3:T4F_ENTRETENIMENTO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "T4F ENTRETENIMENTO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:SHOW3 .
 
 b3:UGPA3_Negociado_20250620
@@ -21745,6 +21848,7 @@ b3:FIEI3_Negociado_20250625
 b3:CIA_SIDERURGICA_NACIONAL
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA SIDERURGICA NACIONAL"@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:CSNA3 .
 
 b3:RCSL3_Negociado_20250606
@@ -21782,6 +21886,7 @@ b3:OIBR3_Negociado_20250612
 
 b3:WHIRLPOOL_SA  rdf:type               b3:Empresa_Capital_Aberto;
         rdfs:label                      "WHIRLPOOL S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:WHRL4 , b3:WHRL3 .
 
 b3:BMOB3_Negociado_20250602
@@ -22133,6 +22238,7 @@ b3:ITSA4_Negociado_20250606
 b3:TPI_-_TRIUNFO_PARTICIP_E_INVEST_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TPI - TRIUNFO PARTICIP. E INVEST. S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:TPIS3 .
 
 b3:RCSL4_Negociado_20250625
@@ -22209,6 +22315,7 @@ b3:UGPA3_Negociado_20250625
 b3:TRES_TENTOS_AGROINDUSTRIAL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TRÊS TENTOS AGROINDUSTRIAL S/A"@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:TTEN3 .
 
 b3:GUAR3_Negociado_20250620
@@ -22258,6 +22365,7 @@ b3:SBSP3_Negociado_20250625
 b3:PPLA_PARTICIPATIONS_LTD
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PPLA PARTICIPATIONS LTD."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:PPLA11 .
 
 b3:STBP3_Negociado_20250603
@@ -22734,6 +22842,7 @@ b3:MTRE3_Negociado_20250609
 b3:PET_CENTER_COMERCIO_E_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PET CENTER COMERCIO  E PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:PETZ3 .
 
 b3:GRND3_Negociado_20250602
@@ -22878,6 +22987,7 @@ b3:ODPV3_Negociado_20250606
 b3:RNI_NEGOCIOS_IMOBILIARIOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "RNI NEGÓCIOS IMOBILIÁRIOS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:RDNI3 .
 
 b3:CBAV3_Negociado_20250617
@@ -22949,6 +23059,7 @@ b3:PTNT3_Negociado_20250603
 b3:TELEC_BRASILEIRAS_SA_TELEBRAS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TELEC BRASILEIRAS S.A. TELEBRAS"@pt;
+        b3:atuaEm                       b3:Comunicacoes;
         b3:temValorMobiliarioNegociado  b3:TELB4 , b3:TELB3 .
 
 b3:ENJU3_Negociado_20250609
@@ -23062,6 +23173,7 @@ b3:CXSE3_Negociado_20250610
 
 b3:NEOENERGIA_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "NEOENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:NEOE3 .
 
 b3:VULC3_Negociado_20250627
@@ -23144,6 +23256,7 @@ b3:VTRU3_Negociado_20250613
 b3:CIA_GAS_DE_SAO_PAULO_-_COMGAS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA GAS DE SAO PAULO - COMGAS"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CGAS5 , b3:CGAS3 .
 
 b3:DIRR3_Negociado_20250620
@@ -23533,6 +23646,7 @@ b3:GGBR4_Negociado_20250610
 
 b3:AZUL_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "AZUL S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:AZUL4 .
 
 b3:RNEW11_Negociado_20250630
@@ -23811,6 +23925,7 @@ b3:SHOW3_Negociado_20250605
 
 b3:IOCHPE_MAXION_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "IOCHPE MAXION S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MYPK3 .
 
 b3:BIED3_Negociado_20250610
@@ -24266,6 +24381,7 @@ b3:INEP3_Negociado_20250611
 b3:AZEVEDO_TRAVASSOS_ENERGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "AZEVEDO & TRAVASSOS ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:AZTE3 .
 
 b3:CASH3_Negociado_20250606
@@ -24862,7 +24978,12 @@ b3:BRSR6_Negociado_20250602
 
 b3:BCO_AMAZONIA_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO AMAZONIA S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BAZA3 .
+
+b3:Consumo_nao_Ciclico
+        rdf:type    b3:Setor_Atuacao;
+        rdfs:label  "Consumo não Cíclico"@pt .
 
 b3:HAPV3_Negociado_20250624
         rdf:type             b3:Negociado_Em_Pregao;
@@ -25048,6 +25169,7 @@ b3:COCE3_Negociado_20250602
 b3:REAG_INVESTIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "REAG INVESTIMENTOS S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:REAG3 .
 
 b3:IFCM3_Negociado_20250627
@@ -26296,6 +26418,7 @@ b3:CPLE3_Negociado_20250603
 
 b3:PETRORECONCAVO_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "PETRORECÔNCAVO S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:RECV3 .
 
 b3:ALUP3_Negociado_20250604
@@ -26367,6 +26490,7 @@ b3:MTRE3_Negociado_20250613
 b3:SENDAS_DISTRIBUIDORA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SENDAS DISTRIBUIDORA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ASAI3 .
 
 b3:ORVR3_Negociado_20250610
@@ -26860,6 +26984,7 @@ b3:BMKS3_Negociado_20250609
 
 b3:TRACK_FIELD_CO_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "TRACK & FIELD CO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:TFCO4 .
 
 b3:CPLE6_Negociado_20250611
@@ -27412,6 +27537,7 @@ b3:RANI3_Negociado_20250606
 
 b3:AZZAS_2154_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "AZZAS 2154 S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:AZZA3 .
 
 b3:MATD3_Negociado_20250604
@@ -27872,6 +27998,7 @@ b3:RAIZ4_Negociado_20250623
 b3:SAO_CARLOS_EMPREEND_E_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SAO CARLOS EMPREEND E PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:SCAR3 .
 
 b3:CEDO4_Negociado_20250609
@@ -28079,6 +28206,7 @@ b3:MLAS3_Negociado_20250623
 b3:NATURA_CO_HOLDING_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "NATURA &CO HOLDING S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:NTCO3 .
 
 b3:BRSR3_Negociado_20250603
@@ -28665,11 +28793,13 @@ b3:BRAP3_Negociado_20250603
 
 b3:VIBRA_ENERGIA_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "VIBRA ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:VBBR3 .
 
 b3:BICICLETAS_MONARK_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BICICLETAS MONARK S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:BMKS3 .
 
 b3:SAPR3_Negociado_20250613
@@ -29477,6 +29607,7 @@ b3:SEQL3_Negociado_20250612
 b3:BANESTES_SA_-_BCO_EST_ESPIRITO_SANTO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BANESTES S.A. - BCO EST ESPIRITO SANTO"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BEES4 , b3:BEES3 .
 
 b3:AVLL3_Negociado_20250602
@@ -29970,6 +30101,7 @@ b3:IRBR3_Negociado_20250616
 b3:TRANSMISSORA_ALIANCA_DE_ENERGIA_ELETRICA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TRANSMISSORA ALIANÇA DE ENERGIA ELÉTRICA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:TAEE4 , b3:TAEE3 , b3:TAEE11 .
 
 b3:BPAC11_Negociado_20250613
@@ -30156,11 +30288,13 @@ b3:BMKS3_Negociado_20250613
 b3:LOJAS_QUERO-QUERO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "LOJAS QUERO-QUERO S/A"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:LJQQ3 .
 
 b3:SER_EDUCACIONAL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SER EDUCACIONAL S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:SEER3 .
 
 b3:OFSA3_Negociado_20250616
@@ -30281,6 +30415,7 @@ b3:ALUP3_Negociado_20250613
 b3:LOG_COMMERCIAL_PROPERTIES
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "LOG COMMERCIAL PROPERTIES"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:LOGG3 .
 
 b3:KLBN4_Negociado_20250618
@@ -30362,6 +30497,7 @@ b3:PNVL3_Negociado_20250610
 
 b3:LOJAS_RENNER_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "LOJAS RENNER S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:LREN3 .
 
 b3:BBAS3_Negociado_20250602
@@ -30378,6 +30514,7 @@ b3:BBAS3_Negociado_20250602
 b3:MOURA_DUBEUX_ENGENHARIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MOURA DUBEUX ENGENHARIA S/A"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MDNE3 .
 
 b3:AGRO3_Negociado_20250616
@@ -30536,6 +30673,7 @@ b3:ENGI4_Negociado_20250603
 
 b3:AMERICANAS_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "AMERICANAS S.A"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:AMER3 .
 
 b3:CMIN3_Negociado_20250627
@@ -31540,6 +31678,7 @@ b3:ALPK3_Negociado_20250627
 
 b3:ENERGISA_SA  rdf:type                b3:Empresa_Capital_Aberto;
         rdfs:label                      "ENERGISA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:ENGI4 , b3:ENGI3 , b3:ENGI11 .
 
 b3:BBSE3_Negociado_20250609
@@ -31830,6 +31969,7 @@ b3:ETER3_Negociado_20250604
 
 b3:VITTIA_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "VITTIA S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:VITT3 .
 
 b3:HBSA3_Negociado_20250618
@@ -31923,6 +32063,7 @@ b3:PTNT3_Negociado_20250626
 b3:BCO_MERCANTIL_DE_INVESTIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO MERCANTIL DE INVESTIMENTOS S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BMIN4 , b3:BMIN3 .
 
 b3:CGRA3_Negociado_20250623
@@ -31950,6 +32091,7 @@ b3:MEAL3_Negociado_20250627
 b3:CIA_FIACAO_TECIDOS_CEDRO_CACHOEIRA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA FIACAO TECIDOS CEDRO CACHOEIRA"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CEDO4 , b3:CEDO3 .
 
 b3:GOAU4  rdf:type    b3:Valor_Mobiliario;
@@ -32687,6 +32829,7 @@ b3:ESPA3_Negociado_20250620
 
 b3:EMBRAER_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "EMBRAER S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:EMBR3 .
 
 b3:ENGI11_Negociado_20250623
@@ -32702,6 +32845,7 @@ b3:ENGI11_Negociado_20250623
 
 b3:CEA_MODAS_SA  rdf:type               b3:Empresa_Capital_Aberto;
         rdfs:label                      "CEA MODAS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CEAB3 .
 
 b3:UNIP3_Negociado_20250626
@@ -32899,6 +33043,7 @@ b3:BRAP3_Negociado_20250612
 b3:EMAE_-_EMPRESA_METROPAGUAS_ENERGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EMAE - EMPRESA METROP.AGUAS ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:EMAE4 .
 
 b3:VSTE3_Negociado_20250605
@@ -33304,6 +33449,7 @@ b3:MAPT4_Negociado_20250626
 
 b3:RENOVA_ENERGIA_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "RENOVA ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:RNEW4 , b3:RNEW3 , b3:RNEW11 .
 
 b3:LJQQ3_Negociado_20250618
@@ -33642,6 +33788,7 @@ b3:SAPR3_Negociado_20250627
 b3:IRANI_PAPEL_E_EMBALAGEM_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "IRANI PAPEL E EMBALAGEM S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:RANI3 .
 
 b3:AZEV3_Negociado_20250623
@@ -33805,6 +33952,7 @@ b3:BHIA3_Negociado_20250617
 
 b3:MPM_CORPOREOS_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "MPM CORPÓREOS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ESPA3 .
 
 b3:OIBR3_Negociado_20250602
@@ -34126,6 +34274,7 @@ b3:MNPR3_Negociado_20250603
 
 b3:GRUPO_TOKY_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "GRUPO TOKY S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:TOKY3 .
 
 b3:SMFT3_Negociado_20250612
@@ -34251,6 +34400,7 @@ b3:CBAV3_Negociado_20250602
 
 b3:SUZANO_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "SUZANO S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:SUZB3 .
 
 b3:BIOM3_Negociado_20250612
@@ -34299,6 +34449,7 @@ b3:GUAR3_Negociado_20250610
 
 b3:ALPARGATAS_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "ALPARGATAS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ALPA4 , b3:ALPA3 .
 
 b3:ITUB4_Negociado_20250620
@@ -34407,6 +34558,7 @@ b3:MYPK3_Negociado_20250617
 
 b3:BAUMER_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "BAUMER S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:BALM4 , b3:BALM3 .
 
 b3:VULC3_Negociado_20250612
@@ -34698,6 +34850,7 @@ b3:TUPY3_Negociado_20250617
 b3:LOG-IN_LOGISTICA_INTERMODAL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "LOG-IN LOGISTICA INTERMODAL S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:LOGN3 .
 
 b3:MRFG3_Negociado_20250618
@@ -34724,6 +34877,7 @@ b3:STBP3_Negociado_20250630
 
 b3:PBG_SA  rdf:type                     b3:Empresa_Capital_Aberto;
         rdfs:label                      "PBG S/A"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:PTBL3 .
 
 b3:AGXY3_Negociado_20250630
@@ -34931,6 +35085,7 @@ b3:CLSC4_Negociado_20250627
 
 b3:KARSTEN_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "KARSTEN S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CTKA4 , b3:CTKA3 .
 
 b3:OIBR4_Negociado_20250626
@@ -35145,6 +35300,7 @@ b3:CMIG4_Negociado_20250616
 b3:GOL_LINHAS_AEREAS_INTELIGENTES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "GOL LINHAS AEREAS INTELIGENTES S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:GOLL54 , b3:GOLL4 .
 
 b3:BEEF3_Negociado_20250616
@@ -35325,6 +35481,7 @@ b3:BBAS3_Negociado_20250616
 
 b3:LIGHT_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "LIGHT S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:LIGT3 .
 
 b3:WLMM4_Negociado_20250603
@@ -35736,11 +35893,13 @@ b3:HBRE3_Negociado_20250612
 b3:TERRA_SANTA_PROPRIEDADES_AGRICOLAS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TERRA SANTA PROPRIEDADES AGRICOLAS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:LAND3 .
 
 b3:CEMEPE_INVESTIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CEMEPE INVESTIMENTOS S.A."@pt;
+        b3:atuaEm                       b3:Outros;
         b3:temValorMobiliarioNegociado  b3:MAPT4 .
 
 b3:CXSE3_Negociado_20250605
@@ -35845,6 +36004,7 @@ b3:RSID3_Negociado_20250610
 b3:USINAS_SID_DE_MINAS_GERAIS_SA-USIMINAS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "USINAS SID DE MINAS GERAIS S.A.-USIMINAS"@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:USIM6 , b3:USIM5 , b3:USIM3 .
 
 b3:BSLI3_Negociado_20250604
@@ -35894,6 +36054,7 @@ b3:NTCO3_Negociado_20250618
 b3:PROFARMA_DISTRIB_PROD_FARMACEUTICOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PROFARMA DISTRIB PROD FARMACEUTICOS S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:PFRM3 .
 
 b3:MULT3_Negociado_20250617
@@ -35954,21 +36115,25 @@ b3:MDNE3_Negociado_20250610
 b3:CIA_BRASILEIRA_DE_DISTRIBUICAO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA BRASILEIRA DE DISTRIBUICAO"@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:PCAR3 .
 
 b3:SONDOTECNICA_ENGENHARIA_SOLOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SONDOTECNICA ENGENHARIA SOLOS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:SOND6 , b3:SOND5 .
 
 b3:CIABRASF_CIA_BRASILEIRA_DE_SERVICOS_FINANCEIROS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIABRASF CIA BRASILEIRA DE SERVIÇOS FINANCEIROS SA"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:ADMF3 .
 
 b3:BEMOBI_MOBILE_TECH_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BEMOBI MOBILE TECH S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:BMOB3 .
 
 b3:HBSA3_Negociado_20250627
@@ -36039,6 +36204,7 @@ b3:DOHL4_Negociado_20250623
 
 b3:JALLES_MACHADO_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "JALLES MACHADO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:JALL3 .
 
 b3:PTNT4_Negociado_20250617
@@ -36176,6 +36342,7 @@ b3:PETR3_Negociado_20250623
 b3:ELECTRO_ACO_ALTONA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ELECTRO ACO ALTONA S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:EALT4 , b3:EALT3 .
 
 b3:RNEW11_Negociado_20250625
@@ -36192,6 +36359,7 @@ b3:RNEW11_Negociado_20250625
 b3:PLANO_PLANO_DESENVOLVIMENTO_IMOBILIARIO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PLANO & PLANO DESENVOLVIMENTO IMOBILIÁRIO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:PLPL3 .
 
 b3:PLPL3_Negociado_20250630
@@ -36636,6 +36804,7 @@ b3:ONCO3_Negociado_20250603
 b3:PRINER_SERVICOS_INDUSTRIAIS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PRINER SERVIÇOS INDUSTRIAIS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:PRNR3 .
 
 b3:ANIM3_Negociado_20250613
@@ -36651,6 +36820,7 @@ b3:ANIM3_Negociado_20250613
 
 b3:CAMBUCI_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "CAMBUCI S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CAMB3 .
 
 b3:INEP4_Negociado_20250620
@@ -36832,6 +37002,7 @@ b3:ENGI3_Negociado_20250606
 b3:ATOM_EDUCACAO_E_EDITORA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ATOM EDUCAÇÃO E EDITORA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ATED3 .
 
 b3:RSUL4_Negociado_20250623
@@ -37254,6 +37425,7 @@ b3:TCSA3_Negociado_20250626
 b3:POSITIVO_TECNOLOGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "POSITIVO TECNOLOGIA S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:POSI3 .
 
 b3:GFSA3_Negociado_20250609
@@ -37528,6 +37700,7 @@ b3:BRAP3_Negociado_20250626
 b3:HAGA_SA_INDUSTRIA_E_COMERCIO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "HAGA S.A. INDUSTRIA E COMERCIO"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:HAGA4 , b3:HAGA3 .
 
 b3:PDTC3_Negociado_20250616
@@ -37587,10 +37760,12 @@ b3:RNEW3_Negociado_20250602
 
 b3:ENJOEI_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "ENJOEI S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:ENJU3 .
 
 b3:TC_SA  rdf:type                      b3:Empresa_Capital_Aberto;
         rdfs:label                      "TC S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:TRAD3 .
 
 b3:SAPR4_Negociado_20250618
@@ -37739,6 +37914,7 @@ b3:WEGE3_Negociado_20250623
 b3:TREVISA_INVESTIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TREVISA INVESTIMENTOS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:LUXM4 .
 
 b3:RCSL3_Negociado_20250605
@@ -38083,6 +38259,7 @@ b3:ITSA3_Negociado_20250623
 
 b3:BCO_PAN_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO PAN S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BPAN4 .
 
 b3:AMBP3_Negociado_20250623
@@ -38159,6 +38336,7 @@ b3:ITSA4_Negociado_20250605
 b3:AMPLA_ENERGIA_E_SERVICOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "AMPLA ENERGIA E SERVICOS S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CBEE3 .
 
 b3:RCSL4_Negociado_20250624
@@ -38305,6 +38483,7 @@ b3:STBP3_Negociado_20250602
 
 b3:BRF_SA  rdf:type                     b3:Empresa_Capital_Aberto;
         rdfs:label                      "BRF S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:BRFS3 .
 
 b3:SANB4_Negociado_20250630
@@ -38353,6 +38532,7 @@ b3:BRKM5_Negociado_20250612
 
 b3:VALE_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "VALE S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:VALE3 .
 
 b3:POMO3_Negociado_20250617
@@ -38978,6 +39158,7 @@ b3:AFLT3_Negociado_20250603
 
 b3:GRUPO_MULTI_SA  rdf:type             b3:Empresa_Capital_Aberto;
         rdfs:label                      "GRUPO MULTI S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:MLAS3 .
 
 b3:BEEF3_Negociado_20250625
@@ -39104,6 +39285,7 @@ b3:FHER3_Negociado_20250617
 b3:MRV_ENGENHARIA_E_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MRV ENGENHARIA E PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MRVE3 .
 
 b3:BBAS3_Negociado_20250625
@@ -39366,6 +39548,7 @@ b3:POSI3_Negociado_20250624
 
 b3:TECNISA_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "TECNISA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:TCSA3 .
 
 b3:VBBR3_Negociado_20250611
@@ -39382,6 +39565,7 @@ b3:VBBR3_Negociado_20250611
 b3:CONSTRUTORA_TENDA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CONSTRUTORA TENDA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:TEND3 .
 
 b3:SOND5_Negociado_20250606
@@ -39430,6 +39614,7 @@ b3:HYPE3_Negociado_20250623
 
 b3:DEXCO_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "DEXCO S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:DXCO3 .
 
 b3:ALOS3_Negociado_20250610
@@ -39600,6 +39785,7 @@ b3:TASA3_Negociado_20250630
 b3:ENGIE_BRASIL_ENERGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ENGIE BRASIL ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:EGIE3 .
 
 b3:PTBL3_Negociado_20250618
@@ -39616,6 +39802,7 @@ b3:PTBL3_Negociado_20250618
 b3:HERCULES_SA_FABRICA_DE_TALHERES
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "HERCULES S.A. FABRICA DE TALHERES"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:HETA4 .
 
 b3:TASA4_Negociado_20250612
@@ -40202,6 +40389,7 @@ b3:ABEV3_Negociado_20250630
 
 b3:ETERNIT_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "ETERNIT S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:ETER3 .
 
 b3:INEP3_Negociado_20250610
@@ -41004,6 +41192,7 @@ b3:EKTR4_Negociado_20250609
 b3:MANUFATURA_DE_BRINQUEDOS_ESTRELA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MANUFATURA DE BRINQUEDOS ESTRELA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ESTR4 .
 
 b3:ATMP3_Negociado_20250604
@@ -41234,6 +41423,7 @@ b3:NEXP3_Negociado_20250603
 b3:BRASILAGRO_-_CIA_BRAS_DE_PROP_AGRICOLAS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BRASILAGRO - CIA BRAS DE PROP AGRICOLAS"@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:AGRO3 .
 
 b3:WHRL4_Negociado_20250626
@@ -41316,6 +41506,7 @@ b3:ONCO3_Negociado_20250617
 b3:FICTOR_ALIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "FICTOR ALIMENTOS S.A"@pt;
+        b3:atuaEm                       b3:Outros;
         b3:temValorMobiliarioNegociado  b3:FICT3 .
 
 b3:ANIM3_Negociado_20250627
@@ -41644,6 +41835,7 @@ b3:PEAB3_Negociado_20250613
 b3:MILLS_LOCACAO_SERVICOS_E_LOGISTICA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MILLS LOCAÇÃO. SERVIÇOS E LOGÍSTICA S.A"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:MILS3 .
 
 b3:PDTC3_Negociado_20250625
@@ -41846,6 +42038,7 @@ b3:CGAS5_Negociado_20250611
 
 b3:ALPHAVILLE_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "ALPHAVILLE S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:AVLL3 .
 
 b3:MYPK3_Negociado_20250630
@@ -42026,6 +42219,7 @@ b3:BPAC11_Negociado_20250603
 
 b3:BCO_ABC_BRASIL_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO ABC BRASIL S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:ABCB4 .
 
 b3:EGIE3_Negociado_20250611
@@ -42320,6 +42514,7 @@ b3:VALE3_Negociado_20250627
 
 b3:AUREN_ENERGIA_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "AUREN ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:AURE3 .
 
 b3:LREN3_Negociado_20250618
@@ -42679,6 +42874,10 @@ b3:OIBR3_Negociado_20250625
         b3:totalNegocios     1.25319E7;
         b3:volumeNegociacao  "8036341.0"^^xsd:double .
 
+b3:Tecnologia_da_Informacao
+        rdf:type    b3:Setor_Atuacao;
+        rdfs:label  "Tecnologia da Informação"@pt .
+
 b3:ALPA3_Negociado_20250609
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250609;
@@ -42747,6 +42946,7 @@ b3:EGIE3_Negociado_20250616
 
 b3:BRASKEM_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "BRASKEM S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:BRKM6 , b3:BRKM5 , b3:BRKM3 .
 
 b3:SANB3_Negociado_20250625
@@ -42784,6 +42984,7 @@ b3:LPSB3_Negociado_20250624
 
 b3:HOTEIS_OTHON_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "HOTEIS OTHON S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:HOOT4 .
 
 b3:IGTI3_Negociado_20250625
@@ -42833,6 +43034,7 @@ b3:LUPA3_Negociado_20250613
 b3:NUTRIPLANT_INDUSTRIA_E_COMERCIO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "NUTRIPLANT INDUSTRIA E COMERCIO S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:NUTR3 .
 
 b3:EVEN3_Negociado_20250606
@@ -43013,6 +43215,7 @@ b3:SOND5_Negociado_20250610
 
 b3:OUROFINO_SA  rdf:type                b3:Empresa_Capital_Aberto;
         rdfs:label                      "OUROFINO S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:OFSA3 .
 
 b3:GRND3_Negociado_20250610
@@ -43088,6 +43291,7 @@ b3:PNVL3_Negociado_20250605
 
 b3:RAIZEN_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "RAIZEN S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:RAIZ4 .
 
 b3:FIQE3_Negociado_20250616
@@ -43250,6 +43454,7 @@ b3:ASAI3_Negociado_20250602
 
 b3:ENEVA_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "ENEVA S.A"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:ENEV3 .
 
 b3:DEXP4_Negociado_20250602
@@ -43946,6 +44151,7 @@ b3:PLPL3_Negociado_20250611
 
 b3:WEG_SA  rdf:type                     b3:Empresa_Capital_Aberto;
         rdfs:label                      "WEG S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:WEGE3 .
 
 b3:LVTC3_Negociado_20250613
@@ -43978,6 +44184,7 @@ b3:VTRU3_Negociado_20250626
 b3:HOSPITAL_MATER_DEI_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "HOSPITAL MATER DEI S/A"@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:MATD3 .
 
 b3:BSLI4_Negociado_20250604
@@ -44218,6 +44425,7 @@ b3:PORT3_Negociado_20250618
 b3:GRUPO_CASAS_BAHIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "GRUPO CASAS BAHIA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:BHIA3 .
 
 b3:ABCB4_Negociado_20250618
@@ -44289,6 +44497,7 @@ b3:GGBR4_Negociado_20250623
 b3:LPS_BRASIL_-_CONSULTORIA_DE_IMOVEIS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "LPS BRASIL - CONSULTORIA DE IMOVEIS S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:LPSB3 .
 
 b3:TCSA3_Negociado_20250602
@@ -44618,11 +44827,13 @@ b3:BIED3_Negociado_20250623
 b3:BB_SEGURIDADE_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BB SEGURIDADE PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BBSE3 .
 
 b3:ULTRAPAR_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ULTRAPAR PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:UGPA3 .
 
 b3:BSLI3_Negociado_20250627
@@ -44804,6 +45015,7 @@ b3:BRST3_Negociado_20250613
 b3:BRB_BCO_DE_BRASILIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BRB BCO DE BRASILIA S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BSLI4 , b3:BSLI3 .
 
 b3:BRAP3_Negociado_20250602
@@ -45478,6 +45690,7 @@ b3:SCAR3_Negociado_20250605
 b3:CIA_SANEAMENTO_BASICO_EST_SAO_PAULO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA SANEAMENTO BASICO EST SAO PAULO"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:SBSP3 .
 
 b3:GFSA3_Negociado_20250627
@@ -45505,6 +45718,7 @@ b3:BRST3_Negociado_20250618
 b3:LAVVI_EMPREENDIMENTOS_IMOBILIARIOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "LAVVI EMPREENDIMENTOS IMOBILIÁRIOS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:LAVV3 .
 
 b3:RDNI3_Negociado_20250626
@@ -45801,6 +46015,7 @@ b3:HBOR3_Negociado_20250609
 b3:INTERNATIONAL_MEAL_COMPANY_ALIMENTACAO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "INTERNATIONAL MEAL COMPANY ALIMENTACAO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MEAL3 .
 
 b3:MDIA3_Negociado_20250612
@@ -45839,10 +46054,12 @@ b3:AGRO3_Negociado_20250610
 b3:MITRE_REALTY_EMPREENDIMENTOS_E_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MITRE REALTY EMPREENDIMENTOS E PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MTRE3 .
 
 b3:BCO_PINE_SA  rdf:type                b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO PINE S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:PINE4 , b3:PINE3 .
 
 b3:TECN3_Negociado_20250623
@@ -46357,6 +46574,7 @@ b3:FESA4  rdf:type    b3:Valor_Mobiliario;
 b3:UNIFIQUE_TELECOMUNICACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "UNIFIQUE TELECOMUNICAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Comunicacoes;
         b3:temValorMobiliarioNegociado  b3:FIQE3 .
 
 b3:AMOB3_Negociado_20250606
@@ -46395,11 +46613,13 @@ b3:BMKS3_Negociado_20250612
 b3:CURY_CONSTRUTORA_E_INCORPORADORA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CURY CONSTRUTORA E INCORPORADORA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CURY3 .
 
 b3:UNICASA_INDUSTRIA_DE_MOVEIS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "UNICASA INDÚSTRIA DE MÓVEIS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:UCAS3 .
 
 b3:VULC3_Negociado_20250602
@@ -46845,6 +47065,7 @@ b3:UNIP5_Negociado_20250613
 b3:SMARTFIT_ESCOLA_DE_GINASTICA_E_DANCA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "SMARTFIT ESCOLA DE GINÁSTICA E DANÇA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:SMFT3 .
 
 b3:AURE3_Negociado_20250627
@@ -47359,6 +47580,7 @@ b3:MTRE3_Negociado_20250626
 b3:BCO_MERCANTIL_DO_BRASIL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO MERCANTIL DO BRASIL S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BMEB4 , b3:BMEB3 .
 
 b3:ORVR3_Negociado_20250623
@@ -47375,6 +47597,7 @@ b3:ORVR3_Negociado_20250623
 b3:MULTIPLAN_-_EMPREEND_IMOBILIARIOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MULTIPLAN - EMPREEND IMOBILIARIOS S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:MULT3 .
 
 b3:HBSA3_Negociado_20250612
@@ -47494,6 +47717,7 @@ b3:CRPG5_Negociado_20250625
 b3:CIA_ESTADUAL_DE_DISTRIB_ENER_ELET-CEEE-D
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA ESTADUAL DE DISTRIB ENER ELET-CEEE-D"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CEED3 .
 
 b3:AZUL4  rdf:type    b3:Valor_Mobiliario;
@@ -47837,6 +48061,7 @@ b3:SMTO3_Negociado_20250603
 b3:CONTAX_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CONTAX PARTICIPAÇÕES S.A"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:CTAX3 .
 
 b3:CEBR3_Negociado_20250623
@@ -47908,6 +48133,7 @@ b3:HBRE3_Negociado_20250602
 b3:CENTRAIS_ELET_BRAS_SA_-_ELETROBRAS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CENTRAIS ELET BRAS S.A. - ELETROBRAS"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:ELET6 , b3:ELET5 , b3:ELET3 .
 
 b3:CSUD3_Negociado_20250605
@@ -48111,6 +48337,7 @@ b3:ETER3_Negociado_20250603
 b3:EMPREENDIMENTOS_PAGUE_MENOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EMPREENDIMENTOS PAGUE MENOS S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:PGMN3 .
 
 b3:HBSA3_Negociado_20250617
@@ -48204,6 +48431,7 @@ b3:CTAX3_Negociado_20250627
 b3:NORDON_INDUSTRIAS_METALURGICAS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "NORDON INDUSTRIAS METALURGICAS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:NORD3 .
 
 b3:TPIS3_Negociado_20250612
@@ -48700,6 +48928,7 @@ b3:PETZ3_Negociado_20250610
 
 b3:GAFISA_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "GAFISA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:GFSA3 .
 
 b3:ABCB4_Negociado_20250627
@@ -48853,6 +49082,7 @@ b3:CASH3_Negociado_20250623
 b3:TEKNO_SA_-_INDUSTRIA_E_COMERCIO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TEKNO S.A. - INDUSTRIA E COMERCIO"@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:TKNO4 .
 
 b3:MDNE3_Negociado_20250605
@@ -49538,6 +49768,7 @@ b3:JSLG3_Negociado_20250613
 
 b3:JBS_SA  rdf:type                     b3:Empresa_Capital_Aberto;
         rdfs:label                      "JBS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:JBSS3 .
 
 b3:FLRY3_Negociado_20250610
@@ -49926,6 +50157,7 @@ b3:VVEO3_Negociado_20250618
 b3:VIVER_INCORPORADORA_E_CONSTRUTORA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "VIVER INCORPORADORA E CONSTRUTORA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:VIVR3 .
 
 b3:BAZA3_Negociado_20250603
@@ -50418,6 +50650,7 @@ b3:CEEB5_Negociado_20250609
 b3:MARFRIG_GLOBAL_FOODS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MARFRIG GLOBAL FOODS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MRFG3 .
 
 b3:TUPY3_Negociado_20250611
@@ -50489,6 +50722,7 @@ b3:RNEW4_Negociado_20250611
 b3:MUNDIAL_SA_-_PRODUTOS_DE_CONSUMO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MUNDIAL S.A. - PRODUTOS DE CONSUMO"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MNDL3 .
 
 b3:CMIN3_Negociado_20250630
@@ -50895,6 +51129,7 @@ b3:EQTL3_Negociado_20250612
 b3:BCO_BTG_PACTUAL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO BTG PACTUAL S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BPAC5 , b3:BPAC3 , b3:BPAC11 .
 
 b3:PSSA3_Negociado_20250604
@@ -51737,6 +51972,7 @@ b3:HAGA3_Negociado_20250613
 b3:HBR_REALTY_EMPREENDIMENTOS_IMOBILIARIOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "HBR REALTY EMPREENDIMENTOS IMOBILIARIOS S/A"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:HBRE3 .
 
 b3:VITT3_Negociado_20250618
@@ -52327,6 +52563,7 @@ b3:TAEE3_Negociado_20250625
 b3:CYRELA_BRAZIL_REALTY_SAEMPREEND_E_PART
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CYRELA BRAZIL REALTY S.A.EMPREEND E PART"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CYRE3 .
 
 b3:MOTV3_Negociado_20250613
@@ -52419,6 +52656,7 @@ b3:MLAS3_Negociado_20250603
 
 b3:ITAUSA_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "ITAUSA S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:ITSA4 , b3:ITSA3 .
 
 b3:PLAS3_Negociado_20250617
@@ -52737,6 +52975,7 @@ b3:ITUB3_Negociado_20250613
 b3:COMPANHIA_BRASILEIRA_DE_ALUMINIO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "COMPANHIA BRASILEIRA DE ALUMÍNIO"@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:CBAV3 .
 
 b3:HBRE3_Negociado_20250616
@@ -53103,6 +53342,7 @@ b3:SYNE3_Negociado_20250630
 
 b3:MOBLY_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "MOBLY S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MBLY3 .
 
 b3:HAPV3_Negociado_20250613
@@ -53667,6 +53907,7 @@ b3:ZAMP3_Negociado_20250616
 
 b3:ZAMP_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "ZAMP S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ZAMP3 .
 
 b3:VIVA3_Negociado_20250630
@@ -53716,6 +53957,7 @@ b3:RECV3_Negociado_20250602
 b3:MELNICK_DESENVOLVIMENTO_IMOBILIARIO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MELNICK DESENVOLVIMENTO IMOBILIÁRIO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MELK3 .
 
 b3:INEP4_Negociado_20250624
@@ -53808,6 +54050,7 @@ b3:SRNA3_Negociado_20250606
 
 b3:OSX_BRASIL_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "OSX BRASIL S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:OSXB3 .
 
 b3:LJQQ3_Negociado_20250626
@@ -54191,6 +54434,7 @@ b3:AZEV4_Negociado_20250613
 b3:LIVETECH_DA_BAHIA_INDUSTRIA_E_COMERCIO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "LIVETECH DA BAHIA INDUSTRIA E COMERCIO S/A"@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:LVTC3 .
 
 b3:POMO3_Negociado_20250611
@@ -54782,6 +55026,7 @@ b3:BIOM3_Negociado_20250620
 
 b3:ELEKTRO_REDES_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "ELEKTRO REDES S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:EKTR4 , b3:EKTR3 .
 
 b3:TECN3_Negociado_20250609
@@ -54819,6 +55064,7 @@ b3:RNEW3_Negociado_20250606
 
 b3:PADTEC_HOLDING_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "PADTEC HOLDING S.A."@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:PDTC3 .
 
 b3:SBSP3_Negociado_20250623
@@ -54846,6 +55092,7 @@ b3:ENJU3_Negociado_20250602
 b3:HIDROVIAS_DO_BRASIL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "HIDROVIAS DO BRASIL S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:HBSA3 .
 
 b3:AMOB3_Negociado_20250624
@@ -54977,6 +55224,7 @@ b3:RCSL3_Negociado_20250609
 b3:BCO_ESTADO_DE_SERGIPE_SA_-_BANESE
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO ESTADO DE SERGIPE S.A. - BANESE"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BGIP4 , b3:BGIP3 .
 
 b3:RDOR3_Negociado_20250606
@@ -55103,6 +55351,7 @@ b3:MGLU3_Negociado_20250609
 b3:CIA_ENERGETICA_DE_MINAS_GERAIS_-_CEMIG
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA ENERGETICA DE MINAS GERAIS - CEMIG"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CMIG4 , b3:CMIG3 .
 
 b3:ALPK3_Negociado_20250602
@@ -55277,6 +55526,7 @@ b3:ENGI4_Negociado_20250620
 
 b3:GRUPO_SBF_SA  rdf:type               b3:Empresa_Capital_Aberto;
         rdfs:label                      "GRUPO SBF SA"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:SBFG3 .
 
 b3:AMAR3_Negociado_20250606
@@ -55315,6 +55565,7 @@ b3:AMBP3_Negociado_20250627
 b3:QUALICORP_CONSULTORIA_E_CORRETORA_DE_SEGUROS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "QUALICORP CONSULTORIA E CORRETORA DE SEGUROS S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:QUAL3 .
 
 b3:ORVR3_Negociado_20250604
@@ -55754,6 +56005,7 @@ b3:BBAS3_Negociado_20250624
 b3:JHSF_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "JHSF PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:JHSF3 .
 
 b3:LUXM4_Negociado_20250623
@@ -55924,6 +56176,7 @@ b3:PTNT4_Negociado_20250620
 b3:JOAO_FORTES_ENGENHARIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "JOAO FORTES ENGENHARIA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:JFEN3 .
 
 b3:DASA3_Negociado_20250624
@@ -56261,6 +56514,7 @@ b3:PCAR3_Negociado_20250610
 b3:AFLUENTE_TRANSMISSAO_DE_ENERGIA_ELETRICA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "AFLUENTE TRANSMISSÃO DE ENERGIA ELÉTRICA S/A"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:AFLT3 .
 
 b3:CXSE3_Negociado_20250613
@@ -56310,6 +56564,7 @@ b3:SOJA3_Negociado_20250626
 b3:WIZ_CO_PARTICIPACOES_E_CORRETAGEM_DE_SEGUROS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "WIZ CO PARTICIPAÇÕES E CORRETAGEM DE SEGUROS S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:WIZC3 .
 
 b3:MRVE3_Negociado_20250620
@@ -56935,6 +57190,7 @@ b3:TEND3_Negociado_20250602
 b3:DIMED_SA_DISTRIBUIDORA_DE_MEDICAMENTOS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "DIMED S.A. DISTRIBUIDORA DE MEDICAMENTOS"@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:PNVL3 .
 
 b3:ELET3_Negociado_20250604
@@ -58158,6 +58414,7 @@ b3:KLBN11_Negociado_20250627
 b3:HAPVIDA_PARTICIPACOES_E_INVESTIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "HAPVIDA PARTICIPACOES E INVESTIMENTOS SA"@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:HAPV3 .
 
 b3:DEXP3_Negociado_20250623
@@ -58315,6 +58572,7 @@ b3:RNEW3_Negociado_20250610
 
 b3:SIMPAR_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "SIMPAR S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:SIMH3 .
 
 b3:SAPR4_Negociado_20250626
@@ -58868,6 +59126,7 @@ b3:WEST3_Negociado_20250627
 
 b3:TAURUS_ARMAS_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "TAURUS ARMAS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:TASA4 , b3:TASA3 .
 
 b3:PSSA3  rdf:type    b3:Valor_Mobiliario;
@@ -58977,6 +59236,7 @@ b3:AGRO3_Negociado_20250605
 b3:BCO_NORDESTE_DO_BRASIL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO NORDESTE DO BRASIL S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BNBR3 .
 
 b3:FIQE3_Negociado_20250610
@@ -59085,6 +59345,7 @@ b3:AGXY3_Negociado_20250610
 
 b3:BIOMM_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "BIOMM S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:BIOM3 .
 
 b3:PINE3_Negociado_20250616
@@ -59551,6 +59812,7 @@ b3:AZZA3_Negociado_20250630
 b3:REDE_DOR_SAO_LUIZ_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "REDE DOR SÃO LUIZ S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:RDOR3 .
 
 b3:MNPR3_Negociado_20250625
@@ -59808,6 +60070,7 @@ b3:CEDO3_Negociado_20250620
 
 b3:SCHULZ_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "SCHULZ S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:SHUL4 .
 
 b3:TELB3_Negociado_20250612
@@ -59989,6 +60252,7 @@ b3:CCTY3_Negociado_20250605
 b3:CIA_PARTICIPACOES_ALIANCA_DA_BAHIA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA PARTICIPACOES ALIANCA DA BAHIA"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:PEAB4 , b3:PEAB3 .
 
 b3:LUPA3_Negociado_20250617
@@ -60158,6 +60422,7 @@ b3:ORVR3_Negociado_20250618
 b3:BARDELLA_SA_INDUSTRIAS_MECANICAS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BARDELLA S.A. INDUSTRIAS MECANICAS"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:BDLL4 , b3:BDLL3 .
 
 b3:PMAM3_Negociado_20250623
@@ -60299,6 +60564,7 @@ b3:SMTO3_Negociado_20250630
 
 b3:RANDONCORP_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "RANDONCORP S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:RAPT4 , b3:RAPT3 .
 
 b3:PTBL3_Negociado_20250626
@@ -60370,6 +60636,7 @@ b3:UNIP3_Negociado_20250610
 b3:MDIAS_BRANCO_SA_IND_COM_DE_ALIMENTOS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "M.DIAS BRANCO S.A. IND COM DE ALIMENTOS"@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MDIA3 .
 
 b3:ASAI3_Negociado_20250606
@@ -60419,6 +60686,7 @@ b3:DEXP4_Negociado_20250606
 b3:EQUATORIAL_MARANHAO_DISTRIBUIDORA_DE_ENERGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EQUATORIAL MARANHÃO DISTRIBUIDORA DE ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:EQMA3B .
 
 b3:SHOW3_Negociado_20250612
@@ -60682,6 +60950,7 @@ b3:ALUP11_Negociado_20250612
 b3:INTELBRAS_SA_IND_DE_TELEC_ELETRONICA_BRASILEIRA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "INTELBRAS S.A. IND DE TELEC ELETRONICA BRASILEIRA"@pt;
+        b3:atuaEm                       b3:Tecnologia_da_Informacao;
         b3:temValorMobiliarioNegociado  b3:INTB3 .
 
 b3:LEVE3_Negociado_20250617
@@ -60698,6 +60967,7 @@ b3:LEVE3_Negociado_20250617
 b3:ATMA_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ATMA PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:ATMP3 .
 
 b3:POMO4_Negociado_20250603
@@ -60879,6 +61149,7 @@ b3:EPAR3_Negociado_20250626
 b3:TEGMA_GESTAO_LOGISTICA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TEGMA GESTAO LOGISTICA S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:TGMA3 .
 
 b3:LAVV3_Negociado_20250623
@@ -60911,6 +61182,7 @@ b3:CYRE3_Negociado_20250611
 b3:EZ_TEC_EMPREEND_E_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EZ TEC EMPREEND. E PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:EZTC3 .
 
 b3:VIVR3_Negociado_20250618
@@ -61409,10 +61681,12 @@ b3:ALUP11_Negociado_20250617
 
 b3:GRAZZIOTIN_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "GRAZZIOTIN S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CGRA4 , b3:CGRA3 .
 
 b3:REVEE_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "REVEE S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:RVEE3 .
 
 b3:AZUL4_Negociado_20250620
@@ -61780,6 +62054,7 @@ b3:SAPR4_Negociado_20250630
 b3:PETROLEO_BRASILEIRO_SA_PETROBRAS
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PETROLEO BRASILEIRO S.A. PETROBRAS"@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:PETR4 , b3:PETR3 .
 
 b3:SBFG3_Negociado_20250613
@@ -62511,6 +62786,9 @@ b3:NTCO3  rdf:type    b3:Valor_Mobiliario;
         b3:negociado  b3:NTCO3_Negociado_20250626 , b3:NTCO3_Negociado_20250610 , b3:NTCO3_Negociado_20250603 , b3:NTCO3_Negociado_20250606 , b3:NTCO3_Negociado_20250620 , b3:NTCO3_Negociado_20250602 , b3:NTCO3_Negociado_20250618 , b3:NTCO3_Negociado_20250605 , b3:NTCO3_Negociado_20250604 , b3:NTCO3_Negociado_20250617 , b3:NTCO3_Negociado_20250613 , b3:NTCO3_Negociado_20250616 , b3:NTCO3_Negociado_20250625 , b3:NTCO3_Negociado_20250612 , b3:NTCO3_Negociado_20250624 , b3:NTCO3_Negociado_20250630 , b3:NTCO3_Negociado_20250611 , b3:NTCO3_Negociado_20250627 , b3:NTCO3_Negociado_20250609 , b3:NTCO3_Negociado_20250623;
         b3:ticker     "NTCO3" .
 
+b3:Utilidade_Publica  rdf:type  b3:Setor_Atuacao;
+        rdfs:label  "Utilidade Pública"@pt .
+
 b3:OPCT3_Negociado_20250609
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250609;
@@ -62522,17 +62800,6 @@ b3:OPCT3_Negociado_20250609
         b3:totalNegocios     "368100.0"^^xsd:double;
         b3:volumeNegociacao  "2229000.0"^^xsd:double .
 
-b3:BPAN4_Negociado_20250610
-        rdf:type             b3:Negociado_Em_Pregao;
-        b3:negociadoDurante  b3:Pregao_20250610;
-        b3:precoAbertura     "8.25"^^xsd:double;
-        b3:precoFechamento   "8.21"^^xsd:double;
-        b3:precoMaximo       "8.38"^^xsd:double;
-        b3:precoMedio        "8.26"^^xsd:double;
-        b3:precoMinimo       "8.18"^^xsd:double;
-        b3:totalNegocios     "884000.0"^^xsd:double;
-        b3:volumeNegociacao  "7308403.0"^^xsd:double .
-
 b3:ENEV3_Negociado_20250624
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250624;
@@ -62543,6 +62810,17 @@ b3:ENEV3_Negociado_20250624
         b3:precoMinimo       "13.86"^^xsd:double;
         b3:totalNegocios     "6867500.0"^^xsd:double;
         b3:volumeNegociacao  9.7174053E7 .
+
+b3:BPAN4_Negociado_20250610
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250610;
+        b3:precoAbertura     "8.25"^^xsd:double;
+        b3:precoFechamento   "8.21"^^xsd:double;
+        b3:precoMaximo       "8.38"^^xsd:double;
+        b3:precoMedio        "8.26"^^xsd:double;
+        b3:precoMinimo       "8.18"^^xsd:double;
+        b3:totalNegocios     "884000.0"^^xsd:double;
+        b3:volumeNegociacao  "7308403.0"^^xsd:double .
 
 b3:INTB3_Negociado_20250613
         rdf:type             b3:Negociado_Em_Pregao;
@@ -62657,6 +62935,7 @@ b3:SCAR3_Negociado_20250609
 b3:OCEANPACT_SERVICOS_MARITIMOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "OCEANPACT SERVICOS MARITIMOS S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:OPCT3 .
 
 b3:BPAC11_Negociado_20250611
@@ -62846,6 +63125,7 @@ b3:HBTS5  rdf:type    b3:Valor_Mobiliario;
 
 b3:MARISA_LOJAS_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "MARISA LOJAS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:AMAR3 .
 
 b3:CPLE3_Negociado_20250610
@@ -63907,6 +64187,7 @@ b3:POSI3_Negociado_20250604
 b3:MOVIDA_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MOVIDA PARTICIPACOES SA"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MOVI3 .
 
 b3:UNIP5_Negociado_20250617
@@ -63922,6 +64203,7 @@ b3:UNIP5_Negociado_20250617
 
 b3:BRAVA_ENERGIA_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "BRAVA ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:BRAV3 .
 
 b3:CBEE3  rdf:type    b3:Valor_Mobiliario;
@@ -64086,6 +64368,7 @@ b3:ALPK3_Negociado_20250625
 b3:CIA_PARANAENSE_DE_ENERGIA_-_COPEL
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA PARANAENSE DE ENERGIA - COPEL"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CPLE6 , b3:CPLE5 , b3:CPLE3 .
 
 b3:LUPA3_Negociado_20250626
@@ -64146,6 +64429,7 @@ b3:CSUD3_Negociado_20250604
 b3:TEXTIL_RENAUXVIEW_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TEXTIL RENAUXVIEW S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:TXRX4 , b3:TXRX3 .
 
 b3:MATD3_Negociado_20250611
@@ -64447,6 +64731,7 @@ b3:DOHL4_Negociado_20250612
 
 b3:GRENDENE_SA  rdf:type                b3:Empresa_Capital_Aberto;
         rdfs:label                      "GRENDENE S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:GRND3 .
 
 b3:PATI3  rdf:type    b3:Valor_Mobiliario;
@@ -64522,6 +64807,7 @@ b3:POSI3_Negociado_20250609
 
 b3:DOHLER_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "DOHLER S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:DOHL4 , b3:DOHL3 .
 
 b3:CGRA4_Negociado_20250603
@@ -64571,6 +64857,7 @@ b3:PETR3_Negociado_20250612
 b3:CIA_FERRO_LIGAS_DA_BAHIA_-_FERBASA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA FERRO LIGAS DA BAHIA - FERBASA"@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:FESA4 , b3:FESA3 .
 
 b3:ABEV3_Negociado_20250610
@@ -64971,6 +65258,9 @@ b3:DIRR3_Negociado_20250609
         b3:precoMinimo       "39.92"^^xsd:double;
         b3:totalNegocios     "1445100.0"^^xsd:double;
         b3:volumeNegociacao  5.8692152E7 .
+
+b3:Outros  rdf:type  b3:Setor_Atuacao;
+        rdfs:label  "Outros"@pt .
 
 b3:TCSA3_Negociado_20250610
         rdf:type             b3:Negociado_Em_Pregao;
@@ -66139,6 +66429,7 @@ b3:SCAR3_Negociado_20250613
 
 b3:LUPATECH_SA  rdf:type                b3:Empresa_Capital_Aberto;
         rdfs:label                      "LUPATECH S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:LUPA3 .
 
 b3:BRST3_Negociado_20250626
@@ -66430,6 +66721,7 @@ b3:HBOR3_Negociado_20250617
 b3:IRB_-_BRASIL_RESSEGUROS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "IRB - BRASIL RESSEGUROS S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:IRBR3 .
 
 b3:COGN3_Negociado_20250604
@@ -66523,6 +66815,7 @@ b3:CTSA3_Negociado_20250623
 b3:DIRECIONAL_ENGENHARIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "DIRECIONAL ENGENHARIA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:DIRR3 .
 
 b3:CEED3  rdf:type    b3:Valor_Mobiliario;
@@ -66543,6 +66836,7 @@ b3:YDUQ3_Negociado_20250630
 
 b3:PANATLANTICA_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "PANATLANTICA S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:PATI4 , b3:PATI3 .
 
 b3:CTSA4_Negociado_20250605
@@ -66729,6 +67023,7 @@ b3:BMGB4_Negociado_20250624
 b3:BRBI_BR_PARTNERS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BRBI BR PARTNERS S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BRBI11 .
 
 b3:NEXP3_Negociado_20250625
@@ -66800,6 +67095,7 @@ b3:PDGR3_Negociado_20250610
 b3:REFINARIA_DE_PETROLEOS_MANGUINHOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "REFINARIA DE PETROLEOS MANGUINHOS S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:RPMG3 .
 
 b3:FICT3_Negociado_20250603
@@ -66992,6 +67288,7 @@ b3:HOOT4_Negociado_20250609
 b3:EMBPAR_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EMBPAR PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:EPAR3 .
 
 b3:VULC3_Negociado_20250610
@@ -67178,6 +67475,7 @@ b3:IGTI3_Negociado_20250605
 b3:VITRU_BRASIL_EMPREEND_PARTICIP_E_COMERCIO_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "VITRU BRASIL EMPREEND. PARTICIP. E COMERCIO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:VTRU3 .
 
 b3:AGRO3_Negociado_20250623
@@ -67215,6 +67513,7 @@ b3:LOGG3_Negociado_20250617
 
 b3:BANCO_BMG_SA  rdf:type               b3:Empresa_Capital_Aberto;
         rdfs:label                      "BANCO BMG S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BMGB4 .
 
 b3:AALR3_Negociado_20250610
@@ -67491,6 +67790,7 @@ b3:OIBR4_Negociado_20250624
 
 b3:GRUPO_MATEUS_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "GRUPO MATEUS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:GMAT3 .
 
 b3:CYRE3  rdf:type    b3:Valor_Mobiliario;
@@ -67622,6 +67922,7 @@ b3:PTBL3_Negociado_20250602
 b3:MANGELS_INDUSTRIAL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "MANGELS INDUSTRIAL S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:MGEL4 .
 
 b3:ITSA3  rdf:type    b3:Valor_Mobiliario;
@@ -67742,6 +68043,7 @@ b3:CURY3_Negociado_20250617
 b3:FICA_EMPREENDIMENTOS_IMOBILIARIOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "FICA EMPREENDIMENTOS IMOBILIÁRIOS S.A"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:FIEI3 .
 
 b3:CTKA4_Negociado_20250623
@@ -67823,6 +68125,7 @@ b3:MULT3_Negociado_20250610
 
 b3:SLC_AGRICOLA_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "SLC AGRICOLA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:SLCE3 .
 
 b3:MULT3  rdf:type    b3:Valor_Mobiliario;
@@ -67943,6 +68246,7 @@ b3:VITT3_Negociado_20250617
 b3:HELBOR_EMPREENDIMENTOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "HELBOR EMPREENDIMENTOS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:HBOR3 .
 
 b3:CTAX3_Negociado_20250630
@@ -68484,6 +68788,7 @@ b3:TAEE4_Negociado_20250606
 b3:WESTWING_COMERCIO_VAREJISTA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "WESTWING COMERCIO VAREJISTA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:WEST3 .
 
 b3:HBSA3_Negociado_20250625
@@ -68522,6 +68827,7 @@ b3:PNVL3_Negociado_20250627
 b3:ALLIED_TECNOLOGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ALLIED TECNOLOGIA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ALLD3 .
 
 b3:LUXM4_Negociado_20250618
@@ -69152,6 +69458,7 @@ b3:GEPA4_Negociado_20250627
 
 b3:PRIO_SA  rdf:type                    b3:Empresa_Capital_Aberto;
         rdfs:label                      "PRIO S.A."@pt;
+        b3:atuaEm                       b3:Petroleo_Gas_e_Biocombustiveis;
         b3:temValorMobiliarioNegociado  b3:PRIO3 .
 
 b3:BIED3_Negociado_20250603
@@ -69699,6 +70006,7 @@ b3:TRIS3_Negociado_20250620
 
 b3:MRS_LOGISTICA_SA  rdf:type           b3:Empresa_Capital_Aberto;
         rdfs:label                      "MRS LOGISTICA S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:MRSA6B , b3:MRSA5B , b3:MRSA3B .
 
 b3:PPLA11_Negociado_20250625
@@ -70400,6 +70708,7 @@ b3:VVEO3_Negociado_20250626
 
 b3:ALLOS_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "ALLOS S.A"@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:ALOS3 .
 
 b3:BAZA3_Negociado_20250611
@@ -70672,6 +70981,7 @@ b3:PRIO3_Negociado_20250618
 b3:EUCATEX_SA_INDUSTRIA_E_COMERCIO
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EUCATEX S.A. INDUSTRIA E COMERCIO"@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:EUCA4 , b3:EUCA3 .
 
 b3:BHIA3_Negociado_20250624
@@ -70775,6 +71085,7 @@ b3:JSLG3_Negociado_20250626
 
 b3:BCO_BRADESCO_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO BRADESCO S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BBDC4 , b3:BBDC3 .
 
 b3:CPLE5_Negociado_20250626
@@ -70846,6 +71157,7 @@ b3:JFEN3_Negociado_20250625
 b3:PDG_REALTY_SA_EMPREEND_E_PARTICIPACOES
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PDG REALTY S.A. EMPREEND E PARTICIPACOES"@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:PDGR3 .
 
 b3:HBOR3_Negociado_20250626
@@ -71376,6 +71688,7 @@ b3:BLAU3_Negociado_20250617
 
 b3:HYPERA_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "HYPERA S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:HYPE3 .
 
 b3:BEEF9_Negociado_20250606
@@ -71956,6 +72269,7 @@ b3:TELB3_Negociado_20250602
 b3:TRONOX_PIGMENTOS_DO_BRASIL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "TRONOX PIGMENTOS DO BRASIL S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:CRPG6 , b3:CRPG5 , b3:CRPG3 .
 
 b3:BEEF3_Negociado_20250623
@@ -71980,16 +72294,9 @@ b3:NTCO3_Negociado_20250620
         b3:totalNegocios     "9679500.0"^^xsd:double;
         b3:volumeNegociacao  1.01736081E8 .
 
-b3:BMOB3_Negociado_20250609
-        rdf:type             b3:Negociado_Em_Pregao;
-        b3:negociadoDurante  b3:Pregao_20250609;
-        b3:precoAbertura     "19.87"^^xsd:double;
-        b3:precoFechamento   "19.5"^^xsd:double;
-        b3:precoMaximo       "20.26"^^xsd:double;
-        b3:precoMedio        "19.69"^^xsd:double;
-        b3:precoMinimo       "19.5"^^xsd:double;
-        b3:totalNegocios     "423300.0"^^xsd:double;
-        b3:volumeNegociacao  "8338220.0"^^xsd:double .
+b3:Petroleo_Gas_e_Biocombustiveis
+        rdf:type    b3:Setor_Atuacao;
+        rdfs:label  "Petróleo. Gás e Biocombustíveis"@pt .
 
 b3:EQTL3_Negociado_20250625
         rdf:type             b3:Negociado_Em_Pregao;
@@ -72001,6 +72308,17 @@ b3:EQTL3_Negociado_20250625
         b3:precoMinimo       "35.0"^^xsd:double;
         b3:totalNegocios     "8467900.0"^^xsd:double;
         b3:volumeNegociacao  2.98708492E8 .
+
+b3:BMOB3_Negociado_20250609
+        rdf:type             b3:Negociado_Em_Pregao;
+        b3:negociadoDurante  b3:Pregao_20250609;
+        b3:precoAbertura     "19.87"^^xsd:double;
+        b3:precoFechamento   "19.5"^^xsd:double;
+        b3:precoMaximo       "20.26"^^xsd:double;
+        b3:precoMedio        "19.69"^^xsd:double;
+        b3:precoMinimo       "19.5"^^xsd:double;
+        b3:totalNegocios     "423300.0"^^xsd:double;
+        b3:volumeNegociacao  "8338220.0"^^xsd:double .
 
 b3:BDLL4_Negociado_20250609
         rdf:type             b3:Negociado_Em_Pregao;
@@ -72458,6 +72776,7 @@ b3:GUAR3_Negociado_20250627
 b3:EVEN_CONSTRUTORA_E_INCORPORADORA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "EVEN CONSTRUTORA E INCORPORADORA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:EVEN3 .
 
 b3:PTBL3_Negociado_20250616
@@ -72481,6 +72800,9 @@ b3:CAML3_Negociado_20250627
         b3:precoMinimo       "4.99"^^xsd:double;
         b3:totalNegocios     "691300.0"^^xsd:double;
         b3:volumeNegociacao  "3470314.0"^^xsd:double .
+
+b3:Materiais_Basicos  rdf:type  b3:Setor_Atuacao;
+        rdfs:label  "Materiais Básicos"@pt .
 
 b3:CGRA3_Negociado_20250602
         rdf:type             b3:Negociado_Em_Pregao;
@@ -72676,6 +72998,7 @@ b3:LVTC3_Negociado_20250602
 b3:PLASCAR_PARTICIPACOES_INDUSTRIAIS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "PLASCAR PARTICIPACOES INDUSTRIAIS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:PLAS3 .
 
 b3:MULT3_Negociado_20250624
@@ -72707,6 +73030,7 @@ b3:KLBN3_Negociado_20250623
 
 b3:ODONTOPREV_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "ODONTOPREV S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:ODPV3 .
 
 b3:ETER3_Negociado_20250620
@@ -73074,6 +73398,7 @@ b3:BSLI4_Negociado_20250630
 
 b3:CSU_DIGITAL_SA  rdf:type             b3:Empresa_Capital_Aberto;
         rdfs:label                      "CSU DIGITAL S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:CSUD3 .
 
 b3:CLSC3_Negociado_20250623
@@ -74341,6 +74666,7 @@ b3:LOGN3_Negociado_20250620
 
 b3:AMBEV_SA  rdf:type                   b3:Empresa_Capital_Aberto;
         rdfs:label                      "AMBEV S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:ABEV3 .
 
 b3:ATED3_Negociado_20250606
@@ -74476,6 +74802,7 @@ b3:BEES3_Negociado_20250617
 
 b3:VALID_SOLUCOES_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "VALID SOLUÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:VLID3 .
 
 b3:BAZA3_Negociado_20250620
@@ -74788,6 +75115,7 @@ b3:DMVF3_Negociado_20250618
 
 b3:EQUATORIAL_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "EQUATORIAL S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:EQTL3 .
 
 b3:BMGB4_Negociado_20250605
@@ -74858,6 +75186,7 @@ b3:BEEF9_Negociado_20250610
 
 b3:FRAS-LE_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "FRAS-LE S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:FRAS3 .
 
 b3:IRBR3_Negociado_20250604
@@ -74944,6 +75273,7 @@ b3:CRPG3  rdf:type    b3:Valor_Mobiliario;
 
 b3:MAGAZINE_LUIZA_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "MAGAZINE LUIZA S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:MGLU3 .
 
 b3:CEBR5_Negociado_20250605
@@ -75300,6 +75630,7 @@ b3:ENJU3_Negociado_20250610
 b3:DTCOM_-_DIRECT_TO_COMPANY_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "DTCOM - DIRECT TO COMPANY S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:DTCY3 .
 
 b3:AZEV4_Negociado_20250626
@@ -75327,6 +75658,7 @@ b3:RAPT3_Negociado_20250602
 b3:GENERAL_SHOPPING_E_OUTLETS_DO_BRASIL_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "GENERAL SHOPPING E OUTLETS DO BRASIL S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:GSHP3 .
 
 b3:POMO3_Negociado_20250624
@@ -75541,6 +75873,7 @@ b3:BPAC11_Negociado_20250606
 b3:CVC_BRASIL_OPERADORA_E_AGENCIA_DE_VIAGENS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CVC BRASIL OPERADORA E AGÊNCIA DE VIAGENS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:CVCB3 .
 
 b3:COGN3_Negociado_20250627
@@ -75711,6 +76044,7 @@ b3:OFSA3_Negociado_20250609
 b3:RIO_PARANAPANEMA_ENERGIA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "RIO PARANAPANEMA ENERGIA S.A."@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:GEPA4 , b3:GEPA3 .
 
 b3:EALT4_Negociado_20250611
@@ -75748,6 +76082,7 @@ b3:ALUP3_Negociado_20250606
 
 b3:ELETROMIDIA_SA  rdf:type             b3:Empresa_Capital_Aberto;
         rdfs:label                      "ELETROMIDIA S.A."@pt;
+        b3:atuaEm                       b3:Comunicacoes;
         b3:temValorMobiliarioNegociado  b3:ELMD3 .
 
 b3:ORVR3_Negociado_20250612
@@ -75921,6 +76256,7 @@ b3:PTBL3_Negociado_20250620
 b3:ECORODOVIAS_INFRAESTRUTURA_E_LOGISTICA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ECORODOVIAS INFRAESTRUTURA E LOGÍSTICA S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:ECOR3 .
 
 b3:BRKM5_Negociado_20250624
@@ -75958,6 +76294,7 @@ b3:SLCE3_Negociado_20250606
 
 b3:WETZEL_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "WETZEL S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:MWET4 , b3:MWET3 .
 
 b3:TELB3_Negociado_20250611
@@ -76023,6 +76360,7 @@ b3:BMOB3_Negociado_20250618
 b3:BLAU_FARMACEUTICA_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "BLAU FARMACÊUTICA S.A."@pt;
+        b3:atuaEm                       b3:Saude;
         b3:temValorMobiliarioNegociado  b3:BLAU3 .
 
 b3:PSSA3_Negociado_20250626
@@ -76060,6 +76398,7 @@ b3:GSHP3_Negociado_20250613
 
 b3:SAO_MARTINHO_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "SAO MARTINHO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:SMTO3 .
 
 b3:ISAE4_Negociado_20250624
@@ -76245,6 +76584,7 @@ b3:CPLE6_Negociado_20250613
 
 b3:KLABIN_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "KLABIN S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:KLBN4 , b3:KLBN3 , b3:KLBN11 .
 
 b3:ABCB4_Negociado_20250611
@@ -76620,6 +76960,7 @@ b3:PETR3_Negociado_20250602
 
 b3:DESKTOP_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "DESKTOP S.A."@pt;
+        b3:atuaEm                       b3:Comunicacoes;
         b3:temValorMobiliarioNegociado  b3:DESK3 .
 
 b3:GGPS3_Negociado_20250630
@@ -76997,6 +77338,7 @@ b3:GRND3_Negociado_20250618
 
 b3:PARANAPANEMA_SA  rdf:type            b3:Empresa_Capital_Aberto;
         rdfs:label                      "PARANAPANEMA S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:PMAM3 .
 
 b3:AHEB3_Negociado_20250618
@@ -77479,6 +77821,7 @@ b3:BRST3_Negociado_20250611
 b3:YDUQS_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "YDUQS PARTICIPACOES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:YDUQ3 .
 
 b3:GFSA3_Negociado_20250620
@@ -77610,6 +77953,7 @@ b3:CSMG3_Negociado_20250627
 b3:CAIXA_SEGURIDADE_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CAIXA SEGURIDADE PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:CXSE3 .
 
 b3:ALUP11_Negociado_20250616
@@ -78054,6 +78398,7 @@ b3:ESPA3_Negociado_20250613
 
 b3:OI_SA  rdf:type                      b3:Empresa_Capital_Aberto;
         rdfs:label                      "OI S.A."@pt;
+        b3:atuaEm                       b3:Comunicacoes;
         b3:temValorMobiliarioNegociado  b3:OIBR4 , b3:OIBR3 .
 
 b3:TAEE11  rdf:type   b3:Valor_Mobiliario;
@@ -78470,6 +78815,7 @@ b3:KLBN4_Negociado_20250610
 b3:AGROGALAXY_PARTICIPACOES_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "AGROGALAXY PARTICIPAÇÕES S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:AGXY3 .
 
 b3:ENGI3_Negociado_20250627
@@ -78694,6 +79040,7 @@ b3:DESK3_Negociado_20250603
 
 b3:BOMBRIL_SA  rdf:type                 b3:Empresa_Capital_Aberto;
         rdfs:label                      "BOMBRIL S.A."@pt;
+        b3:atuaEm                       b3:Consumo_nao_Ciclico;
         b3:temValorMobiliarioNegociado  b3:BOBR4 .
 
 b3:PEAB4_Negociado_20250602
@@ -79247,6 +79594,7 @@ b3:PRNR3_Negociado_20250612
 b3:ARMAC_LOCACAO_LOGISTICA_E_SERVICOS_SA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "ARMAC LOCAÇÃO. LOGÍSTICA E SERVIÇOS S.A."@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:ARML3 .
 
 b3:AGRO3_Negociado_20250613
@@ -79633,6 +79981,7 @@ b3:GUAR3_Negociado_20250603
 
 b3:BRADESPAR_SA  rdf:type               b3:Empresa_Capital_Aberto;
         rdfs:label                      "BRADESPAR S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:BRAP4 , b3:BRAP3 .
 
 b3:ITUB4_Negociado_20250613
@@ -79693,10 +80042,12 @@ b3:EVEN3_Negociado_20250613
 b3:INEPAR_SA_INDUSTRIA_E_CONSTRUCOES
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "INEPAR S.A. INDUSTRIA E CONSTRUCOES"@pt;
+        b3:atuaEm                       b3:Bens_Industriais;
         b3:temValorMobiliarioNegociado  b3:INEP4 , b3:INEP3 .
 
 b3:BCO_BRASIL_SA  rdf:type              b3:Empresa_Capital_Aberto;
         rdfs:label                      "BCO BRASIL S.A."@pt;
+        b3:atuaEm                       b3:Financeiro;
         b3:temValorMobiliarioNegociado  b3:BBAS3 .
 
 b3:OFSA3_Negociado_20250618
@@ -79801,10 +80152,12 @@ b3:BRFS3_Negociado_20250623
 b3:CIA_ELETRICIDADE_EST_DA_BAHIA_-_COELBA
         rdf:type                        b3:Empresa_Capital_Aberto;
         rdfs:label                      "CIA ELETRICIDADE EST. DA BAHIA - COELBA"@pt;
+        b3:atuaEm                       b3:Utilidade_Publica;
         b3:temValorMobiliarioNegociado  b3:CEEB5 , b3:CEEB3 .
 
 b3:VULCABRAS_SA  rdf:type               b3:Empresa_Capital_Aberto;
         rdfs:label                      "VULCABRAS S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:VULC3 .
 
 b3:AVLL3_Negociado_20250609
@@ -80032,6 +80385,9 @@ b3:CSNA3_Negociado_20250630
         b3:totalNegocios     "9082800.0"^^xsd:double;
         b3:volumeNegociacao  6.7862796E7 .
 
+b3:Saude  rdf:type  b3:Setor_Atuacao;
+        rdfs:label  "Saúde"@pt .
+
 b3:CRPG6_Negociado_20250605
         rdf:type             b3:Negociado_Em_Pregao;
         b3:negociadoDurante  b3:Pregao_20250605;
@@ -80237,10 +80593,12 @@ b3:SIMH3_Negociado_20250624
 
 b3:GERDAU_SA  rdf:type                  b3:Empresa_Capital_Aberto;
         rdfs:label                      "GERDAU S.A."@pt;
+        b3:atuaEm                       b3:Materiais_Basicos;
         b3:temValorMobiliarioNegociado  b3:GGBR4 , b3:GGBR3 .
 
 b3:BIOMA_EDUCACAO_SA  rdf:type          b3:Empresa_Capital_Aberto;
         rdfs:label                      "BIOMA EDUCAÇÃO S.A."@pt;
+        b3:atuaEm                       b3:Consumo_Ciclico;
         b3:temValorMobiliarioNegociado  b3:BIED3 .
 
 b3:EUCA4_Negociado_20250606
@@ -81330,7 +81688,7 @@ rdf:Seq  rdf:type        rdfs:Class , rdfs:Resource;
         rdfs:subClassOf  rdf:Seq , rdfs:Container .
 
 rdfs:Datatype  rdf:type  rdfs:Class , rdfs:Resource;
-        rdfs:subClassOf  rdfs:Datatype , rdfs:Resource , rdfs:Class .
+        rdfs:subClassOf  rdfs:Datatype , rdfs:Class , rdfs:Resource .
 
 rdf:Alt  rdf:type        rdfs:Class , rdfs:Resource;
         rdfs:subClassOf  rdf:Alt , rdfs:Container .
@@ -81340,7 +81698,7 @@ rdfs:Container  rdf:type  rdfs:Class , rdfs:Resource;
 
 rdfs:ContainerMembershipProperty
         rdf:type         rdfs:Class , rdfs:Resource;
-        rdfs:subClassOf  rdfs:ContainerMembershipProperty , rdfs:Resource , rdf:Property .
+        rdfs:subClassOf  rdfs:ContainerMembershipProperty , rdf:Property , rdfs:Resource .
 
 rdfs:isDefinedBy  rdf:type  rdf:Property , rdfs:Resource;
         rdfs:subPropertyOf  rdfs:isDefinedBy , rdfs:seeAlso .
@@ -81357,3 +81715,5 @@ b3:Empresa_Capital_Aberto
 b3:Pregao  rdf:type  rdfs:Class , rdfs:Resource .
 
 b3:Valor_Mobiliario  rdf:type  rdfs:Class , rdfs:Resource .
+
+b3:Setor_Atuacao  rdf:type  rdfs:Class , rdfs:Resource .

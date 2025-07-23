@@ -86,9 +86,7 @@ public class Ontology {
             }
             
             List<Map<String, String>> resultsList = new ArrayList<>();
-            Query query = QueryFactory.create(sparqlQuery);
-
-            try (QueryExecution qexec = QueryExecutionFactory.create(query, this.model)) {
+            Query query = QueryFactory.create(query, this.model)) {
                 ResultSet rs = qexec.execSelect();
                 List<String> resultVars = rs.getResultVars();
                 
