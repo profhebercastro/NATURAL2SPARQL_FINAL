@@ -18,10 +18,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.io.StringWriter;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @SpringBootApplication
@@ -67,9 +70,6 @@ public class Main {
         }
     }
 
-    // =======================================================
-    //  !!! MÉTODO MODIFICADO COM A LÓGICA DE FORMATAÇÃO !!!
-    // =======================================================
     @PostMapping("/executar")
     public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
@@ -85,12 +85,24 @@ public class Main {
 
             Map<String, Object> results = new HashMap<>();
             
-            // Lista de nomes de variáveis que representam preços
+            // --- Listas para identificar os tipos de variáveis ---
             List<String> priceVarNames = List.of(
                 "valor", "precoMaximo", "precoMinimo", "precoAbertura", 
                 "precoFechamento", "precoMedio", "variacaoAbsoluta", 
-                "variacaoAbsolutaFinal", "intervaloPercentualFinal" // Adicionado para templates complexos
+                "variacaoAbsolutaFinal"
             );
+            List<String> largeNumberVarNames = List.of(
+                "volume", "volumeIndividual", "quantidadeDeNegocios", 
+                "totalNegocios"
+            );
+            List<String> percentageVarNames = List.of(
+                "variacaoPercentual", "intervaloPercentualFinal"
+            );
+            
+            // --- Formatadores de número ---
+            NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
+            NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
+            DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'");
 
             List<Map<String, Object>> formattedBindings = new ArrayList<>();
             for(Map<String, String> row : bindings) {
@@ -101,16 +113,23 @@ public class Main {
 
                     String currentValue = entry.getValue();
                     String varName = entry.getKey();
+                    String formattedValue = currentValue; // Valor padrão
 
-                    // Se o nome da variável está na nossa lista de preços E o valor é numérico...
-                    if (priceVarNames.contains(varName) && isNumeric(currentValue)) {
-                        // ...formata o valor com "R$ "
-                        valueMap.put("value", "R$ " + currentValue);
-                    } else {
-                        // Senão, mantém o valor original
-                        valueMap.put("value", currentValue);
+                    try {
+                        double numericValue = Double.parseDouble(currentValue);
+
+                        if (priceVarNames.contains(varName)) {
+                            formattedValue = currencyFormatter.format(numericValue);
+                        } else if (largeNumberVarNames.contains(varName)) {
+                            formattedValue = integerFormatter.format(numericValue);
+                        } else if (percentageVarNames.contains(varName)) {
+                            formattedValue = percentageFormatter.format(numericValue);
+                        }
+                    } catch (NumberFormatException e) {
+                        // Se não for um número (ex: um ticker), não faz nada e mantém o valor original
                     }
                     
+                    valueMap.put("value", formattedValue);
                     newRow.put(entry.getKey(), valueMap);
                 }
                 formattedBindings.add(newRow);
@@ -149,22 +168,5 @@ public class Main {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(ontologyAsString);
-    }
-
-    /**
-     * Método auxiliar para verificar se uma string é numérica.
-     * @param str A string a ser verificada.
-     * @return true se a string for um número, false caso contrário.
-     */
-    private boolean isNumeric(String str) {
-        if (str == null) {
-            return false;
-        }
-        try {
-            Double.parseDouble(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
     }
 }
