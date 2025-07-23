@@ -53,23 +53,46 @@ def remover_acentos(texto):
 def extrair_entidades_fixas(pergunta_lower):
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
+    pergunta_limpa = pergunta_lower
     
-    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', pergunta_lower.upper())
+    # Prioridade 1: Extrair Ticker
+    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', pergunta_limpa.upper())
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1)
-    else:
-        sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
-        for key in sorted_empresa_keys:
-            if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
-                entidades['entidade_nome'] = key
-                break
-    
+        pergunta_limpa = pergunta_limpa.replace(ticker_match.group(1).lower(), "")
+
+    # Prioridade 2: Extrair Setor
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
             entidades['nome_setor'] = setor_map[key]
+            pergunta_limpa = re.sub(r'\b' + re.escape(key.lower()) + r'\b', '', pergunta_limpa)
             break
 
+    # Prioridade 3: Extrair Nome da Empresa (se Ticker não foi encontrado)
+    if 'entidade_nome' not in entidades:
+        stop_words = [
+            'qual', 'foi', 'a', 'o', 'da', 'de', 'do', 'no', 'em', 'me', 'diga', 'mostre', 'liste', 'calcule', 
+            'acao', 'empresa', 'pregao', 'dia', 'preco', 'maximo', 'minimo', 'medio', 'abertura', 'fechamento',
+            'volume', 'quantidade', 'variacao', 'percentual', 'absoluta', 'intervalo'
+        ]
+        
+        pergunta_restante = pergunta_lower
+        for word in stop_words:
+            pergunta_restante = re.sub(r'\b' + word + r'\b', '', pergunta_restante)
+        
+        # Remove data e caracteres extras
+        pergunta_restante = re.sub(r'(\d{2})/(\d{2})/(\d{4})', '', pergunta_restante)
+        pergunta_restante = re.sub(r'[^\w\s]', '', pergunta_restante).strip()
+
+        if pergunta_restante:
+            sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
+            for key in sorted_empresa_keys:
+                if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_restante):
+                    entidades['entidade_nome'] = key
+                    break
+
+    # Extrair Data no final
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
@@ -84,7 +107,7 @@ def identificar_parametros_dinamicos(pergunta_lower):
     mapa_metricas = {
         'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
         'calculo_variacao_perc': ['variacao intradiaria percentual', 'variacao percentual'],
-        'calculo_intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
+        'calculo_intervalo_perc': ['intervalo intradiaria percentual', 'intervalo percentual'],
         'calculo_intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
         'calculo_variacao_abs_abs': ['menor variacao'],
         'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
@@ -138,9 +161,11 @@ def process_question():
         return jsonify({"error": "Nenhum template de referência carregado."}), 500
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
+    
     entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
     parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
     entidades_extraidas.update(parametros_dinamicos)
+    
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 

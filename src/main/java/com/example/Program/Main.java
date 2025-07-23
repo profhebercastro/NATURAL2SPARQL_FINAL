@@ -89,13 +89,13 @@ public class Main {
             // --- Listas para identificar os tipos de variáveis para formatação ---
             List<String> priceVarNames = List.of(
                 "precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio", 
-                "variacaoAbsoluta", "variacaoAbsolutaFinal", "resultadoCalculado"
+                "variacaoAbsoluta", "intervaloAbsoluto", "resultadoCalculado" // resultadoCalculado é um fallback
             );
             List<String> largeNumberVarNames = List.of(
-                "volume", "volumeIndividual", "quantidade", "totalNegocios", "valor"
+                "volume", "volumeIndividual", "quantidade", "totalNegocios"
             );
             List<String> percentageVarNames = List.of(
-                "variacaoPercentual", "intervaloPercentualFinal", "resultadoCalculado"
+                "variacaoPercentual", "intervaloPercentual", "resultadoCalculado" // resultadoCalculado é um fallback
             );
             
             // --- Formatadores de número ---
@@ -127,10 +127,6 @@ public class Main {
                             formattedValue = percentageFormatter.format(numericValue);
                         } else if (priceVarNames.contains(varName)) {
                             formattedValue = currencyFormatter.format(numericValue);
-                            // Garante duas casas decimais para valores absolutos que podem não ter
-                            if ((varName.equals("variacaoAbsoluta") || varName.equals("resultadoCalculado")) && !formattedValue.contains(",")) {
-                                formattedValue += ",00";
-                            }
                         } else if (largeNumberVarNames.contains(varName)) {
                             if (varName.toLowerCase().contains("volume")) {
                                 formattedValue = volumeFormatter.format(numericValue);
