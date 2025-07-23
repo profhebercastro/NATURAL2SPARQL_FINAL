@@ -47,7 +47,7 @@ Template_5B;Qual o volume negociado para as ações unit da Taesa em 17/06/2025?
 # Template_6A: CÁLCULO de uma métrica derivada para uma empresa específica
 Template_6A;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 30/06/2025?
 Template_6A;Calcule o intervalo percentual da PETR4 no dia 11/06/2025.
-Template_6A;Me mostre a variação percentual da Vale em 12/06/2025. 
+Template_6A;Qual é a variação percentual da Vale em 12/06/2025. 
 
 # --- [GRUPO 4] Rankings e Consultas Complexas ---
 

@@ -74,10 +74,12 @@ public class Main {
     @PostMapping("/executar")
     public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
+        String tipoMetrica = request.getTipoMetrica(); // Pega o tipo de métrica da requisição
+
         if (sparqlQuery == null || sparqlQuery.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("{\"error\": \"A consulta SPARQL não pode estar vazia.\"}");
         }
-        logger.info("Recebida requisição para EXECUTAR a consulta.");
+        logger.info("Recebida requisição para EXECUTAR a consulta. Tipo de métrica: {}", tipoMetrica);
         try {
             List<Map<String, String>> bindings = ontology.executeQuery(sparqlQuery);
             Map<String, Object> head = new HashMap<>();
@@ -86,24 +88,14 @@ public class Main {
 
             Map<String, Object> results = new HashMap<>();
             
-            // --- Listas para identificar os tipos de variáveis para formatação ---
-            List<String> priceVarNames = List.of(
-                "precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio", 
-                "variacaoAbsoluta", "intervaloAbsoluto", "resultadoCalculado" // resultadoCalculado é um fallback
-            );
-            List<String> largeNumberVarNames = List.of(
-                "volume", "volumeIndividual", "quantidade", "totalNegocios"
-            );
-            List<String> percentageVarNames = List.of(
-                "variacaoPercentual", "intervaloPercentual", "resultadoCalculado" // resultadoCalculado é um fallback
-            );
+            // --- Listas para formatação ---
+            List<String> priceVarNames = List.of("precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio");
+            List<String> largeNumberVarNames = List.of("volume", "volumeIndividual", "quantidade", "totalNegocios", "valor");
             
-            // --- Formatadores de número ---
+            // --- Formatadores ---
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
             NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
             DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(new Locale("pt", "BR")));
-            
-            // Formatador personalizado para Volume: Símbolo R$ e separador de milhar com PONTO
             DecimalFormatSymbols symbols = new DecimalFormatSymbols();
             symbols.setGroupingSeparator('.');
             DecimalFormat volumeFormatter = new DecimalFormat("'R$ ' #,##0", symbols);
@@ -122,9 +114,17 @@ public class Main {
                     try {
                         double numericValue = Double.parseDouble(currentValue);
 
-                        // A ordem é importante: primeiro verifica se é percentual
-                        if (percentageVarNames.contains(varName)) {
-                            formattedValue = percentageFormatter.format(numericValue);
+                        // Lógica de formatação baseada no contexto (tipoMetrica) e no nome da variável
+                        if (varName.equals("resultadoCalculado") && tipoMetrica != null) {
+                            if (tipoMetrica.contains("perc")) { // Ex: "variacao_perc", "intervalo_perc"
+                                formattedValue = percentageFormatter.format(numericValue);
+                            } else { // Assume que outros cálculos são valores monetários absolutos (variacao_abs, etc)
+                                formattedValue = currencyFormatter.format(numericValue);
+                                // Garante duas casas decimais, pois format() pode omitir ,00
+                                if (!formattedValue.contains(",")) {
+                                    formattedValue += ",00";
+                                }
+                            }
                         } else if (priceVarNames.contains(varName)) {
                             formattedValue = currencyFormatter.format(numericValue);
                         } else if (largeNumberVarNames.contains(varName)) {
