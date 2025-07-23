@@ -87,13 +87,11 @@ public class Main {
             
             // --- Listas para identificar os tipos de variáveis ---
             List<String> priceVarNames = List.of(
-                "precoMaximo", "precoMinimo", "precoAbertura", 
-                "precoFechamento", "precoMedio", "variacaoAbsoluta", 
-                "variacaoAbsolutaFinal"
+                "precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio", 
+                "variacaoAbsoluta", "variacaoAbsolutaFinal"
             );
             List<String> largeNumberVarNames = List.of(
-                "volume", "volumeIndividual", "quantidadeDeNegocios", 
-                "totalNegocios", "valor" // 'valor' é genérico, tratado como número grande
+                "volume", "volumeIndividual", "quantidade", "totalNegocios"
             );
             List<String> percentageVarNames = List.of(
                 "variacaoPercentual", "intervaloPercentualFinal", "resultadoCalculado"
@@ -122,10 +120,9 @@ public class Main {
                         if (priceVarNames.contains(varName)) {
                             formattedValue = currencyFormatter.format(numericValue);
                         } else if (largeNumberVarNames.contains(varName)) {
-                            // Se a variável for 'volume', adiciona R$ sem centavos
                             if (varName.toLowerCase().contains("volume")) {
                                 formattedValue = currencyWithoutCentsFormatter.format(numericValue);
-                            } else { // Se for 'quantidade', formata como inteiro
+                            } else {
                                 formattedValue = integerFormatter.format(numericValue);
                             }
                         } else if (percentageVarNames.contains(varName)) {

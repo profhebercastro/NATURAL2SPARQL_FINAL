@@ -75,30 +75,35 @@ public class SPARQLProcessor {
         }
     }
     
+    // =======================================================
+    //  !!! MÉTODO MODIFICADO COM A LÓGICA DE RENOMEAÇÃO !!!
+    // =======================================================
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
         
+        // --- LÓGICA DE RENOMEAÇÃO DINÂMICA DA VARIÁVEL DE RESULTADO ---
+        if (entities.has("VALOR_DESEJADO") && (query.contains("?valor") || query.contains("?ANS"))) {
+            // Extrai o nome da métrica, ex: "preco_maximo"
+            String metricaKey = entities.get("VALOR_DESEJADO").asText().replace("metrica.", "");
+            // Converte de snake_case para camelCase para ser um nome de variável válido, ex: "precoMaximo"
+            String varName = toCamelCase(metricaKey);
+            // Substitui o ?valor ou ?ANS genérico pelo nome específico no template
+            query = query.replace("?valor", "?" + varName);
+            query = query.replace("?ANS", "?" + varName);
+        }
+        // ---------------------------------------------------
+
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
-            entidadeFilter = "?S1 rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
+            // Usando ?empresa como variável padrão para a entidade
+            entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
         }
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
 
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
-            JsonNode setorNode = entities.get("NOME_SETOR");
-            String subjectVariable = query.contains("?S1_rank") ? "?S1_rank" : "?S1";
-            if (setorNode.isArray()) {
-                List<String> setores = new ArrayList<>();
-                for (JsonNode setor : setorNode) {
-                    setores.add("\"" + setor.asText() + "\"@pt");
-                }
-                String inClause = String.join(", ", setores);
-                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label ?label . \n    FILTER(?label IN (" + inClause + "))";
-            } else {
-                String nomeSetor = setorNode.asText();
-                setorFilter = subjectVariable + " b3:atuaEm ?setor . \n    ?setor rdfs:label \"" + nomeSetor + "\"@pt .";
-            }
+            String nomeSetor = entities.get("NOME_SETOR").asText();
+            setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
         }
         query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
 
@@ -110,11 +115,12 @@ public class SPARQLProcessor {
         }
         
         if (query.contains("#FILTER_BLOCK#")) {
-            String filterBlock4C = !setorFilter.isEmpty() ? setorFilter : entidadeFilter;
+            // O PlaceholderService poderia ser usado para uma lógica mais complexa aqui
+            String filterBlock4C = !setorFilter.isEmpty() ? setorFilter.replace("?empresa", "?S1") : entidadeFilter.replace("?empresa", "?S1");
             query = query.replace("#FILTER_BLOCK#", filterBlock4C);
         }
 
-        query = placeholderService.replaceGenericPlaceholders(query);
+        //query = placeholderService.replaceGenericPlaceholders(query);
         
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
@@ -168,5 +174,32 @@ public class SPARQLProcessor {
         } catch (IOException e) {
             throw new RuntimeException("Falha ao carregar template: " + path, e);
         }
+    }
+
+    /**
+     * Converte uma string em formato snake_case para camelCase.
+     * Ex: "preco_maximo" -> "precoMaximo"
+     * @param snakeCase A string de entrada.
+     * @return A string convertida para camelCase.
+     */
+    private String toCamelCase(String snakeCase) {
+        if (snakeCase == null || snakeCase.isEmpty()) {
+            return "";
+        }
+        StringBuilder camelCase = new StringBuilder();
+        boolean nextIsUpper = false;
+        for (char c : snakeCase.toCharArray()) {
+            if (c == '_') {
+                nextIsUpper = true;
+            } else {
+                if (nextIsUpper) {
+                    camelCase.append(Character.toUpperCase(c));
+                    nextIsUpper = false;
+                } else {
+                    camelCase.append(c);
+                }
+            }
+        }
+        return camelCase.toString();
     }
 }
