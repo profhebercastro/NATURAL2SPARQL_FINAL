@@ -87,22 +87,23 @@ public class Main {
             
             // --- Listas para identificar os tipos de variáveis ---
             List<String> priceVarNames = List.of(
-                "valor", "precoMaximo", "precoMinimo", "precoAbertura", 
+                "precoMaximo", "precoMinimo", "precoAbertura", 
                 "precoFechamento", "precoMedio", "variacaoAbsoluta", 
                 "variacaoAbsolutaFinal"
             );
             List<String> largeNumberVarNames = List.of(
                 "volume", "volumeIndividual", "quantidadeDeNegocios", 
-                "totalNegocios"
+                "totalNegocios", "valor" // 'valor' é genérico, tratado como número grande
             );
             List<String> percentageVarNames = List.of(
-                "variacaoPercentual", "intervaloPercentualFinal"
+                "variacaoPercentual", "intervaloPercentualFinal", "resultadoCalculado"
             );
             
             // --- Formatadores de número ---
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
             NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
             DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'");
+            DecimalFormat currencyWithoutCentsFormatter = new DecimalFormat("'R$ ' #,##0");
 
             List<Map<String, Object>> formattedBindings = new ArrayList<>();
             for(Map<String, String> row : bindings) {
@@ -113,7 +114,7 @@ public class Main {
 
                     String currentValue = entry.getValue();
                     String varName = entry.getKey();
-                    String formattedValue = currentValue; // Valor padrão
+                    String formattedValue = currentValue; 
 
                     try {
                         double numericValue = Double.parseDouble(currentValue);
@@ -121,12 +122,17 @@ public class Main {
                         if (priceVarNames.contains(varName)) {
                             formattedValue = currencyFormatter.format(numericValue);
                         } else if (largeNumberVarNames.contains(varName)) {
-                            formattedValue = integerFormatter.format(numericValue);
+                            // Se a variável for 'volume', adiciona R$ sem centavos
+                            if (varName.toLowerCase().contains("volume")) {
+                                formattedValue = currencyWithoutCentsFormatter.format(numericValue);
+                            } else { // Se for 'quantidade', formata como inteiro
+                                formattedValue = integerFormatter.format(numericValue);
+                            }
                         } else if (percentageVarNames.contains(varName)) {
                             formattedValue = percentageFormatter.format(numericValue);
                         }
                     } catch (NumberFormatException e) {
-                        // Se não for um número (ex: um ticker), não faz nada e mantém o valor original
+                        // Mantém o valor original se não for número (ex: um ticker)
                     }
                     
                     valueMap.put("value", formattedValue);
