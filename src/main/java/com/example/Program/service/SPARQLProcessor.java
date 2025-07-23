@@ -76,7 +76,7 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
         
-        // --- 1. Renomeação Dinâmica da Variável de Resultado ---
+        // --- 1. Renomeação Dinâmica da Variável ---
         if (entities.has("VALOR_DESEJADO") && (query.contains("?valor") || query.contains("?ANS"))) {
             String metricaKey = entities.get("VALOR_DESEJADO").asText().replace("metrica.", "");
             String varName = toCamelCase(metricaKey);
@@ -109,13 +109,39 @@ public class SPARQLProcessor {
             }
         }
         
-        // --- 3. Substituição dos Placeholders Genéricos (P*, S*) ---
+        // =======================================================
+        //  !!! LÓGICA DE FILTRO CORRIGIDA AQUI !!!
+        // =======================================================
+        String entidadeFilter = "";
+        if (entities.has("ENTIDADE_NOME")) {
+            entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entities.get("ENTIDADE_NOME").asText() + "\", \"i\"))";
+        }
+
+        String setorFilter = "";
+        if (entities.has("NOME_SETOR")) {
+            String nomeSetor = entities.get("NOME_SETOR").asText();
+            setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
+        }
+        
+        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+        query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
+
+        if (query.contains("#FILTER_BLOCK#")) {
+            String filterBlock = !setorFilter.isEmpty() ? setorFilter : entidadeFilter;
+            query = query.replace("#FILTER_BLOCK#", filterBlock);
+        }
+
+        if (entities.has("REGEX_PATTERN")) {
+            String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
+            query = query.replace("#REGEX_FILTER#", regexFilter);
+        }
+        
+        // --- 4. Substituição dos Placeholders Genéricos (P*, S*) ---
         query = placeholderService.replaceGenericPlaceholders(query);
 
-        // --- 4. Adiciona os prefixos ---
+        // --- 5. Adiciona os prefixos ---
         String prefixes = placeholderService.getPrefixes();
         
-        // --- 5. Monta e retorna a query final ---
         return prefixes + query.replaceAll("#[A-Z_]+#", ""); 
     }
 
