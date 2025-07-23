@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -91,7 +92,7 @@ public class Main {
                 "variacaoAbsoluta", "variacaoAbsolutaFinal"
             );
             List<String> largeNumberVarNames = List.of(
-                "volume", "volumeIndividual", "quantidade", "totalNegocios"
+                "volume", "volumeIndividual", "quantidade", "totalNegocios", "valor"
             );
             List<String> percentageVarNames = List.of(
                 "variacaoPercentual", "intervaloPercentualFinal", "resultadoCalculado"
@@ -100,8 +101,13 @@ public class Main {
             // --- Formatadores de número ---
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
             NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
-            DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'");
-            DecimalFormat currencyWithoutCentsFormatter = new DecimalFormat("'R$ ' #,##0");
+            DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(new Locale("pt", "BR")));
+            
+            // =======================================================
+            //  !!! FORMATADOR PERSONALIZADO PARA VOLUME !!!
+            // =======================================================
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US); // Usa o padrão americano (ponto para milhar)
+            DecimalFormat volumeFormatter = new DecimalFormat("'R$ ' #,##0", symbols);
 
             List<Map<String, Object>> formattedBindings = new ArrayList<>();
             for(Map<String, String> row : bindings) {
@@ -121,7 +127,7 @@ public class Main {
                             formattedValue = currencyFormatter.format(numericValue);
                         } else if (largeNumberVarNames.contains(varName)) {
                             if (varName.toLowerCase().contains("volume")) {
-                                formattedValue = currencyWithoutCentsFormatter.format(numericValue);
+                                formattedValue = volumeFormatter.format(numericValue);
                             } else {
                                 formattedValue = integerFormatter.format(numericValue);
                             }
