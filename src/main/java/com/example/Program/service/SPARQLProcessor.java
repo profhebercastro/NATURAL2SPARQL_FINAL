@@ -30,13 +30,15 @@ public class SPARQLProcessor {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
+    private final NlpDictionaryService nlpDictionaryService; // Injeta o novo serviço
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
-    public SPARQLProcessor(PlaceholderService placeholderService) {
+    public SPARQLProcessor(PlaceholderService placeholderService, NlpDictionaryService nlpDictionaryService) {
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
         this.placeholderService = placeholderService;
+        this.nlpDictionaryService = nlpDictionaryService; // Inicializa o novo serviço
     }
 
     public ProcessamentoDetalhadoResposta generateSparqlQuery(String naturalLanguageQuery) {
@@ -105,13 +107,16 @@ public class SPARQLProcessor {
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
-            if (entidade.matches("^[A-Z0-9]{5,6}$")) {
+            boolean isKnownAlias = nlpDictionaryService.getEmpresaKeys().contains(entidade.toLowerCase());
+
+            if (entidade.matches("^[A-Z0-9]{5,6}$") && !isKnownAlias) {
                 entidadeFilter = "BIND(b3:" + entidade + " AS ?tickerNode) \n    ?empresa b3:temValorMobiliarioNegociado ?tickerNode .";
             } else {
                 entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\"))";
             }
         }
-        
+        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
             JsonNode setorNode = entities.get("NOME_SETOR");
@@ -127,8 +132,6 @@ public class SPARQLProcessor {
                 setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
             }
         }
-        
-        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
 
         if (query.contains("#FILTER_BLOCK#")) {
@@ -138,7 +141,7 @@ public class SPARQLProcessor {
 
         if (entities.has("REGEX_PATTERN")) {
             String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
-            query = query.replace("#REGEX_FILTER#", regexFilter);
+            query = query.replace("#REGEX_PATTERN#", regexFilter);
         }
         
         query = placeholderService.replaceGenericPlaceholders(query);
