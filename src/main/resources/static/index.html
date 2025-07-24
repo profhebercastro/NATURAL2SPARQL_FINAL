@@ -23,6 +23,9 @@
         .btn-success { background-color: #198754; color: white; }
         .btn-danger { background-color: #dc3545; color: white; }
         .btn-info { background-color: #0dcaf0; color: white; }
+        .icon-btn { background: none; border: none; font-size: 1.2rem; color: #6c757d; cursor: pointer; padding: 5px; }
+        .icon-btn:hover { color: #0d6efd; }
+        .card-header-actions { display: flex; align-items: center; gap: 10px; }
         .results-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
         @media (min-width: 768px) { .results-grid { grid-template-columns: 1fr 1fr; } }
         textarea.output { height: 250px; resize: vertical; background-color: #f8f9fa; color: #495057; font-family: 'Courier New', monospace; }
@@ -57,12 +60,22 @@
             <div class="card">
                 <div class="card-title-container">
                     <h3 class="card-title">Consulta SPARQL</h3>
-                    <button id="executeQueryBtn" class="btn btn-info">Executar</button>
+                    <div class="card-header-actions">
+                        <button id="downloadQueryBtn" class="icon-btn" title="Baixar Consulta SPARQL">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button id="executeQueryBtn" class="btn btn-info">Executar</button>
+                    </div>
                 </div>
                 <textarea id="sparqlQueryOutput" class="form-control output" readonly>A consulta SPARQL aparecerá aqui...</textarea>
             </div>
             <div class="card">
-                <h3 class="card-title">Resultado</h3>
+                <div class="card-title-container">
+                    <h3 class="card-title">Resultado</h3>
+                    <button id="downloadResultBtn" class="icon-btn" title="Baixar Resultado">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
                 <div id="resultOutput" class="result-box">
                     <p style="color: #6c757d;">O resultado aparece aqui...</p>
                 </div>
@@ -80,17 +93,26 @@
             const userQuestionInput = document.getElementById('userQuestion');
             const sparqlQueryOutput = document.getElementById('sparqlQueryOutput');
             const resultOutputDiv = document.getElementById('resultOutput');
+            const downloadQueryBtn = document.getElementById('downloadQueryBtn');
+            const downloadResultBtn = document.getElementById('downloadResultBtn');
             
+            let nlpResponseData = null;
+            let lastResultData = null;
+
             generateBtn.addEventListener('click', handleGenerateQuery);
             executeQueryBtn.addEventListener('click', handleExecuteQuery);
             clearBtn.addEventListener('click', clearAllFields);
             userQuestionInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleGenerateQuery(); });
+            downloadQueryBtn.addEventListener('click', downloadSparqlQuery);
+            downloadResultBtn.addEventListener('click', downloadResult);
 
             function clearAllFields() {
                 userQuestionInput.value = '';
                 sparqlQueryOutput.value = 'A consulta SPARQL aparecerá aqui...';
                 sparqlQueryOutput.classList.remove('error-message');
                 resultOutputDiv.innerHTML = '<p style="color: #6c757d;">O resultado aparece aqui...</p>';
+                nlpResponseData = null;
+                lastResultData = null;
             }
 
             async function handleGenerateQuery() {
@@ -101,6 +123,7 @@
                 sparqlQueryOutput.value = 'Gerando consulta...';
                 resultOutputDiv.innerHTML = '<div class="loader"></div>';
                 sparqlQueryOutput.classList.remove('error-message');
+                nlpResponseData = null;
 
                 try {
                     const response = await fetch('/api/processar', {
@@ -113,6 +136,7 @@
                     if (!response.ok) throw new Error(data.erro || `Erro do Servidor: ${response.status}`);
                     
                     sparqlQueryOutput.value = data.sparqlQuery || "Não foi possível gerar a consulta.";
+                    nlpResponseData = data;
 
                 } catch (error) {
                     sparqlQueryOutput.value = `Erro: ${error.message}`;
@@ -124,22 +148,25 @@
             }
 
             async function handleExecuteQuery() {
-                const sparqlQuery = sparqlQueryOutput.value;
-                if (!sparqlQuery || sparqlQuery.startsWith("Erro:") || sparqlQuery.startsWith("Gerando")) {
-                    alert("Não há uma consulta válida para executar."); return;
+                if (!nlpResponseData || !nlpResponseData.sparqlQuery) {
+                    alert("Não há uma consulta válida para executar. Por favor, gere uma consulta primeiro."); return;
                 }
 
                 toggleLoading(executeQueryBtn, true);
                 resultOutputDiv.innerHTML = '<div class="loader"></div>';
 
                 try {
+                    const payload = {
+                        query: nlpResponseData.sparqlQuery,
+                        tipoMetrica: nlpResponseData.tipoMetrica
+                    };
+
                     const response = await fetch('/api/executar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query: sparqlQuery })
+                        body: JSON.stringify(payload)
                     });
                     
-                    // --- CORREÇÃO APLICADA AQUI ---
                     const resultText = await response.text();
                     if (!response.ok) {
                         try {
@@ -151,9 +178,11 @@
                     }
 
                     const data = JSON.parse(resultText);
+                    lastResultData = data;
                     displayResults(data);
 
                 } catch (error) {
+                    lastResultData = null;
                     resultOutputDiv.innerHTML = `<div class="error-message">Erro: ${error.message}</div>`;
                 } finally {
                     toggleLoading(executeQueryBtn, false);
@@ -161,7 +190,7 @@
             }
 
             function displayResults(data) {
-                 resultOutputDiv.innerHTML = ''; 
+                resultOutputDiv.innerHTML = ''; 
                 if (data.error) {
                     resultOutputDiv.innerHTML = `<div class="error-message">${data.error}</div>`;
                     return;
@@ -194,6 +223,42 @@
                 button.disabled = isLoading;
                 button.style.cursor = isLoading ? 'wait' : 'pointer';
                 button.style.opacity = isLoading ? '0.7' : '1';
+            }
+
+            function downloadSparqlQuery() {
+                const queryText = sparqlQueryOutput.value;
+                if (!queryText || queryText.startsWith("Erro:") || queryText.startsWith("Gerando") || queryText.startsWith("A consulta")) {
+                    alert("Não há uma consulta válida para baixar.");
+                    return;
+                }
+                downloadFile('consulta.txt', queryText);
+            }
+
+            function downloadResult() {
+                if (!lastResultData || !lastResultData.results || lastResultData.results.bindings.length === 0) {
+                    alert("Não há um resultado válido para baixar.");
+                    return;
+                }
+                const headers = lastResultData.head.vars;
+                let textContent = headers.join('\t') + '\n';
+                lastResultData.results.bindings.forEach(row => {
+                    const rowValues = headers.map(header => {
+                        const cell = row[header];
+                        return cell ? cell.value : '';
+                    });
+                    textContent += rowValues.join('\t') + '\n';
+                });
+                downloadFile('resultado.txt', textContent);
+            }
+
+            function downloadFile(filename, text) {
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                element.setAttribute('download', filename);
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
             }
         });
     </script>
