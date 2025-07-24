@@ -9,4 +9,4 @@ scikit-learn
 # Servidor de produção WSGI para Flask (mais robusto que o padrão)
 gunicorn
 
-# Forçando a reconstrução do cache no Render - v1
+# Forçando a reconstrução do cache no Render - v3
