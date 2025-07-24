@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,7 +97,7 @@ public class SPARQLProcessor {
                     default: calculoSparql = "0";
                 }
                 query = query.replace(placeholder, calculoSparql);
-            } else if (!placeholder.equals("#NOME_SETOR#")) { // Evita substituir o placeholder de setor aqui
+            } else if (!placeholder.equals("#NOME_SETOR#")) {
                 query = query.replace(placeholder, value);
             }
         }
@@ -110,8 +111,7 @@ public class SPARQLProcessor {
                 entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\"))";
             }
         }
-        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
-
+        
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
             JsonNode setorNode = entities.get("NOME_SETOR");
@@ -127,6 +127,8 @@ public class SPARQLProcessor {
                 setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
             }
         }
+        
+        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
 
         if (query.contains("#FILTER_BLOCK#")) {

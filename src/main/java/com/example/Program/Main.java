@@ -96,6 +96,8 @@ public class Main {
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
             NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
             DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(new Locale("pt", "BR")));
+            
+            // Formatador personalizado para Volume: Símbolo R$ e separador de milhar com PONTO
             DecimalFormatSymbols symbols = new DecimalFormatSymbols();
             symbols.setGroupingSeparator('.');
             DecimalFormat volumeFormatter = new DecimalFormat("'R$ ' #,##0", symbols);
@@ -145,7 +147,11 @@ public class Main {
             finalJsonResponse.put("results", results);
             String resultadoJson = objectMapper.writeValueAsString(finalJsonResponse);
             return ResponseEntity.ok(resultadoJson);
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
+            logger.error("Erro ao serializar resultado para JSON: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("{\"error\": \"Erro ao formatar o resultado da consulta.\"}");
+        }
+        catch (Exception e) {
             logger.error("Erro no endpoint /executar: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("{\"error\": \"Erro interno ao executar a consulta: " + e.getMessage() + "\"}");
         }
