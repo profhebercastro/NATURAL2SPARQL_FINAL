@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,29 +120,30 @@ public class SPARQLProcessor {
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
-            String value = field.getValue().asText();
-
-            if (placeholder.equals("#VALOR_DESEJADO#")) {
-                String predicadoRDF = placeholderService.getPlaceholderValue(value);
-                if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
-            } else if (placeholder.equals("#CALCULO#")) {
-                String calculoSparql;
-                switch (value) {
-                    case "variacao_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                    case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
-                    case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
-                    case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
-                    default: calculoSparql = "0";
+            
+            if (!placeholder.equals("#FILTER_BLOCK_ENTIDADE#") && !placeholder.equals("#FILTER_BLOCK_SETOR#") && !placeholder.equals("#FILTER_BLOCK#")) {
+                String value = field.getValue().asText();
+                if (placeholder.equals("#VALOR_DESEJADO#")) {
+                    String predicadoRDF = placeholderService.getPlaceholderValue(value);
+                    if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
+                } else if (placeholder.equals("#CALCULO#")) {
+                    String calculoSparql;
+                    switch (value) {
+                        case "variacao_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                        case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
+                        case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
+                        case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
+                        default: calculoSparql = "0";
+                    }
+                    query = query.replace(placeholder, calculoSparql);
+                } else {
+                    query = query.replace(placeholder, value);
                 }
-                query = query.replace(placeholder, calculoSparql);
-            } else if (!placeholder.equals("#NOME_SETOR#") && !placeholder.equals("#ENTIDADE_NOME#")) {
-                query = query.replace(placeholder, value);
             }
         }
         
         // LIMPA PLACEHOLDERS # QUE SOBRARAM
-        query = query.replaceAll("#[A-Z_]+#", "");
-        query = query.replaceAll(".*#VALOR_DESEJADO#.*\\n", "");
+        query = query.replaceAll("#[A-Z_]+#", ""); 
 
         // SUBSTITUI PLACEHOLDERS GENÉRICOS P* e S*
         query = placeholderService.replaceGenericPlaceholders(query);
