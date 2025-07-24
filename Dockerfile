@@ -4,7 +4,6 @@ FROM maven:3.8.5-openjdk-17 AS builder
 WORKDIR /app
 
 # Copia TODOS os arquivos do projeto para o estágio de build
-# Isso inclui a pasta 'src', 'pom.xml', a pasta 'nlp', etc.
 COPY . .
 
 # Cache de dependências Maven
@@ -25,22 +24,22 @@ WORKDIR /app
 # Copia o JAR do Java construído no estágio anterior
 COPY --from=builder /app/target/*.jar app.jar
 
-# =======================================================
-#  !!! CORREÇÃO CRUCIAL APLICADA AQUI !!!
-#  Copia a pasta nlp a partir do estágio de BUILD, não do contexto local.
-#  Isso garante que estamos usando a versão mais recente do código do Git.
-# =======================================================
+# Copia a pasta inteira do serviço de NLP a partir do estágio de build
 COPY --from=builder /app/nlp/ ./nlp
 
-# Instala as dependências Python a partir do requirements.txt que está DENTRO da pasta nlp
+# Instala as dependências Python a partir do requirements.txt
 RUN pip3 install --no-cache-dir -r nlp/requirements.txt
 
 # Copia o script de inicialização e o torna executável
 COPY --from=builder /app/start.sh .
 RUN chmod +x start.sh
 
-# Expõe as duas portas que serão usadas pela aplicação
-EXPOSE 10000 5000 # Render usa 10000 por padrão para o serviço principal
+# =======================================================
+#  !!! CORREÇÃO DE SINTAXE APLICADA AQUI !!!
+#  O comentário deve estar em uma linha separada.
+# =======================================================
+# Render usa a porta 10000 por padrão para o serviço principal
+EXPOSE 10000 5000
 
 # Define o comando que será executado quando o container iniciar
 CMD ["./start.sh"]
