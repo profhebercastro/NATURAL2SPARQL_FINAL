@@ -6,16 +6,16 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO ---
+# --- LOADING ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-def carregar_arquivo_json(nome_arquivo):
-    caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
+def load_json_file(filename):
+    path = os.path.join(SCRIPT_DIR, filename)
     try:
-        with open(caminho_completo, 'r', encoding='utf-8') as f: return json.load(f)
+        with open(path, 'r', encoding='utf-8') as f: return json.load(f)
     except FileNotFoundError: return {}
 
-empresa_map = carregar_arquivo_json('Named_entity_dictionary.json')
-setor_map = carregar_arquivo_json('setor_map.json')
+empresa_map = load_json_file('Named_entity_dictionary.json')
+setor_map = load_json_file('setor_map.json')
 
 reference_templates = {}
 try:
@@ -45,71 +45,53 @@ else:
     vectorizer = None
     tfidf_matrix_ref = None
 
-# --- FUNÇÕES AUXILIARES ---
-def remover_acentos(texto):
-    nfkd_form = unicodedata.normalize('NFKD', texto)
+# --- HELPER FUNCTIONS ---
+def remove_accents(text):
+    nfkd_form = unicodedata.normalize('NFKD', text)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def extrair_entidades_fixas(pergunta_lower):
-    entidades = {}
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
-    pergunta_limpa = pergunta_lower
-    
-    # Prioridade 1: Extrair Ticker
-    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', pergunta_limpa.upper())
-    if ticker_match:
-        entidades['entidade_nome'] = ticker_match.group(1)
-        pergunta_limpa = pergunta_limpa.replace(ticker_match.group(1).lower(), "")
+def extract_entities(question_lower):
+    entities = {}
+    question_no_accents = remove_accents(question_lower)
 
-    # Prioridade 2: Extrair Setor
-    sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
-    for key in sorted_setor_keys:
-        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
-            entidades['nome_setor'] = setor_map[key]
-            pergunta_limpa = re.sub(r'\b' + re.escape(key.lower()) + r'\b', '', pergunta_limpa)
+    # 1. Extract Date
+    date_match = re.search(r'(\d{2})/(\d{2})/(\d{4})', question_lower)
+    if date_match:
+        day, month, year = date_match.groups()
+        entities['data'] = f"{year}-{month}-{day}"
+
+    # 2. Extract Ticker (Highest Priority Entity)
+    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', question_lower.upper())
+    if ticker_match:
+        entities['entidade_nome'] = ticker_match.group(1)
+    
+    # 3. Extract Sector
+    # Order keys by length to match longer phrases first (e.g., "petroleo e gas" before "gas")
+    sorted_sector_keys = sorted(setor_map.keys(), key=len, reverse=True)
+    for key in sorted_sector_keys:
+        if re.search(r'\b' + re.escape(remove_accents(key.lower())) + r'\b', question_no_accents):
+            entities['nome_setor'] = setor_map[key]
             break
 
-    # Prioridade 3: Extrair Nome da Empresa (se Ticker não foi encontrado)
-    if 'entidade_nome' not in entidades:
-        stop_words = [
-            'qual', 'foi', 'a', 'o', 'da', 'de', 'do', 'no', 'em', 'me', 'diga', 'mostre', 'liste', 'calcule', 
-            'acao', 'empresa', 'pregao', 'dia', 'preco', 'maximo', 'minimo', 'medio', 'abertura', 'fechamento',
-            'volume', 'quantidade', 'variacao', 'percentual', 'absoluta', 'intervalo'
-        ]
-        
-        pergunta_restante = pergunta_lower
-        for word in stop_words:
-            pergunta_restante = re.sub(r'\b' + word + r'\b', '', pergunta_restante)
-        
-        # Remove data e caracteres extras
-        pergunta_restante = re.sub(r'(\d{2})/(\d{2})/(\d{4})', '', pergunta_restante)
-        pergunta_restante = re.sub(r'[^\w\s]', '', pergunta_restante).strip()
+    # 4. Extract Company Name (only if a Ticker was NOT found)
+    if 'entidade_nome' not in entities:
+        sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
+        for key in sorted_empresa_keys:
+            if re.search(r'\b' + re.escape(key.lower()) + r'\b', question_lower):
+                entities['entidade_nome'] = key
+                break
+                
+    return entities
 
-        if pergunta_restante:
-            sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
-            for key in sorted_empresa_keys:
-                if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_restante):
-                    entidades['entidade_nome'] = key
-                    break
+def identify_dynamic_params(question_lower):
+    params = {}
+    question_no_accents = remove_accents(question_lower)
 
-    # Extrair Data no final
-    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
-    if match_data:
-        dia, mes, ano = match_data.groups()
-        entidades['data'] = f"{ano}-{mes}-{dia}"
-            
-    return entidades
-
-def identificar_parametros_dinamicos(pergunta_lower):
-    dados = {}
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
-
-    mapa_metricas = {
+    metric_map = {
         'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
         'calculo_variacao_perc': ['variacao intradiaria percentual', 'variacao percentual'],
-        'calculo_intervalo_perc': ['intervalo intradiaria percentual', 'intervalo percentual'],
+        'calculo_intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
         'calculo_intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
-        'calculo_variacao_abs_abs': ['menor variacao'],
         'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
         'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
         'metrica.preco_fechamento': ['preco de fechamento', 'fechamento'],
@@ -119,55 +101,63 @@ def identificar_parametros_dinamicos(pergunta_lower):
         'metrica.volume': ['volume'],
     }
 
-    for chave, sinonimos in mapa_metricas.items():
-        if 'calculo' in dados or 'valor_desejado' in dados:
-            break
-        for s in sinonimos:
-            if re.search(r'\b' + remover_acentos(s) + r'\b', pergunta_sem_acento):
-                if chave.startswith('calculo_'):
-                    dados['calculo'] = chave.replace('calculo_', '')
+    for key, synonyms in metric_map.items():
+        for s in synonyms:
+            if re.search(r'\b' + remove_accents(s) + r'\b', question_no_accents):
+                if key.startswith('calculo_'):
+                    params['calculo'] = key.replace('calculo_', '')
                 else:
-                    dados['valor_desejado'] = chave
-                break 
+                    params['valor_desejado'] = key
+                break
+        if 'calculo' in params or 'valor_desejado' in params:
+            break
 
-    if "ordinaria" in pergunta_sem_acento: dados["regex_pattern"] = "3$"
-    elif "preferencial" in pergunta_sem_acento: dados["regex_pattern"] = "[456]$"
-    elif "unit" in pergunta_sem_acento: dados["regex_pattern"] = "11$"
+    if "ordinaria" in question_no_accents: params["regex_pattern"] = "3$"
+    elif "preferencial" in question_no_accents: params["regex_pattern"] = "[456]$"
+    elif "unit" in question_no_accents: params["regex_pattern"] = "11$"
     
-    dados['ordem'] = "DESC"
-    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento: dados['ordem'] = "ASC"
+    params['ordem'] = "DESC"
+    if "baixa" in question_no_accents or "menor" in question_no_accents: params['ordem'] = "ASC"
         
-    dados['limite'] = "1"
-    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower: dados['limite'] = "5"
+    params['limite'] = "1"
+    if "cinco acoes" in question_no_accents or "cinco ações" in question_lower: params['limite'] = "5"
         
-    return dados
+    return params
 
-# --- API FLASK ---
+# --- FLASK API ---
 app = Flask(__name__)
 @app.route('/process_question', methods=['POST'])
 def process_question():
     data = request.get_json()
     if not data or 'question' not in data:
-        return jsonify({"error": "Payload inválido."}), 400
-    pergunta_lower = data.get('question', '').lower()
-    if not pergunta_lower.strip(): 
-        return jsonify({"error": "A pergunta não pode ser vazia."}), 400
+        return jsonify({"error": "Invalid payload"}), 400
+    
+    question_lower = data.get('question', '').lower()
+    if not question_lower.strip(): 
+        return jsonify({"error": "Question cannot be empty"}), 400
+
+    # Template matching
     if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
-        tfidf_usuario = vectorizer.transform([pergunta_lower])
-        similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-        if similaridades.any(): template_id_final = ref_ids_flat[similaridades.argmax()]
-        else: return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
+        user_tfidf = vectorizer.transform([question_lower])
+        similarities = cosine_similarity(user_tfidf, tfidf_matrix_ref).flatten()
+        if similarities.any():
+            final_template_id = ref_ids_flat[similarities.argmax()]
+        else:
+            return jsonify({"error": "Could not find a similarity"}), 404
     else:
-        return jsonify({"error": "Nenhum template de referência carregado."}), 500
-    if not template_id_final:
-        return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
+        return jsonify({"error": "No reference templates loaded"}), 500
+
+    if not final_template_id:
+        return jsonify({"error": "Could not identify a template for the question"}), 404
+
+    # Entity and Parameter Extraction
+    extracted_entities = extract_entities(question_lower)
+    dynamic_params = identify_dynamic_params(question_lower)
+    extracted_entities.update(dynamic_params)
     
-    entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
-    parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
-    entidades_extraidas.update(parametros_dinamicos)
-    
-    entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
-    return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
+    # Final response formatting
+    uppercase_entities = {k.upper(): v for k, v in extracted_entities.items()}
+    return jsonify({"templateId": final_template_id, "entities": uppercase_entities})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
