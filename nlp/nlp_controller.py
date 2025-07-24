@@ -50,18 +50,42 @@ def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def extrair_todas_entidades(pergunta_lower):
+def extrair_entidades_fixas(pergunta_lower):
     entidades = {}
-    texto_restante = ' ' + pergunta_lower + ' '
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
     
-    # Etapa 1: Extrair Data e remover da string de trabalho
-    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', texto_restante)
+    # Prioridade 1: Ticker (é a entidade mais específica e inequívoca)
+    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', pergunta_lower.upper())
+    if ticker_match:
+        entidades['entidade_nome'] = ticker_match.group(1)
+    
+    # Prioridade 2: Setor
+    sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
+    for key in sorted_setor_keys:
+        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
+            entidades['nome_setor'] = setor_map[key]
+            break
+
+    # Prioridade 3: Nome da Empresa (apenas se um Ticker ainda não foi encontrado)
+    if 'entidade_nome' not in entidades:
+        sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
+        for key in sorted_empresa_keys:
+            if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
+                entidades['entidade_nome'] = key
+                break
+
+    # Extração de Data
+    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
-        texto_restante = texto_restante.replace(match_data.group(0), "")
+            
+    return entidades
 
-    # Etapa 2: Extrair Métricas e Cálculos e remover da string de trabalho
+def identificar_parametros_dinamicos(pergunta_lower):
+    dados = {}
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
+
     mapa_metricas = {
         'calculo_variacao_perc': ['percentual de alta', 'percentual de baixa', 'variacao intradiaria percentual', 'variacao percentual'],
         'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
@@ -77,58 +101,41 @@ def extrair_todas_entidades(pergunta_lower):
         'metrica.volume': ['volume'],
     }
     
-    texto_sem_acento = remover_acentos(texto_restante)
-    # Prioriza a busca por termos de cálculo
-    for chave in sorted(mapa_metricas.keys(), key=lambda k: not k.startswith('calculo_')):
-        sinonimos = mapa_metricas[chave]
-        for s in sinonimos:
-            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
-                if chave.startswith('calculo_'):
-                    entidades['calculo'] = chave.replace('calculo_', '')
-                else:
-                    entidades['valor_desejado'] = chave
-                # Remove a primeira palavra do sinônimo para evitar que seja confundida com uma entidade
-                texto_restante = re.sub(r'\b' + s.split()[0] + r'\b', '', texto_restante, flags=re.IGNORECASE)
-                break
-        if 'calculo' in entidades or 'valor_desejado' in entidades:
+    # Etapa 1: Procurar por um termo de CÁLCULO primeiro
+    for chave, sinonimos in mapa_metricas.items():
+        if chave.startswith('calculo_'):
+            for s in sinonimos:
+                if re.search(r'\b' + remover_acentos(s) + r'\b', pergunta_sem_acento):
+                    dados['calculo'] = chave.replace('calculo_', '')
+                    break
+        if 'calculo' in dados:
             break
-
-    # Etapa 3: Extrair Ticker (se houver) e remover
-    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', texto_restante.upper())
-    if ticker_match:
-        entidades['entidade_nome'] = ticker_match.group(1)
-        texto_restante = re.sub(r'\b' + ticker_match.group(1) + r'\b', '', texto_restante, flags=re.IGNORECASE)
-
-    # Etapa 4: Extrair Setor e remover
-    sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
-    for key in sorted_setor_keys:
-        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_restante)):
-            entidades['nome_setor'] = setor_map[key]
-            texto_restante = re.sub(r'\b' + re.escape(key.lower()) + r'\b', '', texto_restante, flags=re.IGNORECASE)
-            break
-            
-    # Etapa 5: Extrair Nome da Empresa do que sobrou (se Ticker não foi encontrado)
-    if 'entidade_nome' not in entidades:
-        sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
-        for key in sorted_empresa_keys:
-            if re.search(r'\b' + re.escape(key.lower()) + r'\b', texto_restante):
-                entidades['entidade_nome'] = key
+    
+    # Etapa 2: Somente se não encontrou um cálculo, procurar por uma métrica de busca simples
+    if 'calculo' not in dados:
+        for chave, sinonimos in mapa_metricas.items():
+            if chave.startswith('metrica.'):
+                for s in sinonimos:
+                    if re.search(r'\b' + remover_acentos(s) + r'\b', pergunta_sem_acento):
+                        dados['valor_desejado'] = chave
+                        break
+            if 'valor_desejado' in dados:
                 break
-                
-    # Etapa 6: Extrair parâmetros restantes da pergunta original
-    pergunta_sem_acento_original = remover_acentos(pergunta_lower)
-    if "ordinaria" in pergunta_sem_acento_original: entidades["regex_pattern"] = "3$"
-    elif "preferencial" in pergunta_sem_acento_original: entidades["regex_pattern"] = "[456]$"
-    elif "unit" in pergunta_sem_acento_original: entidades["regex_pattern"] = "11$"
-    
-    entidades['ordem'] = "DESC"
-    if "baixa" in pergunta_sem_acento_original or "menor" in pergunta_sem_acento_original: entidades['ordem'] = "ASC"
-    
-    entidades['limite'] = "1"
-    if "cinco acoes" in pergunta_sem_acento_original or "cinco ações" in pergunta_lower: entidades['limite'] = "5"
-    elif "3 acoes" in pergunta_sem_acento_original or "3 ações" in pergunta_lower: entidades['limite'] = "3"
 
-    return entidades
+    # Etapa 3: Extrair outros parâmetros
+    if "ordinaria" in pergunta_sem_acento: dados["regex_pattern"] = "3$"
+    elif "preferencial" in pergunta_sem_acento: dados["regex_pattern"] = "[456]$"
+    elif "unit" in pergunta_sem_acento: dados["regex_pattern"] = "11$"
+    
+    dados['ordem'] = "DESC"
+    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento: dados['ordem'] = "ASC"
+        
+    dados['limite'] = "1"
+    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower: dados['limite'] = "5"
+    elif "3 acoes" in pergunta_sem_acento or "3 ações" in pergunta_lower: dados['limite'] = "3"
+        
+    return dados
+
 
 # --- API FLASK ---
 app = Flask(__name__)
@@ -154,7 +161,9 @@ def process_question():
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
 
-    entidades_extraidas = extrair_todas_entidades(pergunta_lower)
+    entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
+    parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
+    entidades_extraidas.update(parametros_dinamicos)
     
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
