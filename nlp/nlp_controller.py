@@ -54,19 +54,16 @@ def extrair_entidades_fixas(pergunta_lower):
     entidades = {}
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     
-    # Prioridade 1: Ticker (é a entidade mais específica e inequívoca)
     ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', pergunta_lower.upper())
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1)
     
-    # Prioridade 2: Setor
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
             entidades['nome_setor'] = setor_map[key]
             break
 
-    # Prioridade 3: Nome da Empresa (apenas se um Ticker ainda não foi encontrado)
     if 'entidade_nome' not in entidades:
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
@@ -74,7 +71,6 @@ def extrair_entidades_fixas(pergunta_lower):
                 entidades['entidade_nome'] = key
                 break
 
-    # Extração de Data
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
@@ -134,7 +130,6 @@ def identificar_parametros_dinamicos(pergunta_lower):
     elif "3 acoes" in pergunta_sem_acento or "3 ações" in pergunta_lower: dados['limite'] = "3"
         
     return dados
-
 
 # --- API FLASK ---
 app = Flask(__name__)

@@ -74,10 +74,12 @@ public class Main {
     @PostMapping("/executar")
     public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
+        String tipoMetrica = request.getTipoMetrica(); // Pega o tipo de métrica da requisição
+
         if (sparqlQuery == null || sparqlQuery.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("{\"error\": \"A consulta SPARQL não pode estar vazia.\"}");
         }
-        logger.info("Recebida requisição para EXECUTAR a consulta.");
+        logger.info("Executando query. Tipo de métrica recebido: {}", tipoMetrica);
         try {
             List<Map<String, String>> bindings = ontology.executeQuery(sparqlQuery);
             Map<String, Object> head = new HashMap<>();
@@ -112,12 +114,11 @@ public class Main {
                     try {
                         double numericValue = Double.parseDouble(currentValue);
 
-                        // Lógica de formatação inteligente baseada na query e no nome da variável
-                        if (varName.equals("resultadoCalculado")) {
-                            // Inspeciona a query para decidir a formatação
-                            if (sparqlQuery.contains("* 100")) { // É um cálculo de percentual
+                        // Lógica de formatação baseada no contexto (tipoMetrica) e no nome da variável
+                        if (varName.equals("resultadoCalculado") && tipoMetrica != null) {
+                            if (tipoMetrica.contains("perc")) { // Ex: "variacao_perc", "intervalo_perc"
                                 formattedValue = percentageFormatter.format(numericValue);
-                            } else { // Assume que é um cálculo de valor absoluto (moeda)
+                            } else { // Assume que outros cálculos são valores monetários (variacao_abs, etc)
                                 formattedValue = currencyFormatter.format(numericValue);
                             }
                         } else if (priceVarNames.contains(varName)) {
@@ -144,7 +145,11 @@ public class Main {
             finalJsonResponse.put("results", results);
             String resultadoJson = objectMapper.writeValueAsString(finalJsonResponse);
             return ResponseEntity.ok(resultadoJson);
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
+            logger.error("Erro ao serializar resultado para JSON: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("{\"error\": \"Erro ao formatar o resultado da consulta.\"}");
+        }
+        catch (Exception e) {
             logger.error("Erro no endpoint /executar: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("{\"error\": \"Erro interno ao executar a consulta: " + e.getMessage() + "\"}");
         }

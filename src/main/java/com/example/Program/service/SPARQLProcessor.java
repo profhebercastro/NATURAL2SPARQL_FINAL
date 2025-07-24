@@ -16,7 +16,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -94,7 +96,7 @@ public class SPARQLProcessor {
                     default: calculoSparql = "0";
                 }
                 query = query.replace(placeholder, calculoSparql);
-            } else {
+            } else if (!placeholder.equals("#NOME_SETOR#")) { // Evita substituir o placeholder de setor aqui
                 query = query.replace(placeholder, value);
             }
         }
@@ -112,8 +114,18 @@ public class SPARQLProcessor {
 
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
-            String nomeSetor = entities.get("NOME_SETOR").asText();
-            setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
+            JsonNode setorNode = entities.get("NOME_SETOR");
+            if (setorNode.isArray()) {
+                List<String> setores = new ArrayList<>();
+                for (JsonNode setor : setorNode) {
+                    setores.add("\"" + setor.asText() + "\"@pt");
+                }
+                String inClause = String.join(", ", setores);
+                setorFilter = "?empresa b3:atuaEm ?setorUri . \n    ?setorUri rdfs:label ?setorLabel . \n    FILTER(?setorLabel IN (" + inClause + "))";
+            } else {
+                String nomeSetor = setorNode.asText();
+                setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
+            }
         }
         query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
 
@@ -127,17 +139,10 @@ public class SPARQLProcessor {
             query = query.replace("#REGEX_FILTER#", regexFilter);
         }
         
-        // =======================================================
-        //  !!! CORREÇÃO FINAL APLICADA AQUI !!!
-        // =======================================================
-        // Primeiro, remove quaisquer placeholders # remanescentes
-        query = query.replaceAll("#[A-Z_]+#", "");
-        // DEPOIS, substitui os placeholders genéricos P* e S*
         query = placeholderService.replaceGenericPlaceholders(query);
-        // POR ÚLTIMO, adiciona os prefixos no topo
         String prefixes = placeholderService.getPrefixes();
         
-        return prefixes + query; 
+        return prefixes + query.replaceAll("#[A-Z_]+#", ""); 
     }
 
     private String toCamelCase(String snakeCase) {
