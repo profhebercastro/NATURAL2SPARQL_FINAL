@@ -127,10 +127,17 @@ public class SPARQLProcessor {
             query = query.replace("#REGEX_FILTER#", regexFilter);
         }
         
+        // =======================================================
+        //  !!! CORREÇÃO FINAL APLICADA AQUI !!!
+        // =======================================================
+        // Primeiro, remove quaisquer placeholders # remanescentes
+        query = query.replaceAll("#[A-Z_]+#", "");
+        // DEPOIS, substitui os placeholders genéricos P* e S*
         query = placeholderService.replaceGenericPlaceholders(query);
+        // POR ÚLTIMO, adiciona os prefixos no topo
         String prefixes = placeholderService.getPrefixes();
         
-        return prefixes + query.replaceAll("#[A-Z_]+#", ""); 
+        return prefixes + query; 
     }
 
     private String toCamelCase(String snakeCase) {
