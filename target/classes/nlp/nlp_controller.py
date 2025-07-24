@@ -78,7 +78,6 @@ def extrair_todas_entidades(pergunta_lower):
     }
     
     texto_sem_acento = remover_acentos(texto_restante)
-    # Prioriza a busca por termos de cálculo
     for chave in sorted(mapa_metricas.keys(), key=lambda k: not k.startswith('calculo_')):
         sinonimos = mapa_metricas[chave]
         for s in sinonimos:
@@ -108,7 +107,7 @@ def extrair_todas_entidades(pergunta_lower):
             setor_encontrado = True
             break
             
-    # Etapa 5: Extrair Nome da Empresa APENAS SE Ticker e Setor não foram encontrados
+    # Etapa 5: Extrair Nome da Empresa do que sobrou (se Ticker e Setor não foram encontrados)
     if 'entidade_nome' not in entidades and not setor_encontrado:
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
@@ -144,12 +143,14 @@ def process_question():
         
     entidades_preliminares = extrair_todas_entidades(pergunta_lower)
     
-    # Lógica customizada para escolher o template certo
+    # Lógica customizada para escolher o template certo, se sobrepondo à similaridade
     if 'nome_setor' in entidades_preliminares:
         if 'calculo' in entidades_preliminares:
-            template_id_final = 'Template_7B' # Ranking por setor
-        else: # valor_desejado
-            template_id_final = 'Template_4C' # Agregação de valor por setor
+            template_id_final = 'Template_7B'
+        elif 'valor_desejado' in entidades_preliminares:
+            template_id_final = 'Template_4C'
+        else:
+            template_id_final = 'Template_3A'
     else:
         # Usa a lógica de similaridade para os outros casos
         if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:

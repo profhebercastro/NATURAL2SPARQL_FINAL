@@ -80,35 +80,11 @@ public class SPARQLProcessor {
             query = query.replace("?ANS", "?" + varName);
         }
 
-        Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
-        while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> field = fields.next();
-            String placeholder = "#" + field.getKey().toUpperCase() + "#";
-            String value = field.getValue().asText();
-
-            if (placeholder.equals("#VALOR_DESEJADO#")) {
-                String predicadoRDF = placeholderService.getPlaceholderValue(value);
-                if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
-            } else if (placeholder.equals("#CALCULO#")) {
-                String calculoSparql;
-                switch (value) {
-                    case "variacao_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                    case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
-                    case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
-                    case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
-                    default: calculoSparql = "0";
-                }
-                query = query.replace(placeholder, calculoSparql);
-            } else if (!placeholder.equals("#NOME_SETOR#")) {
-                query = query.replace(placeholder, value);
-            }
-        }
-        
+        // PREPARA OS BLOCOS DE FILTRO PRIMEIRO
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
             boolean isKnownAlias = nlpDictionaryService.getEmpresaKeys().contains(entidade.toLowerCase());
-
             if (entidade.matches("^[A-Z0-9]{5,6}$") && !isKnownAlias) {
                 entidadeFilter = "BIND(b3:" + entidade + " AS ?tickerNode) \n    ?empresa b3:temValorMobiliarioNegociado ?tickerNode .";
             } else {
@@ -132,28 +108,49 @@ public class SPARQLProcessor {
             }
         }
         
+        // APLICA OS BLOCOS DE FILTRO
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
-
         if (query.contains("#FILTER_BLOCK#")) {
             String filterBlock = !setorFilter.isEmpty() ? setorFilter : entidadeFilter;
             query = query.replace("#FILTER_BLOCK#", filterBlock);
         }
 
-        if (entities.has("REGEX_PATTERN")) {
-            String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))";
-            query = query.replace("#REGEX_FILTER#", regexFilter);
+        // PREENCHE O RESTO DOS PLACEHOLDERS #
+        Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> field = fields.next();
+            String placeholder = "#" + field.getKey().toUpperCase() + "#";
+            String value = field.getValue().asText();
+
+            if (placeholder.equals("#VALOR_DESEJADO#")) {
+                String predicadoRDF = placeholderService.getPlaceholderValue(value);
+                if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
+            } else if (placeholder.equals("#CALCULO#")) {
+                String calculoSparql;
+                switch (value) {
+                    case "variacao_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                    case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
+                    case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
+                    case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
+                    default: calculoSparql = "0";
+                }
+                query = query.replace(placeholder, calculoSparql);
+            } else if (!placeholder.equals("#NOME_SETOR#") && !placeholder.equals("#ENTIDADE_NOME#")) {
+                query = query.replace(placeholder, value);
+            }
         }
         
-        // Remove placeholders não preenchidos ANTES de substituir os genéricos
-        query = query.replaceAll("#[A-Z_]+#", ""); 
+        // LIMPA PLACEHOLDERS # QUE SOBRARAM
+        query = query.replaceAll("#[A-Z_]+#", "");
+        query = query.replaceAll(".*#VALOR_DESEJADO#.*\\n", "");
 
+        // SUBSTITUI PLACEHOLDERS GENÉRICOS P* e S*
         query = placeholderService.replaceGenericPlaceholders(query);
+        
+        // ADICIONA OS PREFIXOS
         String prefixes = placeholderService.getPrefixes();
         
-        // Remove linhas que ficaram com placeholders vazios (ex: ?negociadoNode ?valor)
-        query = query.replaceAll(".*\\s+\\?\\w+\\s*\\.\\s*\\n", "");
-
         return prefixes + query; 
     }
 
