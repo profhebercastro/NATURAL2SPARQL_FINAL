@@ -52,16 +52,16 @@ def remover_acentos(texto):
 
 def extrair_todas_entidades(pergunta_lower):
     entidades = {}
-    texto_restante = ' ' + pergunta_lower + ' '
+    texto_processado = ' ' + pergunta_lower + ' '
     
     # Etapa 1: Extrair Data e remover da string de trabalho
-    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', texto_restante)
+    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', texto_processado)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
-        texto_restante = texto_restante.replace(match_data.group(0), "")
+        texto_processado = texto_processado.replace(match_data.group(0), "")
 
-    # Etapa 2: Extrair Métricas e Cálculos e remover da string de trabalho
+    # Etapa 2: Extrair Métricas e Cálculos
     mapa_metricas = {
         'calculo_variacao_perc': ['percentual de alta', 'percentual de baixa', 'variacao intradiaria percentual', 'variacao percentual'],
         'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
@@ -77,7 +77,7 @@ def extrair_todas_entidades(pergunta_lower):
         'metrica.volume': ['volume'],
     }
     
-    texto_sem_acento = remover_acentos(texto_restante)
+    texto_sem_acento = remover_acentos(texto_processado)
     # Prioriza a busca por termos de cálculo
     for chave in sorted(mapa_metricas.keys(), key=lambda k: not k.startswith('calculo_')):
         sinonimos = mapa_metricas[chave]
@@ -87,33 +87,29 @@ def extrair_todas_entidades(pergunta_lower):
                     entidades['calculo'] = chave.replace('calculo_', '')
                 else:
                     entidades['valor_desejado'] = chave
-                # Remove a primeira palavra do sinônimo para evitar que seja confundida com uma entidade
-                texto_restante = re.sub(r'\b' + s.split()[0] + r'\b', '', texto_restante, flags=re.IGNORECASE)
                 break
         if 'calculo' in entidades or 'valor_desejado' in entidades:
             break
 
-    # Etapa 3: Extrair Ticker (se houver) e remover
-    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', texto_restante.upper())
+    # Etapa 3: Extrair Ticker (se houver)
+    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', texto_processado.upper())
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1)
-        texto_restante = re.sub(r'\b' + ticker_match.group(1) + r'\b', '', texto_restante, flags=re.IGNORECASE)
 
-    # Etapa 4: Extrair Setor e remover
+    # Etapa 4: Extrair Setor
     setor_encontrado = False
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
-        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_restante)):
+        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_processado)):
             entidades['nome_setor'] = setor_map[key]
-            texto_restante = re.sub(r'\b' + re.escape(key.lower()) + r'\b', '', texto_restante, flags=re.IGNORECASE)
             setor_encontrado = True
             break
             
-    # Etapa 5: Extrair Nome da Empresa do que sobrou (se Ticker e Setor não foram encontrados)
+    # Etapa 5: Extrair Nome da Empresa do que sobrou (se Ticker e Setor não foram encontrados como foco)
     if 'entidade_nome' not in entidades and not setor_encontrado:
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
-            if re.search(r'\b' + re.escape(key.lower()) + r'\b', texto_restante):
+            if re.search(r'\b' + re.escape(key.lower()) + r'\b', texto_processado):
                 entidades['entidade_nome'] = key
                 break
                 

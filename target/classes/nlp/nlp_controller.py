@@ -78,6 +78,7 @@ def extrair_todas_entidades(pergunta_lower):
     }
     
     texto_sem_acento = remover_acentos(texto_restante)
+    # Prioriza a busca por termos de cálculo
     for chave in sorted(mapa_metricas.keys(), key=lambda k: not k.startswith('calculo_')):
         sinonimos = mapa_metricas[chave]
         for s in sinonimos:
@@ -86,6 +87,7 @@ def extrair_todas_entidades(pergunta_lower):
                     entidades['calculo'] = chave.replace('calculo_', '')
                 else:
                     entidades['valor_desejado'] = chave
+                # Remove a primeira palavra do sinônimo para evitar que seja confundida com uma entidade
                 texto_restante = re.sub(r'\b' + s.split()[0] + r'\b', '', texto_restante, flags=re.IGNORECASE)
                 break
         if 'calculo' in entidades or 'valor_desejado' in entidades:
