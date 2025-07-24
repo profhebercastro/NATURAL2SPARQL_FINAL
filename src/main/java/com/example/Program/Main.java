@@ -145,11 +145,7 @@ public class Main {
             finalJsonResponse.put("results", results);
             String resultadoJson = objectMapper.writeValueAsString(finalJsonResponse);
             return ResponseEntity.ok(resultadoJson);
-        } catch (JsonProcessingException e) {
-            logger.error("Erro ao serializar resultado para JSON: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("{\"error\": \"Erro ao formatar o resultado da consulta.\"}");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Erro no endpoint /executar: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("{\"error\": \"Erro interno ao executar a consulta: " + e.getMessage() + "\"}");
         }
