@@ -52,16 +52,15 @@ def remover_acentos(texto):
 
 def extrair_todas_entidades(pergunta_lower):
     entidades = {}
-    texto_restante = ' ' + pergunta_lower + ' '
-    
-    # 1. Extrair Data e remover da string
-    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', texto_restante)
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
+
+    # 1. Extrair Data
+    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
-        texto_restante = texto_restante.replace(match_data.group(0), "")
 
-    # 2. Extrair Métricas e Cálculos e remover da string
+    # 2. Extrair Métricas e Cálculos
     mapa_metricas = {
         'calculo_variacao_perc': ['percentual de alta', 'percentual de baixa', 'variacao intradiaria percentual', 'variacao percentual'],
         'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
@@ -76,63 +75,46 @@ def extrair_todas_entidades(pergunta_lower):
         'metrica.quantidade': ['quantidade', 'total de negocios'],
         'metrica.volume': ['volume'],
     }
-    
-    texto_sem_acento = remover_acentos(texto_restante)
-    # Prioriza a busca por termos de cálculo
-    for chave, sinonimos in mapa_metricas.items():
-        if chave.startswith('calculo_'):
-            for s in sinonimos:
-                if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+    for chave, sinonimos in sorted(mapa_metricas.items(), key=lambda item: 'calculo_' not in item[0]):
+        for s in sinonimos:
+            if re.search(r'\b' + remover_acentos(s) + r'\b', pergunta_sem_acento):
+                if chave.startswith('calculo_'):
                     entidades['calculo'] = chave.replace('calculo_', '')
-                    texto_restante = re.sub(r'\b' + s + r'\b', '', texto_restante, flags=re.IGNORECASE)
-                    break
-        if 'calculo' in entidades: break
-    
-    # Se não encontrou cálculo, busca por métrica
-    if 'calculo' not in entidades:
-        for chave, sinonimos in mapa_metricas.items():
-            if chave.startswith('metrica.'):
-                for s in sinonimos:
-                    if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
-                        entidades['valor_desejado'] = chave
-                        texto_restante = re.sub(r'\b' + s + r'\b', '', texto_restante, flags=re.IGNORECASE)
-                        break
-            if 'valor_desejado' in entidades: break
+                else:
+                    entidades['valor_desejado'] = chave
+                break
+        if 'calculo' in entidades or 'valor_desejado' in entidades:
+            break
 
-    # 3. Extrair Ticker (se houver) e remover da string
-    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', texto_restante.upper())
+    # 3. Extrair Ticker (prioridade máxima para entidade)
+    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', pergunta_lower.upper())
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1)
-        texto_restante = re.sub(r'\b' + ticker_match.group(1) + r'\b', '', texto_restante, flags=re.IGNORECASE)
-
-    # 4. Extrair Setor e remover da string
+    
+    # 4. Extrair Setor
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
-        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_restante)):
+        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
             entidades['nome_setor'] = setor_map[key]
-            texto_restante = re.sub(r'\b' + re.escape(key.lower()) + r'\b', '', texto_restante, flags=re.IGNORECASE)
             break
-            
-    # 5. Extrair Nome da Empresa do que sobrou (se Ticker não foi encontrado)
+
+    # 5. Extrair Nome da Empresa (apenas se Ticker não foi encontrado)
     if 'entidade_nome' not in entidades:
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
-            if re.search(r'\b' + re.escape(key.lower()) + r'\b', texto_restante):
+            if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
                 entidades['entidade_nome'] = key
                 break
-                
-    # 6. Extrair parâmetros restantes da pergunta original
-    pergunta_sem_acento_original = remover_acentos(pergunta_lower)
-    if "ordinaria" in pergunta_sem_acento_original: entidades["regex_pattern"] = "3$"
-    elif "preferencial" in pergunta_sem_acento_original: entidades["regex_pattern"] = "[456]$"
-    elif "unit" in pergunta_sem_acento_original: entidades["regex_pattern"] = "11$"
     
+    # 6. Extrair parâmetros restantes
+    if "ordinaria" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
+    elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
+    elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
     entidades['ordem'] = "DESC"
-    if "baixa" in pergunta_sem_acento_original or "menor" in pergunta_sem_acento_original: entidades['ordem'] = "ASC"
-    
+    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento: entidades['ordem'] = "ASC"
     entidades['limite'] = "1"
-    if "cinco acoes" in pergunta_sem_acento_original or "cinco ações" in pergunta_lower: entidades['limite'] = "5"
-    elif "3 acoes" in pergunta_sem_acento_original or "3 ações" in pergunta_lower: entidades['limite'] = "3"
+    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower: entidades['limite'] = "5"
+    elif "3 acoes" in pergunta_sem_acento or "3 ações" in pergunta_lower: entidades['limite'] = "3"
 
     return entidades
 
