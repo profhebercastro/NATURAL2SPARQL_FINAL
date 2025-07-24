@@ -87,6 +87,7 @@ def extrair_todas_entidades(pergunta_lower):
                     entidades['calculo'] = chave.replace('calculo_', '')
                 else:
                     entidades['valor_desejado'] = chave
+                # Remove a primeira palavra do sinônimo para evitar que seja confundida com uma entidade
                 texto_restante = re.sub(r'\b' + s.split()[0] + r'\b', '', texto_restante, flags=re.IGNORECASE)
                 break
         if 'calculo' in entidades or 'valor_desejado' in entidades:
