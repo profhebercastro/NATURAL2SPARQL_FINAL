@@ -74,12 +74,10 @@ public class Main {
     @PostMapping("/executar")
     public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
-        String tipoMetrica = request.getTipoMetrica(); // Pega o tipo de métrica da requisição
-
         if (sparqlQuery == null || sparqlQuery.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("{\"error\": \"A consulta SPARQL não pode estar vazia.\"}");
         }
-        logger.info("Recebida requisição para EXECUTAR a consulta. Tipo de métrica: {}", tipoMetrica);
+        logger.info("Recebida requisição para EXECUTAR a consulta.");
         try {
             List<Map<String, String>> bindings = ontology.executeQuery(sparqlQuery);
             Map<String, Object> head = new HashMap<>();
@@ -90,7 +88,7 @@ public class Main {
             
             // --- Listas para formatação ---
             List<String> priceVarNames = List.of("precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio");
-            List<String> largeNumberVarNames = List.of("volume", "volumeIndividual", "quantidade", "totalNegocios", "valor");
+            List<String> largeNumberVarNames = List.of("volume", "volumeIndividual", "quantidade", "totalNegocios");
             
             // --- Formatadores ---
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
@@ -114,16 +112,13 @@ public class Main {
                     try {
                         double numericValue = Double.parseDouble(currentValue);
 
-                        // Lógica de formatação baseada no contexto (tipoMetrica) e no nome da variável
-                        if (varName.equals("resultadoCalculado") && tipoMetrica != null) {
-                            if (tipoMetrica.contains("perc")) { // Ex: "variacao_perc", "intervalo_perc"
+                        // Lógica de formatação inteligente baseada na query e no nome da variável
+                        if (varName.equals("resultadoCalculado")) {
+                            // Inspeciona a query para decidir a formatação
+                            if (sparqlQuery.contains("* 100")) { // É um cálculo de percentual
                                 formattedValue = percentageFormatter.format(numericValue);
-                            } else { // Assume que outros cálculos são valores monetários absolutos (variacao_abs, etc)
+                            } else { // Assume que é um cálculo de valor absoluto (moeda)
                                 formattedValue = currencyFormatter.format(numericValue);
-                                // Garante duas casas decimais, pois format() pode omitir ,00
-                                if (!formattedValue.contains(",")) {
-                                    formattedValue += ",00";
-                                }
                             }
                         } else if (priceVarNames.contains(varName)) {
                             formattedValue = currencyFormatter.format(numericValue);
@@ -149,11 +144,7 @@ public class Main {
             finalJsonResponse.put("results", results);
             String resultadoJson = objectMapper.writeValueAsString(finalJsonResponse);
             return ResponseEntity.ok(resultadoJson);
-        } catch (JsonProcessingException e) {
-            logger.error("Erro ao serializar resultado para JSON: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("{\"error\": \"Erro ao formatar o resultado da consulta.\"}");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Erro no endpoint /executar: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("{\"error\": \"Erro interno ao executar a consulta: " + e.getMessage() + "\"}");
         }
