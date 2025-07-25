@@ -1,5 +1,4 @@
 #TEMPLATE 5B
-
 SELECT ?ticker ?valor WHERE {
     #FILTER_BLOCK_ENTIDADE#
     

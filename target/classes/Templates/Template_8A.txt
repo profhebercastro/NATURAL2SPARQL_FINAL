@@ -16,8 +16,10 @@ SELECT ?ticker ?resultadoFinal WHERE {
             ?S2_rank P6 "#DATA#"^^xsd:date .
             ?negociadoNode_rank b3:precoAbertura ?abertura_rank .
             ?negociadoNode_rank b3:precoFechamento ?fechamento_rank .
+            ?negociadoNode_rank b3:precoMaximo ?maximo_rank .
+            ?negociadoNode_rank b3:precoMinimo ?minimo_rank .
             FILTER(?abertura_rank > 0)
-            BIND((((?fechamento_rank - ?abertura_rank) / ?abertura_rank) * 100) AS ?rankingValue)
+            BIND((#RANKING_CALCULATION#) AS ?rankingValue) # 
         }
         ORDER BY #ORDEM#(?rankingValue)
         LIMIT 1
