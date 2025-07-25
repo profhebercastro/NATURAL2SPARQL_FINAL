@@ -1,9 +1,10 @@
 com\example\Program\WebController.class
 com\example\Program\model\ExecuteQueryRequest.class
+com\example\Program\service\NlpDictionaryService.class
+com\example\Program\service\NlpDictionaryService$1.class
 com\example\Program\service\PlaceholderService.class
 com\example\Program\service\SPARQLProcessor.class
 com\example\Program\ontology\Ontology.class
 com\example\Program\model\PerguntaRequest.class
 com\example\Program\model\ProcessamentoDetalhadoResposta.class
-com\example\Program\OfflineInferenceGenerator.class
 com\example\Program\Main.class
