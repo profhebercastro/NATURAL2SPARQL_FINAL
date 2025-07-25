@@ -7,7 +7,7 @@
 [![Apache Jena](https://img.shields.io/badge/Apache-Jena-orange.svg?style=for-the-badge&logo=apache)](https://jena.apache.org/)
 [![Docker](https://img.shields.io/badge/Docker-gray.svg?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-Um sistema que traduz perguntas em linguagem natural (Português) em consultas **SPARQL**, executando-as contra uma base de conhecimento RDF para obter respostas precisas. O framework utiliza uma arquitetura flexível baseada em templates, Processamento de Linguagem Natural e uma ontologia de domínio para realizar buscas diretas e cálculos dinâmicos.
+Um sistema que traduz perguntas em linguagem natural (Português) em consultas **[SPARQL](https://www.w3.org/TR/sparql11-overview/)**, executando-as contra uma base de conhecimento RDF para obter respostas precisas. O framework utiliza uma arquitetura flexível baseada em templates, Processamento de Linguagem Natural e uma ontologia de domínio para realizar buscas diretas e cálculos dinâmicos.
 
 ---
 
@@ -43,7 +43,7 @@ Um sistema que traduz perguntas em linguagem natural (Português) em consultas *
 | Categoria                      | Tecnologia                                                                                             | Propósito                                                                          |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
 | **Backend & Orquestração**     | `Java 17`, `Spring Boot 3.2`, `Apache Jena`                                                            | Servidor principal, manipulação da ontologia, geração de consultas, execução de queries |
-| **Processamento de Linguagem** | `Python 3.9+`, `Flask`, `Gunicorn`, `scikit-learn`                                                     | Microserviço de NLP, classificação de intenção, extração de entidades, normalização de texto |
+| **Processamento de Linguagem** | `Python 3.9+`, `Flask`, `scikit-learn`                                                                 | Microserviço de NLP, classificação de intenção, extração de entidades, normalização de texto |
 | **Frontend**                   | `HTML5`, `CSS3`, `JavaScript` (vanilla com API `fetch`)                                                | Interface de usuário interativa para gerar e executar consultas                    |
 | **Base de Dados & Config.**    | `RDF/TTL` (ontologia pré-calculada), `.properties` (mapeamento), `.json` (dicionários), `.txt` (templates) | Armazenamento do conhecimento e das configurações do framework     |
 | **DevOps & Build**             | `Docker` (build multi-stage), `Maven`, `start.sh`                                                      | Containerização, gerenciamento de dependências e orquestração dos serviços         |
@@ -56,8 +56,8 @@ O sistema opera com uma arquitetura desacoplada onde o serviço Java orquestra o
 2.  **Requisição ao Backend Java**: O Frontend envia a pergunta via `POST` para o endpoint `/api/processar`.
 3.  **Chamada ao Serviço de NLP**: O `SPARQLProcessor` (Java) faz uma chamada HTTP para o microserviço Python/Flask.
 4.  **Processamento em Python (`nlp_controller.py`)**:
-    *   **Extração de Entidades em Pipeline**: Uma função única e robusta (`extrair_todas_entidades`) processa a pergunta em etapas, extraindo e "consumindo" entidades em uma ordem de prioridade (Data -> Métricas -> Ticker -> Setor -> Nome da Empresa) para evitar ambiguidades.
-    *   **Seleção de Template Híbrida**: O sistema primeiro verifica se as entidades extraídas (ex: um setor + uma métrica) correspondem a uma regra de negócio explícita para escolher um template (`Template_4C` ou `Template_7B`). Se nenhuma regra for acionada, ele recorre à similaridade de texto (TF-IDF) com o `Reference_questions.txt` para encontrar o template mais adequado.
+    *   **Extração de Entidades em Pipeline**: Uma função única e robusta (`extrair_todas_entidades`) processa a pergunta em etapas, extraindo e "consumindo" entidades em uma ordem de prioridade (Data -> Métricas -> Setor -> Ticker/Nome da Empresa) para evitar ambiguidades.
+    *   **Seleção de Template Híbrida**: O sistema primeiro verifica se as entidades extraídas correspondem a uma regra de negócio explícita para escolher um template de consulta complexa (`Template_8A/B`, `Template_7A/B`). Se nenhuma regra for acionada, ele recorre à similaridade de texto (TF-IDF) com o `Reference_questions.txt` para encontrar o template mais adequado.
     *   **Resposta JSON**: Devolve um objeto JSON para o Java, contendo o `templateId` selecionado e um dicionário com todas as `entidades` extraídas.
 5.  **Geração da Consulta SPARQL (Java)**:
     *   O `SPARQLProcessor` carrega o conteúdo do template (`.txt`) correspondente.
@@ -72,7 +72,8 @@ O sistema opera com uma arquitetura desacoplada onde o serviço Java orquestra o
 ### Pré-requisitos
 
 *   `Java JDK 17+` & `Apache Maven 3.6+`
-*   `Docker` e `Docker Compose` (recomendado)
+*   `Python 3.9+` & `pip`
+*   `Docker` (recomendado para simular o ambiente de produção)
 
 ---
 
@@ -104,6 +105,50 @@ A maneira mais fácil e que melhor simula o ambiente de produção é usar o `Do
 
 </details>
 
+<details>
+<summary><strong>Opção 2: Execução Local (para Desenvolvimento)</strong></summary>
+
+Esta abordagem permite executar cada serviço separadamente, o que é ideal para desenvolvimento e depuração.
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/profhebercastro/NATURAL2SPARQL_FINAL.git
+    cd NATURAL2SPARQL_FINAL
+    ```
+
+2.  **Execute o Serviço de NLP (Python):**
+    *   Abra um terminal na raiz do projeto.
+    *   Crie e ative um ambiente virtual:
+        ```bash
+        python -m venv venv
+        # Windows:
+        venv\Scripts\activate
+        # macOS/Linux:
+        source venv/bin/activate
+        ```
+    *   Instale as dependências:
+        ```bash
+        pip install -r requirements.txt
+        ```
+    *   Navegue até a pasta do script e inicie o servidor:
+        ```bash
+        cd src/main/resources
+        python nlp_controller.py
+        ```
+    *   O servidor Python estará rodando em `http://localhost:5000`. **Deixe este terminal aberto.**
+
+3.  **Execute o Serviço Principal (Java):**
+    *   Abra um **novo** terminal na raiz do projeto.
+    *   Compile e execute a aplicação Spring Boot com Maven:
+        ```bash
+        mvn spring-boot:run
+        ```
+    *   O servidor Java estará rodando em `http://localhost:8080` (ou na porta configurada).
+
+4.  Acesse a aplicação em [**http://localhost:8080**](http://localhost:8080).
+
+</details>
+
 ## 🕹️ Exemplos de Perguntas
 
 > **Buscas Diretas:**
@@ -114,7 +159,7 @@ A maneira mais fácil e que melhor simula o ambiente de produção é usar o `Do
 > *   `Quais são as ações do setor de energia elétrica?`
 >
 > **Buscas com Agregação:**
-> *   `Qual foi o volume negociado nas ações de bancos em 13/06/2025?`
+> *   `Qual foi o volume total negociado nas ações de bancos em 13/06/2025?`
 > *   `Some a quantidade de ações do Itau negociadas no pregão de 23/06/2025.`
 >
 > **Buscas com Cálculo e Ranking:**
@@ -128,24 +173,23 @@ A maneira mais fácil e que melhor simula o ambiente de produção é usar o `Do
 
 ## 🗂️ Estrutura de Arquivos Essenciais
 
-*   `nlp/`: Contém o microserviço Python (`nlp_controller.py`) e seus arquivos de conhecimento:
-    *   `Named_entity_dictionary.json`: Mapeia apelidos a nomes de empresas.
-    *   `setor_map.json`: Mapeia sinônimos de setores aos nomes canônicos.
-    *   `Reference_questions.txt`: Perguntas de exemplo para a seleção de templates por similaridade.
-*   `src/main/resources/`: Contém os recursos do backend Java.
+*   `src/main/resources/`: Contém os recursos do backend Java e o microserviço Python.
+    *   `nlp_controller.py`: O microserviço Python/Flask.
     *   `static/index.html`: O frontend da aplicação.
     *   `ontology_inferred_final.ttl`: O arquivo pré-processado da ontologia RDF.
     *   `Templates/`: Contém os arquivos de template SPARQL (`.txt`).
     *   `placeholders.properties`: Arquivo crucial que mapeia os placeholders genéricos para os termos RDF.
+    *   Dicionários de NLP (`Named_entity_dictionary.json`, `setor_map.json`, etc.).
 *   `Dockerfile`: Define como a aplicação poliglota é empacotada em um container para deploy.
 *   `start.sh`: Script que orquestra a inicialização dos serviços Java e Python dentro do container.
+*   `requirements.txt`: Lista as dependências do serviço Python.
 
 ## 🔄 Como Adaptar para um Novo Domínio
 
 A arquitetura do framework permite sua adaptação para um novo domínio (ex: filmes, produtos, etc.) através da substituição dos artefatos de conhecimento:
 
 1.  **Criar/Atualizar a Ontologia**: Gere um novo arquivo `.ttl` com o esquema e os dados do novo domínio.
-2.  **Atualizar Dicionários de NLP**: Altere os arquivos `.json` na pasta `nlp/` para refletir as novas entidades (nomes de produtos, categorias, sinônimos, etc.).
+2.  **Atualizar Dicionários de NLP**: Altere os arquivos `.json` para refletir as novas entidades (nomes de produtos, categorias, sinônimos, etc.).
 3.  **Criar Perguntas de Referência**: O passo mais importante. Adapte o `Reference_questions.txt` com perguntas de exemplo bem definidas para cada tipo de consulta que você deseja suportar no novo domínio.
 4.  **Definir Novos Templates SPARQL**: Crie arquivos `.txt` em `Templates/` com as consultas SPARQL parametrizadas necessárias para o novo domínio.
 5.  **Mapear Placeholders**: Edite o `placeholders.properties` para mapear os placeholders genéricos (`P1`, `S1`...) para os novos predicados e classes da sua ontologia.
