@@ -50,92 +50,66 @@ def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def extrair_entidades_fixas(pergunta_lower):
+def extrair_todas_entidades(pergunta_lower):
     entidades = {}
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
     
-    # Prioridade 1: Ticker (é a entidade mais específica e inequívoca)
+    # --- PARÂMETROS DINÂMICOS (ORDEM, LIMITE, TIPO DE AÇÃO) ---
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
+    if "ordinaria" in pergunta_sem_acento: entidades["regex_pattern"] = "3$"
+    elif "preferencial" in pergunta_sem_acento: entidades["regex_pattern"] = "[456]$"
+    elif "unit" in pergunta_sem_acento: entidades["regex_pattern"] = "11$"
+    entidades['ordem'] = "DESC"
+    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento: entidades['ordem'] = "ASC"
+    entidades['limite'] = "1"
+    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower: entidades['limite'] = "5"
+    elif "3 acoes" in pergunta_sem_acento or "3 ações" in pergunta_lower: entidades['limite'] = "3"
+
+    # --- ENTIDADES FIXAS (DATA, MÉTRICA, CÁLCULO, SETOR, EMPRESA) ---
+    # Extrai Data
+    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
+    if match_data:
+        dia, mes, ano = match_data.groups()
+        entidades['data'] = f"{ano}-{mes}-{dia}"
+
+    # Extrai Métricas e Cálculos
+    mapa_metricas = {
+        'calculo_variacao_perc': ['percentual de alta', 'percentual de baixa', 'variacao intradiaria percentual', 'variacao percentual'],
+        'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
+        'calculo_intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
+        'calculo_intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
+        'metrica.preco_maximo': ['preco maximo', 'preço máximo'], 'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
+        'metrica.preco_fechamento': ['preco de fechamento', 'fechamento'], 'metrica.preco_abertura': ['preco de abertura', 'abertura'],
+        'metrica.preco_medio': ['preco medio', 'preço médio'], 'metrica.quantidade': ['quantidade', 'total de negocios'],
+        'metrica.volume': ['volume'],
+    }
+    for chave in sorted(mapa_metricas.keys(), key=lambda k: not k.startswith('calculo_')):
+        for s in mapa_metricas[chave]:
+            if re.search(r'\b' + remover_acentos(s) + r'\b', pergunta_sem_acento):
+                if chave.startswith('calculo_'): entidades['calculo'] = chave.replace('calculo_', '')
+                else: entidades['valor_desejado'] = chave
+                break
+        if 'calculo' in entidades or 'valor_desejado' in entidades: break
+
+    # Extrai Ticker
     ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', pergunta_lower.upper())
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1)
     
-    # Prioridade 2: Setor
+    # Extrai Setor
     sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
     for key in sorted_setor_keys:
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', pergunta_sem_acento):
             entidades['nome_setor'] = setor_map[key]
             break
 
-    # Prioridade 3: Nome da Empresa (apenas se um Ticker ainda não foi encontrado)
+    # Extrai Nome da Empresa (se Ticker não foi encontrado)
     if 'entidade_nome' not in entidades:
         sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
         for key in sorted_empresa_keys:
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', pergunta_lower):
                 entidades['entidade_nome'] = key
                 break
-
-    # Extração de Data
-    match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', pergunta_lower)
-    if match_data:
-        dia, mes, ano = match_data.groups()
-        entidades['data'] = f"{ano}-{mes}-{dia}"
-            
     return entidades
-
-def identificar_parametros_dinamicos(pergunta_lower):
-    dados = {}
-    pergunta_sem_acento = remover_acentos(pergunta_lower)
-
-    mapa_metricas = {
-        'calculo_variacao_perc': ['percentual de alta', 'percentual de baixa', 'variacao intradiaria percentual', 'variacao percentual'],
-        'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
-        'calculo_intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
-        'calculo_intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
-        'calculo_variacao_abs_abs': ['menor variacao'],
-        'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
-        'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
-        'metrica.preco_fechamento': ['preco de fechamento', 'fechamento'],
-        'metrica.preco_abertura': ['preco de abertura', 'abertura'],
-        'metrica.preco_medio': ['preco medio', 'preço médio'],
-        'metrica.quantidade': ['quantidade', 'total de negocios'],
-        'metrica.volume': ['volume'],
-    }
-    
-    # Etapa 1: Procurar por um termo de CÁLCULO primeiro
-    for chave, sinonimos in mapa_metricas.items():
-        if chave.startswith('calculo_'):
-            for s in sinonimos:
-                if re.search(r'\b' + remover_acentos(s) + r'\b', pergunta_sem_acento):
-                    dados['calculo'] = chave.replace('calculo_', '')
-                    break
-        if 'calculo' in dados:
-            break
-    
-    # Etapa 2: Somente se não encontrou um cálculo, procurar por uma métrica de busca simples
-    if 'calculo' not in dados:
-        for chave, sinonimos in mapa_metricas.items():
-            if chave.startswith('metrica.'):
-                for s in sinonimos:
-                    if re.search(r'\b' + remover_acentos(s) + r'\b', pergunta_sem_acento):
-                        dados['valor_desejado'] = chave
-                        break
-            if 'valor_desejado' in dados:
-                break
-
-    # Etapa 3: Extrair outros parâmetros
-    if "ordinaria" in pergunta_sem_acento: dados["regex_pattern"] = "3$"
-    elif "preferencial" in pergunta_sem_acento: dados["regex_pattern"] = "[456]$"
-    elif "unit" in pergunta_sem_acento: dados["regex_pattern"] = "11$"
-    
-    dados['ordem'] = "DESC"
-    if "baixa" in pergunta_sem_acento or "menor" in pergunta_sem_acento: dados['ordem'] = "ASC"
-        
-    dados['limite'] = "1"
-    if "cinco acoes" in pergunta_sem_acento or "cinco ações" in pergunta_lower: dados['limite'] = "5"
-    elif "3 acoes" in pergunta_sem_acento or "3 ações" in pergunta_lower: dados['limite'] = "3"
-        
-    return dados
-
 
 # --- API FLASK ---
 app = Flask(__name__)
@@ -148,38 +122,24 @@ def process_question():
     if not pergunta_lower.strip(): 
         return jsonify({"error": "A pergunta não pode ser vazia."}), 400
         
-    # Combina as duas funções de extração
-    entidades_extraidas = extrair_entidades_fixas(pergunta_lower)
-    parametros_dinamicos = identificar_parametros_dinamicos(pergunta_lower)
-    entidades_extraidas.update(parametros_dinamicos)
-
-    # Lógica customizada para escolher o template certo
+    entidades_extraidas = extrair_todas_entidades(pergunta_lower)
+    
+    # Lógica de seleção de template
     if 'nome_setor' in entidades_extraidas:
-        if 'calculo' in entidades_extraidas:
-            template_id_final = 'Template_7B'
-        elif 'valor_desejado' in entidades_extraidas:
-            template_id_final = 'Template_4C'
-        else:
-            template_id_final = 'Template_3A'
+        if 'calculo' in entidades_extraidas: template_id_final = 'Template_7B'
+        elif 'valor_desejado' in entidades_extraidas: template_id_final = 'Template_4C'
+        else: template_id_final = 'Template_3A'
     else:
-        # Usa a lógica de similaridade padrão para os outros casos
         if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
             tfidf_usuario = vectorizer.transform([pergunta_lower])
             similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-            if similaridades.any(): 
-                template_id_final = ref_ids_flat[similaridades.argmax()]
-            else: 
-                return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
+            if similaridades.any(): template_id_final = ref_ids_flat[similaridades.argmax()]
+            else: return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
         else:
             return jsonify({"error": "Nenhum template de referência carregado."}), 500
 
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
-    
-    # Remove a entidade de nome se ela for uma palavra-chave de setor
-    if 'entidade_nome' in entidades_extraidas and 'nome_setor' in entidades_extraidas:
-        if entidades_extraidas['entidade_nome'].lower() in setor_map:
-            del entidades_extraidas['entidade_nome']
 
     entidades_maiusculas = {k.upper(): v for k, v in entidades_extraidas.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
