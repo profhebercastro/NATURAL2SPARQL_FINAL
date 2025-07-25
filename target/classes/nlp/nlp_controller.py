@@ -1,4 +1,4 @@
-# --- VERSÃO FINAL CORRIGIDA ---
+# --- VERSÃO FINAL CORRIGIDA2 ---
 
 import json
 import re
@@ -55,22 +55,19 @@ def remover_acentos(texto):
 def extrair_todas_entidades(pergunta_lower):
     entidades = {}
     texto_restante = ' ' + pergunta_lower + ' '
-    
+    texto_sem_acento = remover_acentos(texto_restante)
+
     # Etapa 1: Extrair Data
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', texto_restante)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
-        texto_restante = texto_restante.replace(match_data.group(0), "")
+        texto_restante = texto_restante.replace(match_data.group(0), " ")
+        texto_sem_acento = texto_sem_acento.replace(match_data.group(0), " ")
 
     # Etapa 2: Extrair Métricas e Cálculos
-    # <-- MUDANÇA 1: Dicionário de métricas expandido -->
     mapa_metricas = {
-        'calculo_variacao_perc': [
-            'maior alta percentual', 'maior percentual de alta', 'percentual de alta', 
-            'maior baixa percentual', 'maior percentual de baixa', 'percentual de baixa', 
-            'variacao intradiaria percentual', 'variacao percentual'
-        ],
+        'calculo_variacao_perc': ['maior alta percentual', 'maior percentual de alta', 'percentual de alta', 'maior baixa percentual', 'maior percentual de baixa', 'percentual de baixa', 'variacao intradiaria percentual', 'variacao percentual'],
         'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
         'calculo_intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
         'calculo_intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
@@ -84,46 +81,41 @@ def extrair_todas_entidades(pergunta_lower):
         'metrica.volume': ['volume'],
     }
     
-    texto_sem_acento = remover_acentos(texto_restante)
     for chave in sorted(mapa_metricas.keys(), key=lambda k: not k.startswith('calculo_')):
-        sinonimos = mapa_metricas[chave]
-        # Ordena sinônimos por tamanho para pegar "maior alta percentual" antes de "percentual de alta"
-        for s in sorted(sinonimos, key=len, reverse=True):
+        for s in sorted(mapa_metricas[chave], key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
                 if chave.startswith('calculo_'):
                     entidades['calculo'] = chave.replace('calculo_', '')
                 else:
                     entidades['valor_desejado'] = chave
-                texto_restante = re.sub(r'\b' + s.split()[0] + r'\b', '', texto_restante, flags=re.IGNORECASE)
+                texto_restante = re.sub(r'\b' + remover_acentos(s) + r'\b', '', texto_restante, flags=re.IGNORECASE)
+                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', '', texto_sem_acento, flags=re.IGNORECASE)
                 break
         if 'calculo' in entidades or 'valor_desejado' in entidades:
             break
 
-    # Etapa 3: Extrair Ticker
-    ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', texto_restante.upper())
-    if ticker_match:
-        entidades['entidade_nome'] = ticker_match.group(1)
-        texto_restante = re.sub(r'\b' + ticker_match.group(1) + r'\b', '', texto_restante, flags=re.IGNORECASE)
-
-    # Etapa 4: Extrair Setor
+    # Etapa 3: Tentar extrair SETOR com prioridade máxima.
     setor_encontrado = False
-    sorted_setor_keys = sorted(setor_map.keys(), key=len, reverse=True)
-    for key in sorted_setor_keys:
-        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_restante)):
+    for key in sorted(setor_map.keys(), key=len, reverse=True):
+        if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', texto_sem_acento):
             entidades['nome_setor'] = setor_map[key]
-            texto_restante = re.sub(r'\b' + re.escape(key.lower()) + r'\b', '', texto_restante, flags=re.IGNORECASE)
+            texto_restante = re.sub(r'\b' + re.escape(key.lower()) + r'\b', ' ', texto_restante, flags=re.IGNORECASE)
+            texto_sem_acento = re.sub(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
             setor_encontrado = True
             break
-            
-    # Etapa 5: Extrair Nome da Empresa
-    if 'entidade_nome' not in entidades and not setor_encontrado:
-        sorted_empresa_keys = sorted(empresa_map.keys(), key=len, reverse=True)
-        for key in sorted_empresa_keys:
-            if re.search(r'\b' + re.escape(key.lower()) + r'\b', texto_restante):
-                entidades['entidade_nome'] = key
-                break
-                
-    # Etapa 6: Extrair parâmetros restantes
+    
+    # Etapa 4: Se NENHUM setor foi encontrado, tente extrair Ticker ou Nome de Empresa.
+    if not setor_encontrado:
+        ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', texto_restante.upper())
+        if ticker_match:
+            entidades['entidade_nome'] = ticker_match.group(1)
+        else:
+            for key in sorted(empresa_map.keys(), key=len, reverse=True):
+                if re.search(r'\b' + re.escape(key.lower()) + r'\b', texto_restante):
+                    entidades['entidade_nome'] = key
+                    break
+    
+    # Etapa 5: Extrair parâmetros restantes
     pergunta_sem_acento_original = remover_acentos(pergunta_lower)
     if "ordinaria" in pergunta_sem_acento_original: entidades["regex_pattern"] = "3$"
     elif "preferencial" in pergunta_sem_acento_original: entidades["regex_pattern"] = "[456]$"
@@ -151,15 +143,14 @@ def process_question():
         
     entidades_preliminares = extrair_todas_entidades(pergunta_lower)
     
-    # <-- MUDANÇA 2: Lógica de decisão de template refeita -->
     template_id_final = None
     
     # Etapa 1: Prioridade máxima para perguntas sobre setores
     if 'nome_setor' in entidades_preliminares:
         if 'calculo' in entidades_preliminares:
             template_id_final = 'Template_7B'
-        # A palavra "total" ajuda a identificar a intenção de soma
-        elif 'valor_desejado' in entidades_preliminares and 'total' in pergunta_lower:
+        # A palavra "total" ou "volume" em uma pergunta de setor sugere agregação
+        elif 'valor_desejado' in entidades_preliminares and ('total' in pergunta_lower or 'volume' in pergunta_lower or 'quantidade' in pergunta_lower):
             template_id_final = 'Template_4C'
         else:
             template_id_final = 'Template_3A'

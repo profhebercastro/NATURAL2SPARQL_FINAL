@@ -1,12 +1,15 @@
 #TEMPLATE 5B
+
 SELECT ?ticker ?valor WHERE {
     #FILTER_BLOCK_ENTIDADE#
+    
     ?S1 P1 ?SO1 .
     ?SO1 P8 ?ticker .
+    
     #REGEX_FILTER#
+    
     ?SO1 P3 ?negociadoNode .
     ?negociadoNode P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
     ?negociadoNode #VALOR_DESEJADO# ?valor .
 }
-LIMIT 1

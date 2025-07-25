@@ -126,6 +126,7 @@ public class SPARQLProcessor {
                 if (placeholder.equals("#VALOR_DESEJADO#")) {
                     String predicadoRDF = placeholderService.getPlaceholderValue(value);
                     if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
+
                 } else if (placeholder.equals("#CALCULO#")) {
                     String calculoSparql;
                     switch (value) {
@@ -136,6 +137,23 @@ public class SPARQLProcessor {
                         default: calculoSparql = "0";
                     }
                     query = query.replace(placeholder, calculoSparql);
+
+                } else if (placeholder.equals("#RANKING_CALCULATION#")) {
+                    String rankingCalculoSql;
+                     switch (value) {
+                        case "variacao_abs": rankingCalculoSql = "ABS(?fechamento_rank - ?abertura_rank)"; break;
+                        case "variacao_perc": rankingCalculoSql = "((?fechamento_rank - ?abertura_rank) / ?abertura_rank) * 100"; break;
+                        case "intervalo_abs": rankingCalculoSql = "ABS(?maximo_rank - ?minimo_rank)"; break;
+                        case "intervalo_perc": rankingCalculoSql = "((?maximo_rank - ?minimo_rank) / ?abertura_rank) * 100"; break;
+                        case "variacao_abs_abs": rankingCalculoSql = "ABS(?fechamento_rank - ?abertura_rank)"; break;
+                        default: rankingCalculoSql = "0";
+                    }
+                    query = query.replace(placeholder, rankingCalculoSql);
+
+                } else if (placeholder.equals("#REGEX_PATTERN#")) {
+                    String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + value + "\"))";
+                    query = query.replace("#REGEX_FILTER#", regexFilter);
+                    
                 } else {
                     query = query.replace(placeholder, value);
                 }

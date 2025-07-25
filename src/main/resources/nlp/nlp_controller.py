@@ -1,5 +1,3 @@
-# --- VERSÃO FINAL CORRIGIDA2 ---
-
 import json
 import re
 import os
@@ -56,7 +54,7 @@ def extrair_todas_entidades(pergunta_lower):
     entidades = {}
     texto_restante = ' ' + pergunta_lower + ' '
     texto_sem_acento = remover_acentos(texto_restante)
-
+    
     # Etapa 1: Extrair Data
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', texto_restante)
     if match_data:
@@ -65,46 +63,61 @@ def extrair_todas_entidades(pergunta_lower):
         texto_restante = texto_restante.replace(match_data.group(0), " ")
         texto_sem_acento = texto_sem_acento.replace(match_data.group(0), " ")
 
-    # Etapa 2: Extrair Métricas e Cálculos
-    mapa_metricas = {
-        'calculo_variacao_perc': ['maior alta percentual', 'maior percentual de alta', 'percentual de alta', 'maior baixa percentual', 'maior percentual de baixa', 'percentual de baixa', 'variacao intradiaria percentual', 'variacao percentual'],
-        'calculo_variacao_abs': ['variacao intradiaria absoluta', 'variacao absoluta'],
-        'calculo_intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
-        'calculo_intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
-        'calculo_variacao_abs_abs': ['menor variacao absoluta', 'menor variacao', 'menor variação'],
-        'metrica.preco_maximo': ['preco maximo', 'preço máximo'],
-        'metrica.preco_minimo': ['preco minimo', 'preço mínimo'],
-        'metrica.preco_fechamento': ['preco de fechamento', 'fechamento'],
-        'metrica.preco_abertura': ['preco de abertura', 'abertura'],
-        'metrica.preco_medio': ['preco medio', 'preço médio'],
-        'metrica.quantidade': ['quantidade', 'total de negocios'],
-        'metrica.volume': ['volume'],
+    # Etapa 2: Extrair intenções de cálculo (principal e de ranking)
+    mapa_ranking = {
+        'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual'],
+        'variacao_abs_abs': ['menor variacao', 'menor variação', 'menor variacao absoluta'],
     }
-    
-    for chave in sorted(mapa_metricas.keys(), key=lambda k: not k.startswith('calculo_')):
-        for s in sorted(mapa_metricas[chave], key=len, reverse=True):
+    mapa_metricas = {
+        'variacao_perc': ['variacao percentual', 'percentual de alta', 'percentual de baixa'],
+        'variacao_abs': ['variacao absoluta', 'variacao intradiaria absoluta'],
+        'intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
+        'intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
+        'preco_maximo': ['preco maximo', 'preço máximo'],
+        'preco_minimo': ['preco minimo', 'preço mínimo'],
+        'preco_fechamento': ['preco de fechamento', 'fechamento'],
+        'preco_abertura': ['preco de abertura', 'abertura'],
+        'preco_medio': ['preco medio', 'preço médio'],
+        'quantidade': ['quantidade', 'total de negocios'],
+        'volume': ['volume'],
+    }
+
+    # Procura por um critério de ranking primeiro
+    for chave, sinonimos in mapa_ranking.items():
+        for s in sorted(sinonimos, key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
-                if chave.startswith('calculo_'):
-                    entidades['calculo'] = chave.replace('calculo_', '')
+                entidades['ranking_calculation'] = chave
+                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
+                break
+        if 'ranking_calculation' in entidades:
+            break
+
+    # Procura pela métrica principal na string restante
+    for chave, sinonimos in mapa_metricas.items():
+        for s in sorted(sinonimos, key=len, reverse=True):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+                if chave.startswith('variacao_') or chave.startswith('intervalo_'):
+                    entidades['calculo'] = chave
                 else:
-                    entidades['valor_desejado'] = chave
-                texto_restante = re.sub(r'\b' + remover_acentos(s) + r'\b', '', texto_restante, flags=re.IGNORECASE)
-                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', '', texto_sem_acento, flags=re.IGNORECASE)
+                    entidades['valor_desejado'] = 'metrica.' + chave
                 break
         if 'calculo' in entidades or 'valor_desejado' in entidades:
             break
 
-    # Etapa 3: Tentar extrair SETOR com prioridade máxima.
+    # Se encontrou um ranking mas não um cálculo principal, o ranking é o cálculo principal
+    if 'ranking_calculation' in entidades and 'calculo' not in entidades and 'valor_desejado' not in entidades:
+        entidades['calculo'] = entidades['ranking_calculation']
+
+    # Etapa 3: Tentar extrair SETOR com prioridade
     setor_encontrado = False
     for key in sorted(setor_map.keys(), key=len, reverse=True):
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', texto_sem_acento):
             entidades['nome_setor'] = setor_map[key]
             texto_restante = re.sub(r'\b' + re.escape(key.lower()) + r'\b', ' ', texto_restante, flags=re.IGNORECASE)
-            texto_sem_acento = re.sub(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
             setor_encontrado = True
             break
-    
-    # Etapa 4: Se NENHUM setor foi encontrado, tente extrair Ticker ou Nome de Empresa.
+            
+    # Etapa 4: Se não for setor, extrair Ticker ou Nome de Empresa
     if not setor_encontrado:
         ticker_match = re.search(r'\b([A-Z0-9]{5,6})\b', texto_restante.upper())
         if ticker_match:
@@ -144,18 +157,24 @@ def process_question():
     entidades_preliminares = extrair_todas_entidades(pergunta_lower)
     
     template_id_final = None
+
+    # Etapa 1: Prioridade para perguntas complexas de duas intenções
+    if 'ranking_calculation' in entidades_preliminares and ('calculo' in entidades_preliminares or 'valor_desejado' in entidades_preliminares):
+        if 'nome_setor' in entidades_preliminares:
+            template_id_final = 'Template_8B'
+        else:
+            template_id_final = 'Template_8A'
     
-    # Etapa 1: Prioridade máxima para perguntas sobre setores
-    if 'nome_setor' in entidades_preliminares:
+    # Etapa 2: Se não for, verificar perguntas sobre setores
+    if not template_id_final and 'nome_setor' in entidades_preliminares:
         if 'calculo' in entidades_preliminares:
             template_id_final = 'Template_7B'
-        # A palavra "total" ou "volume" em uma pergunta de setor sugere agregação
         elif 'valor_desejado' in entidades_preliminares and ('total' in pergunta_lower or 'volume' in pergunta_lower or 'quantidade' in pergunta_lower):
             template_id_final = 'Template_4C'
         else:
             template_id_final = 'Template_3A'
     
-    # Etapa 2: Se não for sobre setor, usar a similaridade de cosseno
+    # Etapa 3: Se não for nenhum dos anteriores, usar a similaridade
     if not template_id_final:
         if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
             tfidf_usuario = vectorizer.transform([pergunta_lower])
@@ -167,7 +186,7 @@ def process_question():
         else:
             return jsonify({"error": "Nenhum template de referência carregado."}), 500
 
-    # Etapa 3: Verificação final
+    # Verificação final
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
 
