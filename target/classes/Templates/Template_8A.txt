@@ -19,7 +19,7 @@ SELECT ?ticker ?resultadoFinal WHERE {
             ?negociadoNode_rank b3:precoMaximo ?maximo_rank .
             ?negociadoNode_rank b3:precoMinimo ?minimo_rank .
             FILTER(?abertura_rank > 0)
-            BIND((#RANKING_CALCULATION#) AS ?rankingValue) # 
+            BIND((#RANKING_CALCULATION#) AS ?rankingValue)
         }
         ORDER BY #ORDEM#(?rankingValue)
         LIMIT 1

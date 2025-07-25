@@ -114,8 +114,7 @@ public class Main {
 
                         if (tipoMetrica != null && (varName.equals("resultadoCalculado") || varName.equals("resultadoFinal"))) {
                             if (tipoMetrica.contains("perc")) { 
-                                // A query SPARQL já multiplica por 100, então não precisamos dividir aqui.
-                                // O formatador do Java já entende que 5.23 deve ser "5,23%"
+                 
                                 formattedValue = percentageFormatter.format(numericValue);
                             } else { 
                                 formattedValue = currencyFormatter.format(numericValue);
@@ -130,7 +129,7 @@ public class Main {
                             }
                         }
                     } catch (NumberFormatException e) {
-                        // Mantém o valor original se não for número (ex: um ticker)
+                      
                     }
                     
                     valueMap.put("value", formattedValue);

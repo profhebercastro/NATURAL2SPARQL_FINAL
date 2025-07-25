@@ -9,3 +9,5 @@ SELECT ?valor WHERE {
     ?negociadoNode #VALOR_DESEJADO# ?valor .
 }
 LIMIT 1
+
+
