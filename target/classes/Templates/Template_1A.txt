@@ -1,3 +1,4 @@
+#TEMPLATE 1A
 SELECT ?valor WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))

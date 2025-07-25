@@ -1,3 +1,4 @@
+#TEMPLATE 6A
 SELECT ?ticker ?resultadoCalculado
 WHERE {
     #FILTER_BLOCK_ENTIDADE#

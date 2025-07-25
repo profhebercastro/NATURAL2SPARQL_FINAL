@@ -1,3 +1,4 @@
+#TEMPLATE 1B
 SELECT ?valor WHERE {
     BIND(b3:#ENTIDADE_NOME# AS ?SO1)
     ?SO1 P3 ?negociadoNode .

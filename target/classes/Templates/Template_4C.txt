@@ -1,3 +1,4 @@
+#TEMPLATE 4C
 SELECT ?ticker ?valor
 WHERE {
     {

@@ -1,3 +1,4 @@
+#TEMPLATE 3A
 SELECT DISTINCT ?ticker WHERE {
   ?S4 P7 "#NOME_SETOR#"@pt .
   ?S1 P9 ?S4 .

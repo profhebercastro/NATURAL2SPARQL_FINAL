@@ -1,3 +1,4 @@
+#TEMPLATE 8B
 SELECT ?ticker ?resultadoFinal WHERE {
     ?SO1 P8 ?ticker .
     ?SO1 P3 ?negociadoNode .

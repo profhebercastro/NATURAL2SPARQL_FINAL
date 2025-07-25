@@ -1,3 +1,4 @@
+#TEMPLATE 7A
 SELECT ?ticker ?resultadoCalculado WHERE {
     ?negociadoNode P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .

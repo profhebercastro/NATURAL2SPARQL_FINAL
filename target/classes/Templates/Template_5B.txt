@@ -1,3 +1,4 @@
+#TEMPLATE 5B
 SELECT ?ticker ?valor WHERE {
     #FILTER_BLOCK_ENTIDADE#
     ?S1 P1 ?SO1 .
