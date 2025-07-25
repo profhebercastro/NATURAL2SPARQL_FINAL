@@ -63,7 +63,7 @@ def extrair_todas_entidades(pergunta_lower):
         texto_restante = texto_restante.replace(match_data.group(0), " ")
         texto_sem_acento = texto_sem_acento.replace(match_data.group(0), " ")
 
-    # Etapa 2: Extrair intenções de cálculo (principal e de ranking)
+    # Etapa 2: Extrair intenções de cálculo
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual'],
         'variacao_abs_abs': ['menor variacao', 'menor variação', 'menor variacao absoluta'],
@@ -82,7 +82,6 @@ def extrair_todas_entidades(pergunta_lower):
         'volume': ['volume'],
     }
 
-    # Procura por um critério de ranking primeiro
     for chave, sinonimos in mapa_ranking.items():
         for s in sorted(sinonimos, key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
@@ -92,7 +91,6 @@ def extrair_todas_entidades(pergunta_lower):
         if 'ranking_calculation' in entidades:
             break
 
-    # Procura pela métrica principal na string restante
     for chave, sinonimos in mapa_metricas.items():
         for s in sorted(sinonimos, key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
@@ -104,11 +102,10 @@ def extrair_todas_entidades(pergunta_lower):
         if 'calculo' in entidades or 'valor_desejado' in entidades:
             break
 
-    # Se encontrou um ranking mas não um cálculo principal, o ranking é o cálculo principal
     if 'ranking_calculation' in entidades and 'calculo' not in entidades and 'valor_desejado' not in entidades:
         entidades['calculo'] = entidades['ranking_calculation']
 
-    # Etapa 3: Tentar extrair SETOR com prioridade
+    # Etapa 3: Tentar extrair SETOR
     setor_encontrado = False
     for key in sorted(setor_map.keys(), key=len, reverse=True):
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', texto_sem_acento):
@@ -158,14 +155,25 @@ def process_question():
     
     template_id_final = None
 
-    # Etapa 1: Prioridade para perguntas complexas de duas intenções
-    if 'ranking_calculation' in entidades_preliminares and ('calculo' in entidades_preliminares or 'valor_desejado' in entidades_preliminares):
+    is_simple_ranking_list = ('quais' in pergunta_lower or 'liste' in pergunta_lower) and \
+                             ('ranking_calculation' in entidades_preliminares and 'calculo' in entidades_preliminares and \
+                              entidades_preliminares['ranking_calculation'] == entidades_preliminares['calculo'])
+
+    # Etapa 1: Prioridade para ranking simples (Template 7A/7B) se for uma lista
+    if is_simple_ranking_list:
+        if 'nome_setor' in entidades_preliminares:
+            template_id_final = 'Template_7B'
+        else:
+            template_id_final = 'Template_7A'
+            
+    # Etapa 2: Se não for, verificar perguntas complexas de duas intenções (Template 8A/8B)
+    if not template_id_final and 'ranking_calculation' in entidades_preliminares and ('calculo' in entidades_preliminares or 'valor_desejado' in entidades_preliminares):
         if 'nome_setor' in entidades_preliminares:
             template_id_final = 'Template_8B'
         else:
             template_id_final = 'Template_8A'
     
-    # Etapa 2: Se não for, verificar perguntas sobre setores
+    # Etapa 3: Perguntas sobre setores
     if not template_id_final and 'nome_setor' in entidades_preliminares:
         if 'calculo' in entidades_preliminares:
             template_id_final = 'Template_7B'
@@ -174,7 +182,7 @@ def process_question():
         else:
             template_id_final = 'Template_3A'
     
-    # Etapa 3: Se não for nenhum dos anteriores, usar a similaridade
+    # Etapa 4: Fallback para similaridade
     if not template_id_final:
         if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
             tfidf_usuario = vectorizer.transform([pergunta_lower])
@@ -186,7 +194,6 @@ def process_question():
         else:
             return jsonify({"error": "Nenhum template de referência carregado."}), 500
 
-    # Verificação final
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
 

@@ -83,12 +83,11 @@ public class SPARQLProcessor {
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
-            // Se a entidade parece um ticker (ex: CMIN3), SEMPRE use BIND.
-            if (entidade.matches("^[A-Z0-9]{5,6}$")) {
-                entidadeFilter = "BIND(b3:" + entidade.toUpperCase() + " AS ?tickerNode)";
+            // Regex aprimorado: 4 letras maiúsculas seguidas por 1 ou 2 números.
+            if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) {
+                entidadeFilter = "BIND(b3:" + entidade.toUpperCase() + " AS ?SO1)";
             } else {
-            // Senão, procure pelo nome da empresa.
-                entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\"))";
+                entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\")) \n    ?S1 P1 ?SO1 .";
             }
         }
         
@@ -101,10 +100,10 @@ public class SPARQLProcessor {
                     setores.add("\"" + setor.asText() + "\"@pt");
                 }
                 String inClause = String.join(", ", setores);
-                setorFilter = "?empresa b3:atuaEm ?setorUri . \n    ?setorUri rdfs:label ?setorLabel . \n    FILTER(?setorLabel IN (" + inClause + "))";
+                setorFilter = "?S1 P9 ?setorUri . \n    ?setorUri P7 ?setorLabel . \n    FILTER(?setorLabel IN (" + inClause + "))";
             } else {
                 String nomeSetor = setorNode.asText();
-                setorFilter = "?empresa b3:atuaEm ?setorNode . \n    ?setorNode rdfs:label \"" + nomeSetor + "\"@pt .";
+                setorFilter = "?S1 P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt .";
             }
         }
         

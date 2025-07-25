@@ -6,6 +6,7 @@ SELECT ?ticker ?resultadoCalculado WHERE {
     ?negociadoNode P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
     ?SO1 P8 ?ticker .
+    
     ?negociadoNode b3:precoAbertura ?abertura .
     ?negociadoNode b3:precoFechamento ?fechamento .
     ?negociadoNode b3:precoMaximo ?maximo .
