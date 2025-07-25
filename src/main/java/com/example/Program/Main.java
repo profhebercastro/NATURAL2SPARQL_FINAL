@@ -74,7 +74,7 @@ public class Main {
     @PostMapping("/executar")
     public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
-        String tipoMetrica = request.getTipoMetrica(); // Pega o tipo de métrica da requisição
+        String tipoMetrica = request.getTipoMetrica();
 
         if (sparqlQuery == null || sparqlQuery.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("{\"error\": \"A consulta SPARQL não pode estar vazia.\"}");
@@ -88,11 +88,9 @@ public class Main {
 
             Map<String, Object> results = new HashMap<>();
             
-            // --- Listas para formatação ---
             List<String> priceVarNames = List.of("precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio");
             List<String> largeNumberVarNames = List.of("volume", "volumeIndividual", "quantidade", "totalNegocios");
             
-            // --- Formatadores ---
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
             NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
             DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(new Locale("pt", "BR")));
@@ -114,11 +112,12 @@ public class Main {
                     try {
                         double numericValue = Double.parseDouble(currentValue);
 
-                        // Lógica de formatação baseada no contexto (tipoMetrica) e no nome da variável
-                        if (varName.equals("resultadoCalculado") && tipoMetrica != null) {
-                            if (tipoMetrica.contains("perc")) { // Ex: "variacao_perc", "intervalo_perc"
+                        if (tipoMetrica != null && (varName.equals("resultadoCalculado") || varName.equals("resultadoFinal"))) {
+                            if (tipoMetrica.contains("perc")) { 
+                                // A query SPARQL já multiplica por 100, então não precisamos dividir aqui.
+                                // O formatador do Java já entende que 5.23 deve ser "5,23%"
                                 formattedValue = percentageFormatter.format(numericValue);
-                            } else { // Assume que outros cálculos são valores monetários (variacao_abs, etc)
+                            } else { 
                                 formattedValue = currencyFormatter.format(numericValue);
                             }
                         } else if (priceVarNames.contains(varName)) {

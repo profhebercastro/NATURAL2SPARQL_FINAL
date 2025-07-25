@@ -83,10 +83,11 @@ public class SPARQLProcessor {
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
-            boolean isKnownAlias = nlpDictionaryService.getEmpresaKeys().contains(entidade.toLowerCase());
-            if (entidade.matches("^[A-Z0-9]{5,6}$") && !isKnownAlias) {
-                entidadeFilter = "BIND(b3:" + entidade + " AS ?tickerNode) \n    ?empresa b3:temValorMobiliarioNegociado ?tickerNode .";
+            // Se a entidade parece um ticker (ex: CMIN3), SEMPRE use BIND.
+            if (entidade.matches("^[A-Z0-9]{5,6}$")) {
+                entidadeFilter = "BIND(b3:" + entidade.toUpperCase() + " AS ?tickerNode)";
             } else {
+            // Senão, procure pelo nome da empresa.
                 entidadeFilter = "?empresa rdfs:label ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\"))";
             }
         }
@@ -134,9 +135,7 @@ public class SPARQLProcessor {
                         case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
                         case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
                         case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
-                        // --- INÍCIO DA CORREÇÃO ---
-                        case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                        // --- FIM DA CORREÇÃO ---
+                        case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break; 
                         default: calculoSparql = "0";
                     }
                     query = query.replace(placeholder, calculoSparql);
