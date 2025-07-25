@@ -1,7 +1,6 @@
 #TEMPLATE 3A
 SELECT DISTINCT ?ticker WHERE {
-  ?S4 P7 "#NOME_SETOR#"@pt .
-  ?S1 P9 ?S4 .
+  #FILTER_BLOCK_SETOR#
   ?S1 P1 ?SO1 .
   ?SO1 P8 ?ticker .
 }

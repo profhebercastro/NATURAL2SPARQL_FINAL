@@ -1,4 +1,7 @@
-#TEMPLATE 2A
+# --- Template_2A.txt ---
+# Finalidade: Busca o(s) ticker(s) de uma empresa pelo NOME.
+# Exemplo: "Qual o código de negociação da Vale?"
+# ----------------------------------------------------------
 SELECT DISTINCT ?ticker WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))

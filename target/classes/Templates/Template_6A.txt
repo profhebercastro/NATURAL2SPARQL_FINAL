@@ -2,17 +2,15 @@
 SELECT ?ticker ?resultadoCalculado
 WHERE {
     #FILTER_BLOCK_ENTIDADE#
-    
     ?SO1 P8 ?ticker .
-    
-    ?SO1 P3 ?negociadoNode .
-    ?negociadoNode P5 ?S2 .
+    ?SO1 P3 ?SO2 .
+    ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
     
-    ?negociadoNode b3:precoMaximo ?maximo .
-    ?negociadoNode b3:precoMinimo ?minimo .
-    ?negociadoNode b3:precoAbertura ?abertura .
-    ?negociadoNode b3:precoFechamento ?fechamento .
+    ?SO2 D1 ?abertura .
+    ?SO2 D2 ?fechamento .
+    ?SO2 D3 ?maximo .
+    ?SO2 D4 ?minimo .
     
     FILTER(?abertura > 0)
     BIND((#CALCULO#) AS ?resultadoCalculado)

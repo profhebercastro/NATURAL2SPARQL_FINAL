@@ -1,23 +1,30 @@
-#TEMPLATE 8A
+# --- Template_8A.txt ---
+# Finalidade: Consulta complexa com subconsulta sobre o ranking geral.
+# Exemplo: "Qual o volume da ação com a maior alta percentual em 30/06/2025?"
+# ----------------------------------------------------------
 SELECT ?ticker ?resultadoFinal WHERE {
     ?SO1 P8 ?ticker .
-    ?SO1 P3 ?negociadoNode .
-    ?negociadoNode P5 ?S2 .
+    ?SO1 P3 ?SO2 .
+    ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
-    ?negociadoNode b3:precoMaximo ?maximo .
-    ?negociadoNode b3:precoMinimo ?minimo .
-    ?negociadoNode b3:precoAbertura ?abertura .
-    ?negociadoNode b3:precoFechamento ?fechamento .
+
+    ?SO2 D1 ?abertura .
+    ?SO2 D2 ?fechamento .
+    ?SO2 D3 ?maximo .
+    ?SO2 D4 ?minimo .
+
     BIND((#CALCULO#) AS ?resultadoFinal)
     {
         SELECT ?SO1 WHERE {
-            ?SO1 P3 ?negociadoNode_rank .
-            ?negociadoNode_rank P5 ?S2_rank .
+            ?SO1 P3 ?SO2_rank .
+            ?SO2_rank P5 ?S2_rank .
             ?S2_rank P6 "#DATA#"^^xsd:date .
-            ?negociadoNode_rank b3:precoAbertura ?abertura_rank .
-            ?negociadoNode_rank b3:precoFechamento ?fechamento_rank .
-            ?negociadoNode_rank b3:precoMaximo ?maximo_rank .
-            ?negociadoNode_rank b3:precoMinimo ?minimo_rank .
+
+            ?SO2_rank D1 ?abertura_rank .
+            ?SO2_rank D2 ?fechamento_rank .
+            ?SO2_rank D3 ?maximo_rank .
+            ?SO2_rank D4 ?minimo_rank .
+
             FILTER(?abertura_rank > 0)
             BIND((#RANKING_CALCULATION#) AS ?rankingValue)
         }

@@ -1,13 +1,18 @@
-#TEMPLATE 7A
+# --- Template_7A.txt ---
+# Finalidade: Ranking geral de ações por uma métrica calculada (TOP N).
+# Exemplo: "Quais as cinco ações de maior alta percentual em 10/06/2025?"
+# ----------------------------------------------------------
 SELECT ?ticker ?resultadoCalculado WHERE {
-    ?negociadoNode P5 ?S2 .
-    ?S2 P6 "#DATA#"^^xsd:date .
-    ?SO1 P3 ?negociadoNode .
+    ?SO1 P3 ?SO2 .
     ?SO1 P8 ?ticker .
-    ?negociadoNode b3:precoAbertura ?abertura .
-    ?negociadoNode b3:precoFechamento ?fechamento .
-    ?negociadoNode b3:precoMaximo ?maximo .
-    ?negociadoNode b3:precoMinimo ?minimo .
+    ?SO2 P5 ?S2 .
+    ?S2 P6 "#DATA#"^^xsd:date .
+
+    ?SO2 D1 ?abertura .
+    ?SO2 D2 ?fechamento .
+    ?SO2 D3 ?maximo .
+    ?SO2 D4 ?minimo .
+
     FILTER(?abertura > 0)
     BIND((#CALCULO#) AS ?resultadoCalculado)
 }
