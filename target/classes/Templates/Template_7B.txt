@@ -1,4 +1,7 @@
-#TEMPLATE 7B
+# --- Template_7B.txt ---
+# Finalidade: Ranking de ações DENTRO DE UM SETOR por uma métrica calculada (TOP N).
+# Exemplo: "Qual a ação de mineração com maior alta percentual em 18/06/2025?"
+# ----------------------------------------------------------
 SELECT ?ticker ?resultadoCalculado WHERE {
     #FILTER_BLOCK_SETOR#
     ?S1 P1 ?SO1 .

@@ -1,4 +1,7 @@
-#TEMPLATE 8B
+# --- Template_8B.txt ---
+# Finalidade: Consulta complexa com subconsulta sobre o ranking de um SETOR.
+# Exemplo: "Qual o preço de fechamento da ação de maior alta do setor de Energia?"
+# ----------------------------------------------------------
 SELECT ?ticker ?resultadoFinal WHERE {
     ?SO1 P8 ?ticker .
     ?SO1 P3 ?SO2 .

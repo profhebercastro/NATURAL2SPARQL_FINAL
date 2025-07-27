@@ -1,4 +1,7 @@
-#TEMPLATE 6A
+# --- Template_6A.txt ---
+# Finalidade: Calcula uma métrica derivada para uma empresa específica.
+# Exemplo: "Qual foi a variação absoluta da CSN em 30/06/2025?"
+# ----------------------------------------------------------
 SELECT ?ticker ?resultadoCalculado
 WHERE {
     #FILTER_BLOCK_ENTIDADE#

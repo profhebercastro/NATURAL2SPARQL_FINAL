@@ -178,7 +178,7 @@ def process_question():
         if 'calculo' in entidades_preliminares:
             template_id_final = 'Template_7B'
         elif 'valor_desejado' in entidades_preliminares and ('total' in pergunta_lower or 'volume' in pergunta_lower or 'quantidade' in pergunta_lower):
-            template_id_final = 'Template_4C'
+            template_id_final = 'Template_4A'
         else:
             template_id_final = 'Template_3A'
     

@@ -1,4 +1,7 @@
-#TEMPLATE 1A
+# --- Template_1A.txt ---
+# Finalidade: Busca um valor pontual de uma empresa por NOME em uma data.
+# Exemplo: "Qual o preço de fechamento da Petrobras em 10/06/2025?"
+# ----------------------------------------------------------
 SELECT ?valor WHERE {
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))

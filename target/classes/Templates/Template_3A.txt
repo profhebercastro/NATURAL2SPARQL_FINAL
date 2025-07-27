@@ -1,4 +1,7 @@
-#TEMPLATE 3A
+# --- Template_3A.txt ---
+# Finalidade: Lista todos os tickers de um determinado SETOR.
+# Exemplo: "Quais são as ações do setor de Mineração?"
+# ----------------------------------------------------------
 SELECT DISTINCT ?ticker WHERE {
   #FILTER_BLOCK_SETOR#
   ?S1 P1 ?SO1 .
