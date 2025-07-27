@@ -1,4 +1,4 @@
-# --- Template_4C.txt ---
+# --- Template_4A.txt ---
 # Finalidade: Agrega (soma) uma métrica para um setor ou empresa em uma data.
 # Exemplo: "Qual o volume total do setor financeiro em 12/06/2025?"
 # ----------------------------------------------------------

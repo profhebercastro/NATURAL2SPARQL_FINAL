@@ -5,7 +5,7 @@
 echo "--- Iniciando serviço de NLP (Python/Flask) na porta 5000 ---"
 gunicorn --bind 0.0.0.0:5000 --workers 2 nlp.nlp_controller:app &
 
-# Aguarda um pouco. Isso é opcional, mas pode ajudar a garantir que
+# Aguarda um pouco. 
 # o serviço Python esteja totalmente funcional antes do Java tentar usá-lo.
 sleep 5 
 

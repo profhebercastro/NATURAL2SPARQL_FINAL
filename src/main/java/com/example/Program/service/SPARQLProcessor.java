@@ -161,7 +161,7 @@ public class SPARQLProcessor {
             }
         }
         
-        // LIMPA PLACEHOLDERS # QUE SOBRARAM
+        // LIMPA PLACEHOLDERS
         query = query.replaceAll("#[A-Z_]+#", ""); 
 
         // SUBSTITUI PLACEHOLDERS GENÉRICOS P* e S*

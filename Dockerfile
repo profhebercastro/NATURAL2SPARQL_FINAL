@@ -3,7 +3,7 @@ FROM maven:3.8.5-openjdk-17 AS builder
 
 WORKDIR /app
 
-# Copia TODOS os arquivos do projeto (incluindo a nova localização da pasta nlp)
+# Copia TODOS os arquivos do projeto 
 COPY . .
 
 # Cache de dependências Maven
@@ -24,12 +24,6 @@ WORKDIR /app
 # Copia o JAR do Java construído no estágio anterior
 COPY --from=builder /app/target/*.jar app.jar
 
-# =======================================================
-#  !!! CORREÇÃO CRUCIAL APLICADA AQUI !!!
-#  Copia a pasta nlp a partir da sua nova localização correta.
-#  Quando o Java compila, ele coloca os recursos na raiz do JAR, 
-#  então o Python também deve estar na raiz da aplicação final.
-# =======================================================
 COPY --from=builder /app/src/main/resources/nlp/ ./nlp
 
 # Instala as dependências Python a partir do requirements.txt que está na raiz
