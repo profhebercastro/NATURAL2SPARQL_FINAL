@@ -13,7 +13,7 @@ Um sistema que traduz perguntas em linguagem natural (Português) em consultas *
 
 ### ✨ **[Acesse a Demonstração Online](https://natural2sparql-final.onrender.com/)** ✨
 
-*(Nota: A primeira requisição do dia pode demorar cerca de 30 segundos para "acordar" o servidor gratuito da plataforma Render.)*
+*(Nota: A primeira requisição do dia pode demorar cerca de 30 segundos para "acordar" o servidor da plataforma Render.)*
 
 ---
 
