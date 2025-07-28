@@ -33,6 +33,7 @@ Template_3A;Quais são todas as ações do setor de Mineração?
 Template_3A;Quais são todas as ações do setor de Saúde?
 Template_3A;Quais são todas as ações do setor de Telecomunicações?
 Template_3A;Quais são as ações do setor de energia elétrica?
+Template_3A;Quais são todas as ações do setor financeiro?
 
 # --- [GRUPO 3] Agregações, Filtros e Cálculos ---
 
