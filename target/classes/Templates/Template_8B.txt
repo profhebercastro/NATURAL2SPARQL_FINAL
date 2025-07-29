@@ -14,7 +14,7 @@ SELECT ?ticker ?resultadoFinal WHERE {
     ?SO2 D4 ?minimo .
     
     FILTER(?abertura > 0)
-    BIND((#CALCULO#) AS ?resultadoFinal)
+    #RESULT_LINE#
     {
         SELECT ?SO1 WHERE {
             #FILTER_BLOCK_SETOR#

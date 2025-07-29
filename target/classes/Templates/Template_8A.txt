@@ -13,7 +13,7 @@ SELECT ?ticker ?resultadoFinal WHERE {
     ?SO2 D3 ?maximo .
     ?SO2 D4 ?minimo .
 
-    BIND((#CALCULO#) AS ?resultadoFinal)
+    #RESULT_LINE#
     {
         SELECT ?SO1 WHERE {
             ?SO1 P3 ?SO2_rank .
