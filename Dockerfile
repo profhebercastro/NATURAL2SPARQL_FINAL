@@ -3,14 +3,21 @@ FROM maven:3.8.5-openjdk-17 AS builder
 
 WORKDIR /app
 
-# Copia TODOS os arquivos do projeto 
-COPY . .
+# 1. Copia o pom.xml e o requirements.txt para cache de dependências
+COPY pom.xml .
+COPY requirements.txt .
 
-# Cache de dependências Maven
+# 2. Baixa as dependências do Maven (isso raramente muda, então fica em cache)
 RUN mvn dependency:go-offline
 
-# Constrói o projeto Java
+# 3. Copia todo o resto do código-fonte
+COPY . .
+
+# 4. Constrói o projeto Java
 RUN mvn clean package -DskipTests
+
+
+# ====================================================================
 
 
 # ESTÁGIO 2: Imagem Final de Produção
@@ -21,17 +28,20 @@ RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/
 
 WORKDIR /app
 
-# Copia o JAR do Java construído no estágio anterior
-COPY --from=builder /app/target/*.jar app.jar
-
-COPY --from=builder /app/src/main/resources/nlp/ ./nlp
-
-# Instala as dependências Python a partir do requirements.txt que está na raiz
+# 1. Copia o requirements.txt do estágio anterior e instala as dependências Python
+#    Isso é feito primeiro para otimizar o cache.
 COPY --from=builder /app/requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Copia o script de inicialização e o torna executável
+# 2. Copia todos os recursos necessários do estágio builder
+#    Copia o JAR compilado
+COPY --from=builder /app/target/*.jar app.jar
+#    Copia TODA a pasta de recursos, que inclui o nlp_controller.py e a pasta nlp/
+COPY --from=builder /app/src/main/resources ./src/main/resources
+#    Copia o script de inicialização
 COPY --from=builder /app/start.sh .
+
+# 3. Torna o script de inicialização executável
 RUN chmod +x start.sh
 
 # Render usa a porta 10000 por padrão para o serviço principal
