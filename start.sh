@@ -1,5 +1,5 @@
 #!/bin/bash
-# Este script inicia os dois serviços de forma robusta e compatível.
+# Este script inicia os dois serviços de forma simples e direta.
 set -e
 
 echo "--- Iniciando serviço principal (Java/Spring Boot) em segundo plano ---"
@@ -11,9 +11,9 @@ echo "Aguardando o serviço Java iniciar completamente..."
 sleep 15
 
 echo "--- Iniciando serviço de NLP (Python/Flask) em primeiro plano ---"
-# 1. Navega para o diretório do serviço de NLP
+# Navega para o diretório do serviço de NLP para que ele encontre seus dicionários.
 cd /app/nlp_service
 
-# 2. Executa o Gunicorn a partir do diretório correto.
-#    Agora ele encontrará 'nlp_controller.py' sem problemas.
-exec gunicorn --bind 0.0.0.0:5000 nlp_controller:app
+# Executa o script Python diretamente. O servidor de desenvolvimento do Flask é iniciado.
+# 'exec' faz com que este se torne o processo principal do container.
+exec python3 nlp_controller.py

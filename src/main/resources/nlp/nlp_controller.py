@@ -205,5 +205,9 @@ def process_question():
     entidades_maiusculas = {k.upper(): v for k, v in entidades.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
+
+
 if __name__ == '__main__':
+    # 'host=0.0.0.0' é essencial para que o servidor seja acessível dentro do container.
+    # 'port=5000' define a porta que o Java irá usar para se comunicar.
     app.run(host='0.0.0.0', port=5000)
