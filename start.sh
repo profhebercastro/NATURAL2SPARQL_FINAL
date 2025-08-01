@@ -1,16 +1,15 @@
 #!/bin/bash
+set -e
 
-# Inicia o serviço de NLP (Python/Flask) em SEGUNDO PLANO na porta 5000.
-# O Java irá se comunicar com ele internamente usando localhost:5000.
-echo "--- Iniciando serviço de NLP (Python/Flask) na porta 5000 ---"
-gunicorn --bind 0.0.0.0:5000 --workers 2 nlp.nlp_controller:app &
+echo "--- Iniciando serviço de NLP (Python/Flask) na porta 5000 em segundo plano ---"
+# 1. Navega para o diretório onde o script Python e os dicionários estão.
+# 2. Executa o Gunicorn a partir dali. O Gunicorn agora encontrará 'nlp_controller.py' facilmente.
+(cd /app/src/main/resources && exec gunicorn --bind 0.0.0.0:5000 nlp_controller:app) &
 
-# Aguarda um pouco. 
-# o serviço Python esteja totalmente funcional antes do Java tentar usá-lo.
-sleep 5 
+# Aguarda um pouco para o serviço Python iniciar completamente.
+echo "Aguardando o serviço de NLP iniciar..."
+sleep 10 # Aumentei para 10s para garantir, especialmente em ambientes gratuitos.
 
-# Inicia o serviço principal (Java/Spring Boot) em PRIMEIRO PLANO.
-# Este é o comando mais importante. Ele usa a variável $PORT fornecida pelo Render.
-# O Render VAI direcionar o tráfego externo para esta porta.
 echo "--- Iniciando serviço principal (Java/Spring Boot) na porta $PORT ---"
-java -jar -Dserver.port=${PORT} app.jar
+# O Java agora roda em primeiro plano, o que é o padrão para o Render.
+exec java -jar -Dserver.port=${PORT} app.jar
