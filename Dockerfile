@@ -3,17 +3,14 @@ FROM maven:3.8.5-openjdk-17 AS builder
 
 WORKDIR /app
 
-# 1. Copia o pom.xml e o requirements.txt para cache de dependências
+# Otimiza o cache copiando apenas os arquivos de dependência primeiro
 COPY pom.xml .
-COPY requirements.txt .
-
-# 2. Baixa as dependências do Maven (isso raramente muda, então fica em cache)
 RUN mvn dependency:go-offline
 
-# 3. Copia todo o resto do código-fonte
-COPY . .
+# Copia todo o código-fonte
+COPY src ./src
 
-# 4. Constrói o projeto Java
+# Constrói o projeto Java
 RUN mvn clean package -DskipTests
 
 
@@ -21,30 +18,32 @@ RUN mvn clean package -DskipTests
 
 
 # ESTÁGIO 2: Imagem Final de Produção
-FROM openjdk:17-jdk-slim
+FROM openjdk:17-jre-slim
 
 # Instala Python e pip
 RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# 1. Copia o requirements.txt do estágio anterior e instala as dependências Python
-#    Isso é feito primeiro para otimizar o cache.
-COPY --from=builder /app/requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-# 2. Copia todos os recursos necessários do estágio builder
-#    Copia o JAR compilado
+# --- CORREÇÃO PRINCIPAL ---
+# 1. Copia o JAR compilado do estágio builder
 COPY --from=builder /app/target/*.jar app.jar
-#    Copia TODA a pasta de recursos, que inclui o nlp_controller.py e a pasta nlp/
-COPY --from=builder /app/src/main/resources ./src/main/resources
-#    Copia o script de inicialização
-COPY --from=builder /app/start.sh .
 
-# 3. Torna o script de inicialização executável
+# 2. Copia o conteúdo da pasta de recursos (incluindo nlp_controller.py e os JSONs)
+#    para uma pasta de serviço dedicada. Isso simplifica os caminhos.
+COPY src/main/resources/ /app/nlp_service/
+
+# 3. Copia e instala as dependências Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 4. Copia e torna o script de inicialização executável
+COPY start.sh .
 RUN chmod +x start.sh
+# --- FIM DA CORREÇÃO ---
 
-# Render usa a porta 10000 por padrão para o serviço principal
+# Render usa a porta 10000 para o serviço principal (Java)
+# A porta 5000 é para comunicação interna
 EXPOSE 10000 5000
 
 # Define o comando que será executado quando o container iniciar
