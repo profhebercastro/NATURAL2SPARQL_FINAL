@@ -2,6 +2,8 @@
 # Finalidade: Consulta complexa com subconsulta sobre o ranking geral.
 # Exemplo: "Qual o volume da ação com a maior alta percentual em 30/06/2025?"
 # ----------------------------------------------------------
+#TEMPLATE 8A 
+
 SELECT ?ticker ?resultadoFinal WHERE {
     ?SO1 P8 ?ticker .
     ?SO1 P3 ?SO2 .
@@ -13,9 +15,14 @@ SELECT ?ticker ?resultadoFinal WHERE {
     ?SO2 D3 ?maximo .
     ?SO2 D4 ?minimo .
 
-    #RESULT_LINE#
+    BIND((#CALCULO#) AS ?resultadoFinal)
     {
         SELECT ?SO1 WHERE {
+            ?SO1 P8 ?ticker_rank .
+            
+          
+            #REGEX_FILTER#
+            
             ?SO1 P3 ?SO2_rank .
             ?SO2_rank P5 ?S2_rank .
             ?S2_rank P6 "#DATA#"^^xsd:date .

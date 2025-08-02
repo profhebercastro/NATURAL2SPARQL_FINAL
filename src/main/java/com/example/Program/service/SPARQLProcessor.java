@@ -112,22 +112,6 @@ public class SPARQLProcessor {
             query = query.replace("#FILTER_BLOCK#", filterBlock);
         }
 
-        if (query.contains("#RESULT_LINE#")) {
-            String resultLine = "";
-            if (entities.has("CALCULO")) {
-                String calculo = entities.get("CALCULO").asText();
-                String calculoSparql = getCalculationFormula(calculo, "");
-                resultLine = "BIND((" + calculoSparql + ") AS ?resultadoFinal)";
-            } else if (entities.has("VALOR_DESEJADO")) {
-                String valorDesejado = entities.get("VALOR_DESEJADO").asText();
-                String predicadoRDF = placeholderService.getPlaceholderValue(valorDesejado);
-                if (predicadoRDF != null) {
-                    resultLine = "?SO2 " + predicadoRDF + " ?resultadoFinal .";
-                }
-            }
-            query = query.replace("#RESULT_LINE#", resultLine);
-        }
-
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -140,13 +124,22 @@ public class SPARQLProcessor {
             } else if (placeholder.equals("#RANKING_CALCULATION#")) {
                 String rankingCalculoSql = getCalculationFormula(value, "_rank");
                 query = query.replace(placeholder, rankingCalculoSql);
+
+            // --- INÍCIO DA CORREÇÃO ---
             } else if (placeholder.equals("#REGEX_PATTERN#")) {
-                String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + value + "\"))";
+                // Verifica se o template é de subconsulta (contém _rank) para usar a variável correta
+                boolean isSubqueryTemplate = query.contains("_rank");
+                String targetVariable = isSubqueryTemplate ? "?ticker_rank" : "?ticker";
+                
+                String regexFilter = "FILTER(REGEX(STR(" + targetVariable + "), \"" + value + "\"))";
                 query = query.replace("#REGEX_FILTER#", regexFilter);
+            // --- FIM DA CORREÇÃO ---
+
             } else if (placeholder.equals("#VALOR_DESEJADO#")) {
                  String predicadoRDF = placeholderService.getPlaceholderValue(value);
                  if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
             } else {
+                // Substitui outros placeholders genéricos como #DATA#, #LIMITE#, #ORDEM#
                 query = query.replace(placeholder, value);
             }
         }
