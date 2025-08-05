@@ -30,7 +30,6 @@ public class SPARQLProcessor {
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
     private final NlpDictionaryService nlpDictionaryService;
-    // Ajuste esta URL se o serviço Python rodar em um local diferente durante o desenvolvimento.
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
@@ -73,7 +72,6 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
         
-        // Substitui a variável de resultado genérica (ex: ?valor) em templates simples
         if (entities.has("VALOR_DESEJADO") && (query.contains("?valor") || query.contains("?ANS"))) {
             String metricaKey = entities.get("VALOR_DESEJADO").asText();
             String varName = toCamelCase(metricaKey);
@@ -188,27 +186,34 @@ public class SPARQLProcessor {
 
     private String toCamelCase(String text) {
         if (text == null || text.isEmpty()) { return ""; }
-        String cleanText = text.replace("metrica.", "").replace("b3:", "");
+      
+        String cleanText = text.replaceAll("^(metrica\\.|b3:)", "");
+        
         StringBuilder camelCase = new StringBuilder();
         boolean nextIsUpper = false;
         
-        char[] chars = cleanText.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            if (chars[i] == '_') {
+        for (char c : cleanText.toCharArray()) {
+            if (c == '_') {
                 nextIsUpper = true;
             } else {
                 if (nextIsUpper) {
-                    camelCase.append(Character.toUpperCase(chars[i]));
+                    camelCase.append(Character.toUpperCase(c));
                     nextIsUpper = false;
                 } else {
+                  
                     if (camelCase.length() == 0) {
-                        camelCase.append(Character.toLowerCase(chars[i]));
+                        camelCase.append(Character.toLowerCase(c));
                     } else {
-                        camelCase.append(chars[i]);
+                        camelCase.append(c);
                     }
                 }
             }
         }
+
+        if (camelCase.length() > 0 && Character.isUpperCase(camelCase.charAt(0))) {
+            camelCase.setCharAt(0, Character.toLowerCase(camelCase.charAt(0)));
+        }
+        
         return camelCase.toString();
     }
     
