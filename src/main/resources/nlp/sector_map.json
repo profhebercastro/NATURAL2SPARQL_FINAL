@@ -90,51 +90,5 @@
   "agropecuaria": "Agropecuária",
   "agropecuária": "Agropecuária",
   "agricultura": "Agropecuária",
-  "holdings diversificadas": "Holdings Diversificadas",
-  "imat": [
-    "Materiais Básicos",
-    "Minerais Metálicos",
-    "Siderurgia e Metalurgia",
-    "Químicos",
-    "Madeira e Papel"
-  ],
-  "iagro": [
-    "Agropecuária",
-    "Alimentos",
-    "Alimentos Processados",
-    "Carnes e Derivados",
-    "Açucar e Alcool",
-    "Bebidas",
-    "Cervejas e Refrigerantes",
-    "Madeira e Papel"
-  ],
-  "ifnc": [
-    "Bancos",
-    "Previdência e Seguros",
-    "Resseguradoras",
-    "Holdings Diversificadas"
-  ],
-  "icon": [
-    "Consumo não Cíclico",
-    "Alimentos Processados",
-    "Bebidas",
-    "Consumo Cíclico",
-    "Construção e Engenharia",
-    "Viagens e Lazer",
-    "Comércio e Distribuição",
-    "Eletrodomésticos",
-    "Tecidos, Vestuário e Calçados",
-    "Serviços Educacionais"
-  ],
-  "iee": [
-    "Energia Elétrica"
-  ],
-  "indx": [
-    "Bens Industriais",
-    "Máquinas e Equipamentos",
-    "Material de Transporte",
-    "Transporte",
-    "Construção e Engenharia",
-    "Serviços Diversos"
-  ]
+  "holdings diversificadas": "Holdings Diversificadas"
 }

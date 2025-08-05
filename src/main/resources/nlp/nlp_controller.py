@@ -12,10 +12,13 @@ def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
     try:
         with open(caminho_completo, 'r', encoding='utf-8') as f: return json.load(f)
-    except FileNotFoundError: return {}
+    except FileNotFoundError:
+        print(f"AVISO: Arquivo {nome_arquivo} não encontrado.")
+        return {}
 
 empresa_map = carregar_arquivo_json('Named_entity_dictionary.json')
-setor_map = carregar_arquivo_json('setor_map.json')
+setor_map = carregar_arquivo_json('sector_map.json')
+index_map = carregar_arquivo_json('index_map.json')
 reference_templates = {}
 try:
     with open(os.path.join(SCRIPT_DIR, 'Reference_questions.txt'), 'r', encoding='utf-8') as f:
@@ -114,24 +117,34 @@ def extrair_todas_entidades(pergunta_lower):
     if 'calculo' in entidades and 'ranking_calculation' not in entidades:
         entidades['ranking_calculation'] = entidades['calculo']
 
+    entidade_principal_encontrada = False
+    
     ticker_match = re.search(r'\b([A-Z]{4}[0-9]{1,2})\b', texto_restante.upper())
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1)
         entidades['tipo_entidade'] = 'ticker'
-    else:
-        setor_encontrado = False
+        entidade_principal_encontrada = True
+
+    if not entidade_principal_encontrada:
+        for key in sorted(index_map.keys(), key=len, reverse=True):
+            if re.search(r'\b(do|da|de|entre as|do indice|acoes do)?\s*' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
+                entidades['lista_tickers'] = index_map[key]
+                entidade_principal_encontrada = True
+                break
+
+    if not entidade_principal_encontrada:
         for key in sorted(setor_map.keys(), key=len, reverse=True):
             if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_restante)):
                 entidades['nome_setor'] = setor_map[key]
-                setor_encontrado = True
+                entidade_principal_encontrada = True
                 break
-        
-        if not setor_encontrado:
-            for key in sorted(empresa_map.keys(), key=len, reverse=True):
-                if re.search(r'\b' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
-                    entidades['entidade_nome'] = key
-                    entidades['tipo_entidade'] = 'nome'
-                    break
+    
+    if not entidade_principal_encontrada:
+        for key in sorted(empresa_map.keys(), key=len, reverse=True):
+            if re.search(r'\b' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
+                entidades['entidade_nome'] = key
+                entidades['tipo_entidade'] = 'nome'
+                break
 
     pergunta_sem_acento_original = remover_acentos(pergunta_lower)
     if "ordinaria" in pergunta_sem_acento_original: entidades["regex_pattern"] = "3$"
@@ -160,15 +173,16 @@ def process_question():
 
     is_ranking = 'ranking_calculation' in entidades
     is_complex_query = is_ranking and ('calculo' in entidades or 'valor_desejado' in entidades) and entidades.get('calculo') != entidades.get('ranking_calculation')
-    
-    # 1. Pergunta Complexa (duas intenções de cálculo diferentes) -> 8A/8B
+    is_simple_ranking_list = is_ranking and not is_complex_query
+
+    # 1. Pergunta Complexa (duas intenções diferentes) -> 8A/8B
     if is_complex_query:
-        if 'nome_setor' in entidades: template_id_final = 'Template_8B'
+        if 'nome_setor' in entidades or 'lista_tickers' in entidades: template_id_final = 'Template_8B'
         else: template_id_final = 'Template_8A'
     
-    # 2. Pergunta de Ranking Simples (lista TOP N) -> 7A/7B
-    if not template_id_final and is_ranking and not ('entidade_nome' in entidades):
-        if 'nome_setor' in entidades: template_id_final = 'Template_7B'
+    # 2. Pergunta de Ranking Simples (lista TOP N ou busca de 1) -> 7A/7B
+    if not template_id_final and is_simple_ranking_list:
+        if 'nome_setor' in entidades or 'lista_tickers' in entidades: template_id_final = 'Template_7B'
         else: template_id_final = 'Template_7A'
 
     # 3. Pergunta com cálculo sobre entidade única -> 6A
@@ -185,8 +199,8 @@ def process_question():
             elif 'valor_desejado' in entidades: template_id_final = 'Template_1A'
             else: template_id_final = 'Template_2A'
 
-    # 5. Outras perguntas sobre setor
-    if not template_id_final and 'nome_setor' in entidades:
+    # 5. Outras perguntas sobre setor ou índice
+    if not template_id_final and ('nome_setor' in entidades or 'lista_tickers' in entidades):
         if 'valor_desejado' in entidades: template_id_final = 'Template_4A'
         else: template_id_final = 'Template_3A'
     
@@ -205,9 +219,5 @@ def process_question():
     entidades_maiusculas = {k.upper(): v for k, v in entidades.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
-
-
 if __name__ == '__main__':
-    # 'host=0.0.0.0' é essencial para que o servidor seja acessível dentro do container.
-    # 'port=5000' define a porta que o Java irá usar para se comunicar.
     app.run(host='0.0.0.0', port=5000)

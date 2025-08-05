@@ -1,0 +1,63 @@
+{
+  "ibov": [
+    "AALR3", "ABEV3", "ALPA4", "AMER3", "ASAI3", "AZUL4", "B3SA3", "BBAS3", "BBDC3", "BBDC4", 
+    "BBSE3", "BEEF3", "BPAC11", "BRAP4", "BRFS3", "BRKM5", "CASH3", "CCRO3", "CIEL3", "CMIG4", 
+    "COGN3", "CPFE3", "CPLE6", "CRFB3", "CSAN3", "CSNA3", "CVCB3", "CYRE3", "DXCO3", "ECOR3", 
+    "EGIE3", "ELET3", "ELET6", "EMBR3", "ENBR3", "ENEV3", "ENGI11", "EQTL3", "EZTC3", "FLRY3", 
+    "GGBR4", "GOAU4", "GOLL4", "HAPV3", "HYPE3", "IGTI11", "IRBR3", "ITSA4", "ITUB4", "JBSS3", 
+    "KLBN11", "LREN3", "LWSA3", "MGLU3", "MRFG3", "MRVE3", "MULT3", "NTCO3", "PCAR3", "PETR3", 
+    "PETR4", "PRIO3", "RADL3", "RAIL3", "RAIZ4", "RDOR3", "RENT3", "RRRP3", "SANB11", "SBSP3", 
+    "SLCE3", "SOMA3", "SUZB3", "TAEE11", "TIMS3", "TOTS3", "UGPA3", "USIM5", "VALE3", "VBBR3", 
+    "VIVT3", "WEGE3", "YDUQ3"
+  ],
+  "ibrx 100": [
+    "AALR3", "ABEV3", "ALPA4", "AMER3", "ASAI3", "AZUL4", "B3SA3", "BBAS3", "BBDC3", "BBDC4", 
+    "BBSE3", "BEEF3", "BPAC11", "BRAP4", "BRFS3", "BRKM5", "CASH3", "CCRO3", "CIEL3", "CMIG4", 
+    "COGN3", "CPFE3", "CPLE6", "CRFB3", "CSAN3", "CSNA3", "CVCB3", "CYRE3", "DXCO3", "ECOR3", 
+    "EGIE3", "ELET3", "ELET6", "EMBR3", "ENBR3", "ENEV3", "ENGI11", "EQTL3", "EZTC3", "FLRY3", 
+    "GGBR4", "GOAU4", "GOLL4", "HAPV3", "HYPE3", "IGTI11", "IRBR3", "ITSA4", "ITUB4", "JBSS3", 
+    "KLBN11", "LREN3", "LWSA3", "MGLU3", "MRFG3", "MRVE3", "MULT3", "NTCO3", "PCAR3", "PETR3", 
+    "PETR4", "PRIO3", "RADL3", "RAIL3", "RAIZ4", "RDOR3", "RENT3", "RRRP3", "SANB11", "SBSP3", 
+    "SLCE3", "SOMA3", "SUZB3", "TAEE11", "TIMS3", "TOTS3", "UGPA3", "USIM5", "VALE3", "VBBR3", 
+    "VIVT3", "WEGE3", "YDUQ3", "ALOS3", "ARZZ3", "AURE3", "CEAB3", "CMIN3", "KEPL3", "PETZ3", 
+    "PSSA3", "RECV3", "SMTO3", "TRPL4", "VAMO3"
+  ],
+  "ibrx 50": [
+    "ABEV3", "ASAI3", "B3SA3", "BBAS3", "BBDC4", "BBSE3", "BEEF3", "BPAC11", "BRAP4", "BRFS3", 
+    "BRKM5", "CCRO3", "CIEL3", "CMIG4", "CPFE3", "CPLE6", "CRFB3", "CSAN3", "CSNA3", "CYRE3", 
+    "EGIE3", "ELET3", "EMBR3", "ENEV3", "ENGI11", "EQTL3", "GGBR4", "GOAU4", "HAPV3", "HYPE3", 
+    "ITSA4", "ITUB4", "JBSS3", "KLBN11", "LREN3", "MGLU3", "MRFG3", "MULT3", "NTCO3", "PCAR3", 
+    "PETR4", "PRIO3", "RADL3", "RAIL3", "RAIZ4", "RDOR3", "RENT3", "RRRP3", "SANB11", "SBSP3", 
+    "SUZB3", "TAEE11", "TOTS3", "UGPA3", "USIM5", "VALE3", "VBBR3", "VIVT3", "WEGE3", "YDUQ3"
+  ],
+  "smll": [
+    "AALR3", "AERI3", "ALOS3", "AMBP3", "ARML3", "ARZZ3", "AURE3", "CEAB3", "CLSA3", "CMIN3", 
+    "CVCB3", "ESPA3", "GMAT3", "GRND3", "INTB3", "KEPL3", "LAVV3", "LJNC3", "MATD3", "MDNE3", 
+    "MELK3", "MOVI3", "MRVE3", "NEOE3", "ONCO3", "PETZ3", "PLPL3", "PNVL3", "POSI3", "PSSA3", 
+    "RECV3", "SMFT3", "SMTO3", "SOMA3", "TASA4", "TRPL4", "VAMO3", "ZAMP3"
+  ],
+  "idiv": [
+    "BBAS3", "BBDC4", "BBSE3", "BRAP4", "CMIG4", "CPFE3", "CPLE6", "CSNA3", "EGIE3", "GGBR4", 
+    "GOAU4", "ITSA4", "ITUB4", "PETR4", "PSSA3", "SANB11", "SBSP3", "TAEE11", "TRPL4", "USIM5", 
+    "VALE3", "VIVT3"
+  ],
+  "ifnc": [
+    "B3SA3", "BBAS3", "BBDC3", "BBDC4", "BBSE3", "BPAC11", "CIEL3", "IRBR3", "ITSA4", "ITUB4", 
+    "PSSA3", "SANB11"
+  ],
+  "imat": [
+    "BRAP4", "BRKM5", "CMIN3", "CSNA3", "GGBR4", "GOAU4", "KLBN11", "SUZB3", "USIM5", "VALE3"
+  ],
+  "iee": [
+    "AURE3", "CMIG4", "CPFE3", "CPLE6", "EGIE3", "ELET3", "ELET6", "ENBR3", "ENEV3", "ENGI11", 
+    "EQTL3", "NEOE3", "TAEE11", "TRPL4"
+  ],
+  "indx": [
+    "AERI3", "AZUL4", "CCRO3", "ECOR3", "EMBR3", "GOLL4", "GRND3", "INTB3", "KEPL3", "RAIL3", 
+    "TASA4", "TOTS3", "WEGE3"
+  ],
+  "iagro": [
+    "AGRO3", "BEEF3", "BRFS3", "CAML3", "CSAN3", "JBSS3", "KEPL3", "MRFG3", "RAIZ4", "SLCE3", 
+    "SMTO3"
+  ]
+}
