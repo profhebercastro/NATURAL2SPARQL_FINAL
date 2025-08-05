@@ -68,16 +68,23 @@ public class SPARQLProcessor {
             return resposta;
         }
     }
-    
+
+    /**
+     * MÉTODO ATUALIZADO COM AS CORREÇÕES
+     */
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
-        
+
+        // Lógica inicial de ?valor e ?ANS permanece a mesma
         if (entities.has("VALOR_DESEJADO") && (query.contains("?valor") || query.contains("?ANS"))) {
             String metricaKey = entities.get("VALOR_DESEJADO").asText();
             String varName = toCamelCase(metricaKey);
             query = query.replace("?valor", "?" + varName);
             query = query.replace("?ANS", "?" + varName);
         }
+
+        // --- INÍCIO DA CORREÇÃO ---
+        // Prepara TODOS os possíveis blocos de filtro primeiro
 
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
@@ -88,7 +95,7 @@ public class SPARQLProcessor {
                 entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\")) \n    ?S1 P1 ?SO1 .";
             }
         }
-        
+
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
             JsonNode setorNode = entities.get("NOME_SETOR");
@@ -104,7 +111,7 @@ public class SPARQLProcessor {
                 setorFilter = "?S1 P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt .";
             }
         }
-        
+
         String tickersFilter = "";
         if (entities.has("LISTA_TICKERS")) {
             JsonNode tickersNode = entities.get("LISTA_TICKERS");
@@ -114,13 +121,21 @@ public class SPARQLProcessor {
                     uris.add("b3:" + ticker.asText());
                 }
                 String inClause = String.join(" ", uris);
+                // Gera um filtro que busca por múltiplos tickers
                 tickersFilter = "VALUES ?SO1 { " + inClause + " }";
             }
         }
-        
-        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
-        query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
 
+        // DECIDE QUAL FILTRO USAR COM BASE NA PRIORIDADE E APLICA
+
+        // Para #FILTER_BLOCK_SETOR#, a prioridade é a lista de tickers, se existir.
+        String setorOuIndiceFilter = !tickersFilter.isEmpty() ? tickersFilter : setorFilter;
+        query = query.replace("#FILTER_BLOCK_SETOR#", setorOuIndiceFilter);
+
+        // Para #FILTER_BLOCK_ENTIDADE#, a lógica permanece a mesma.
+        query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+
+        // Para o #FILTER_BLOCK# genérico, a prioridade é: Lista de Tickers > Setor > Entidade
         if (query.contains("#FILTER_BLOCK#")) {
             String filterBlock = "";
             if (!tickersFilter.isEmpty()) {
@@ -132,13 +147,15 @@ public class SPARQLProcessor {
             }
             query = query.replace("#FILTER_BLOCK#", filterBlock);
         }
+        // --- FIM DA CORREÇÃO ---
 
+        // O resto do método para preencher #CALCULO#, #RANKING_CALCULATION#, etc., permanece o mesmo
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
             String value = field.getValue().asText();
-            
+
             if (placeholder.equals("#VALOR_DESEJADO#")) {
                 String predicadoRDF = placeholderService.getPlaceholderValue(value);
                 if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
@@ -181,28 +198,28 @@ public class SPARQLProcessor {
             } else if (placeholder.equals("#REGEX_PATTERN#")) {
                 String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + value + "\"))";
                 query = query.replace("#REGEX_FILTER#", regexFilter);
-                
+
             } else {
                 if (!placeholder.matches("#FILTER_BLOCK.*#")) {
                     query = query.replace(placeholder, value);
                 }
             }
         }
-        
-        query = query.replaceAll("#[A-Z_]+#", ""); 
+
+        query = query.replaceAll("#[A-Z_]+#", "");
         query = placeholderService.replaceGenericPlaceholders(query);
         String prefixes = placeholderService.getPrefixes();
-        
-        return prefixes + query; 
+
+        return prefixes + query;
     }
 
     private String toCamelCase(String text) {
         if (text == null || text.isEmpty()) { return ""; }
         String cleanText = text.replaceAll("^(metrica\\.|b3:)", "");
-        
+
         StringBuilder camelCase = new StringBuilder();
         boolean nextIsUpper = false;
-        
+
         for (char c : cleanText.toCharArray()) {
             if (c == '_') {
                 nextIsUpper = true;
@@ -222,7 +239,7 @@ public class SPARQLProcessor {
         if (camelCase.length() > 0 && Character.isUpperCase(camelCase.charAt(0))) {
             camelCase.setCharAt(0, Character.toLowerCase(camelCase.charAt(0)));
         }
-        
+
         return camelCase.toString();
     }
     
