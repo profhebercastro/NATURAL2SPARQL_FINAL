@@ -5,11 +5,25 @@
 #TEMPLATE 8B 
 
 SELECT ?ticker ?resultadoFinal WHERE {
-
+    ?SO1 P8 ?ticker .
+    ?SO1 P3 ?SO2 .
+    ?SO2 P5 ?S2 .
+    ?S2 P6 "#DATA#"^^xsd:date .
+    
+    ?SO2 D1 ?abertura .
+    ?SO2 D2 ?fechamento .
+    ?SO2 D3 ?maximo .
+    ?SO2 D4 ?minimo .
+    
+    FILTER(?abertura > 0)
+    BIND((#CALCULO#) AS ?resultadoFinal)
     {
         SELECT ?SO1 WHERE {
             #FILTER_BLOCK_SETOR#
             ?S1 P1 ?SO1 .
+            ?SO1 P8 ?ticker_rank . 
+            
+            #REGEX_FILTER#
             
             ?SO1 P3 ?SO2_rank .
             ?SO2_rank P5 ?S2_rank .
@@ -26,21 +40,4 @@ SELECT ?ticker ?resultadoFinal WHERE {
         ORDER BY #ORDEM#(?rankingValue)
         LIMIT 1
     }
-    
-
-    ?SO1 P8 ?ticker .
-    ?SO1 P3 ?SO2 .
-    ?SO2 P5 ?S2 .
-    ?S2 P6 "#DATA#"^^xsd:date .
-
-
-    ?SO2 D1 ?abertura .
-    ?SO2 D2 ?fechamento .
-    ?SO2 D3 ?maximo .
-    ?SO2 D4 ?minimo .
-    ?SO2 D5 ?precoMedio .
-    ?SO2 D6 ?volumeNegociacao .
-    ?SO2 D7 ?totalNegocios .
-    
-    BIND((#CALCULO#) AS ?resultadoFinal)
 }
