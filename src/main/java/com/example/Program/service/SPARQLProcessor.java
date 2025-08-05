@@ -79,6 +79,7 @@ public class SPARQLProcessor {
             query = query.replace("?ANS", "?" + varName);
         }
 
+        // PREPARA OS BLOCOS DE FILTRO PRIMEIRO
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
@@ -105,6 +106,7 @@ public class SPARQLProcessor {
             }
         }
         
+        // APLICA OS BLOCOS DE FILTRO
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", setorFilter);
         if (query.contains("#FILTER_BLOCK#")) {
@@ -112,57 +114,78 @@ public class SPARQLProcessor {
             query = query.replace("#FILTER_BLOCK#", filterBlock);
         }
 
+        // PREENCHE O RESTO DOS PLACEHOLDERS #
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
             String value = field.getValue().asText();
+            
+            if (placeholder.equals("#VALOR_DESEJADO#")) {
+                String predicadoRDF = placeholderService.getPlaceholderValue(value);
+                if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
 
-            if (placeholder.equals("#CALCULO#")) {
-                String calculoSparql = getCalculationFormula(value, "");
+            } else if (placeholder.equals("#CALCULO#")) {
+                String calculoSparql;
+                if (entities.has("VALOR_DESEJADO")) {
+                    String metricaKey = entities.get("VALOR_DESEJADO").asText();
+                    String predicado = placeholderService.getPlaceholderValue(metricaKey);
+                    if (predicado != null) {
+                        String varName = toCamelCase(predicado.replace("b3:", ""));
+                        calculoSparql = "?" + varName;
+                    } else {
+                        calculoSparql = "?undefinedValue";
+                    }
+                } else {
+                    switch (value) {
+                        case "variacao_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                        case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
+                        case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
+                        case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
+                        case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                        default: calculoSparql = "?undefinedCalculation";
+                    }
+                }
                 query = query.replace(placeholder, calculoSparql);
+
             } else if (placeholder.equals("#RANKING_CALCULATION#")) {
-                String rankingCalculoSql = getCalculationFormula(value, "_rank");
+                String rankingCalculoSql;
+                 switch (value) {
+                    case "variacao_abs": rankingCalculoSql = "ABS(?fechamento_rank - ?abertura_rank)"; break;
+                    case "variacao_perc": rankingCalculoSql = "((?fechamento_rank - ?abertura_rank) / ?abertura_rank) * 100"; break;
+                    case "intervalo_abs": rankingCalculoSql = "ABS(?maximo_rank - ?minimo_rank)"; break;
+                    case "intervalo_perc": rankingCalculoSql = "((?maximo_rank - ?minimo_rank) / ?abertura_rank) * 100"; break;
+                    case "variacao_abs_abs": rankingCalculoSql = "ABS(?fechamento_rank - ?abertura_rank)"; break;
+                    default: rankingCalculoSql = "0";
+                }
                 query = query.replace(placeholder, rankingCalculoSql);
 
-         
             } else if (placeholder.equals("#REGEX_PATTERN#")) {
-                
-                boolean isSubqueryTemplate = query.contains("_rank");
-                String targetVariable = isSubqueryTemplate ? "?ticker_rank" : "?ticker";
-                
-                String regexFilter = "FILTER(REGEX(STR(" + targetVariable + "), \"" + value + "\"))";
+                String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + value + "\"))";
                 query = query.replace("#REGEX_FILTER#", regexFilter);
-            
-
-            } else if (placeholder.equals("#VALOR_DESEJADO#")) {
-                 String predicadoRDF = placeholderService.getPlaceholderValue(value);
-                 if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
+                
             } else {
-                // Substitui outros placeholders genéricos como #DATA#, #LIMITE#, #ORDEM#
-                query = query.replace(placeholder, value);
+                if (!placeholder.matches("#FILTER_BLOCK.*#")) {
+                    query = query.replace(placeholder, value);
+                }
             }
         }
         
+        // LIMPA PLACEHOLDERS # QUE SOBRARAM
         query = query.replaceAll("#[A-Z_]+#", ""); 
+
+        // SUBSTITUI PLACEHOLDERS GENÉRICOS P* e S*
         query = placeholderService.replaceGenericPlaceholders(query);
+        
+        // ADICIONA OS PREFIXOS
         String prefixes = placeholderService.getPrefixes();
+        
         return prefixes + query; 
     }
 
-    private String getCalculationFormula(String calculationKey, String suffix) {
-        switch (calculationKey) {
-            case "variacao_abs": return "ABS(?fechamento" + suffix + " - ?abertura" + suffix + ")";
-            case "variacao_perc": return "((?fechamento" + suffix + " - ?abertura" + suffix + ") / ?abertura" + suffix + ") * 100";
-            case "intervalo_abs": return "ABS(?maximo" + suffix + " - ?minimo" + suffix + ")";
-            case "intervalo_perc": return "((?maximo" + suffix + " - ?minimo" + suffix + ") / ?abertura" + suffix + ") * 100";
-            case "variacao_abs_abs": return "ABS(?fechamento" + suffix + " - ?abertura" + suffix + ")";
-            default: return "0";
-        }
-    }
-    
     private String toCamelCase(String snakeCase) {
         if (snakeCase == null || snakeCase.isEmpty()) { return ""; }
+        snakeCase = snakeCase.replace("metrica.", ""); // Limpa o prefixo se existir
         StringBuilder camelCase = new StringBuilder();
         boolean nextIsUpper = false;
         for (char c : snakeCase.toCharArray()) {
