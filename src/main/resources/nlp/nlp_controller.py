@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # --- CARREGAMENTO ---
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -30,6 +31,7 @@ try:
 except FileNotFoundError:
     reference_templates = {}
 
+# Prepara o modelo de similaridade de texto
 ref_questions_flat = []
 ref_ids_flat = []
 for template_id, questions in reference_templates.items():
@@ -53,12 +55,14 @@ def extrair_todas_entidades(pergunta_lower):
     entidades = {}
     texto_restante = ' ' + pergunta_lower + ' '
     
+    # Etapa 1: Extração de Data
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', texto_restante)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
         texto_restante = texto_restante.replace(match_data.group(0), " ")
 
+    # Etapa 2: Extração de Limites 
     limit_match = re.search(r'\b(as|os)?\s*(\d+|cinco|tres|três)\s+(acoes|ações|papeis|papéis)\b', texto_restante, flags=re.IGNORECASE)
     if limit_match:
         num_str = limit_match.group(2)
@@ -69,6 +73,7 @@ def extrair_todas_entidades(pergunta_lower):
     else:
         entidades['limite'] = '1'
 
+    # Etapa 3: Extração de Intenções de Cálculo e Métricas
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'maiores altas', 'maiores baixas', 'mais subiu percentualmente'],
         'variacao_abs_abs': ['menor variacao', 'menor variação', 'menor variacao absoluta'],
@@ -114,6 +119,7 @@ def extrair_todas_entidades(pergunta_lower):
     if 'calculo' in entidades and 'ranking_calculation' not in entidades:
         entidades['ranking_calculation'] = entidades['calculo']
 
+    # Etapa 4: Extração de Ticker, Setor ou Nome de Empresa 
     ticker_match = re.search(r'\b([A-Z]{4}[0-9]{1,2})\b', texto_restante.upper())
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1)
@@ -129,14 +135,12 @@ def extrair_todas_entidades(pergunta_lower):
         if not setor_encontrado:
             for key in sorted(empresa_map.keys(), key=len, reverse=True):
                 if re.search(r'\b' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
-                    # --- INÍCIO DA CORREÇÃO ---
-                    # Usa o VALOR do dicionário (nome canônico) em vez da CHAVE (apelido).
-                    # Isso garante que a busca SPARQL use sempre o nome formal da empresa.
-                    entidades['entidade_nome'] = empresa_map[key]
-                    # --- FIM DA CORREÇÃO ---
+                  
+                    entidades['entidade_nome'] = key
                     entidades['tipo_entidade'] = 'nome'
                     break
 
+    # Etapa 5: Extração de Parâmetros Adicionais
     pergunta_sem_acento_original = remover_acentos(pergunta_lower)
     if "ordinaria" in pergunta_sem_acento_original: entidades["regex_pattern"] = "3$"
     elif "preferencial" in pergunta_sem_acento_original: entidades["regex_pattern"] = "[456]$"

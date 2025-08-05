@@ -125,15 +125,15 @@ public class SPARQLProcessor {
                 String rankingCalculoSql = getCalculationFormula(value, "_rank");
                 query = query.replace(placeholder, rankingCalculoSql);
 
-            // --- INÍCIO DA CORREÇÃO ---
+         
             } else if (placeholder.equals("#REGEX_PATTERN#")) {
-                // Verifica se o template é de subconsulta (contém _rank) para usar a variável correta
+                
                 boolean isSubqueryTemplate = query.contains("_rank");
                 String targetVariable = isSubqueryTemplate ? "?ticker_rank" : "?ticker";
                 
                 String regexFilter = "FILTER(REGEX(STR(" + targetVariable + "), \"" + value + "\"))";
                 query = query.replace("#REGEX_FILTER#", regexFilter);
-            // --- FIM DA CORREÇÃO ---
+            
 
             } else if (placeholder.equals("#VALOR_DESEJADO#")) {
                  String predicadoRDF = placeholderService.getPlaceholderValue(value);
