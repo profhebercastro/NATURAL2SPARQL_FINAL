@@ -129,7 +129,11 @@ def extrair_todas_entidades(pergunta_lower):
         if not setor_encontrado:
             for key in sorted(empresa_map.keys(), key=len, reverse=True):
                 if re.search(r'\b' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
-                    entidades['entidade_nome'] = key
+                    # --- INÍCIO DA CORREÇÃO ---
+                    # Usa o VALOR do dicionário (nome canônico) em vez da CHAVE (apelido).
+                    # Isso garante que a busca SPARQL use sempre o nome formal da empresa.
+                    entidades['entidade_nome'] = empresa_map[key]
+                    # --- FIM DA CORREÇÃO ---
                     entidades['tipo_entidade'] = 'nome'
                     break
 
@@ -167,7 +171,7 @@ def process_question():
         else: template_id_final = 'Template_8A'
     
     # 2. Pergunta de Ranking Simples (lista TOP N) -> 7A/7B
-    if not template_id_final and is_ranking and not ('entidade_nome' in entidades):
+    if not template_id_final and is_ranking and not ('entidade_nome' in entidades and entidades.get('limite') == '1'):
         if 'nome_setor' in entidades: template_id_final = 'Template_7B'
         else: template_id_final = 'Template_7A'
 
@@ -205,9 +209,5 @@ def process_question():
     entidades_maiusculas = {k.upper(): v for k, v in entidades.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
 
-
-
 if __name__ == '__main__':
-    # 'host=0.0.0.0' é essencial para que o servidor seja acessível dentro do container.
-    # 'port=5000' define a porta que o Java irá usar para se comunicar.
     app.run(host='0.0.0.0', port=5000)
