@@ -30,6 +30,7 @@ public class SPARQLProcessor {
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
     private final NlpDictionaryService nlpDictionaryService;
+    // Ajuste esta URL se o serviço Python rodar em um local diferente durante o desenvolvimento.
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
@@ -72,8 +73,9 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
         
+        // Substitui a variável de resultado genérica (ex: ?valor) em templates simples
         if (entities.has("VALOR_DESEJADO") && (query.contains("?valor") || query.contains("?ANS"))) {
-            String metricaKey = entities.get("VALOR_DESEJADO").asText().replace("metrica.", "");
+            String metricaKey = entities.get("VALOR_DESEJADO").asText();
             String varName = toCamelCase(metricaKey);
             query = query.replace("?valor", "?" + varName);
             query = query.replace("?ANS", "?" + varName);
@@ -83,6 +85,7 @@ public class SPARQLProcessor {
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
+            // Regex aprimorado: 4 letras maiúsculas seguidas por 1 ou 2 números.
             if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) {
                 entidadeFilter = "BIND(b3:" + entidade.toUpperCase() + " AS ?SO1)";
             } else {
@@ -131,7 +134,7 @@ public class SPARQLProcessor {
                     String metricaKey = entities.get("VALOR_DESEJADO").asText();
                     String predicado = placeholderService.getPlaceholderValue(metricaKey);
                     if (predicado != null) {
-                        String varName = toCamelCase(predicado.replace("b3:", ""));
+                        String varName = toCamelCase(predicado);
                         calculoSparql = "?" + varName;
                     } else {
                         calculoSparql = "?undefinedValue";
@@ -171,31 +174,39 @@ public class SPARQLProcessor {
             }
         }
         
-        // LIMPA PLACEHOLDERS # QUE SOBRARAM
+        // Limpa placeholders que não foram utilizados
         query = query.replaceAll("#[A-Z_]+#", ""); 
 
-        // SUBSTITUI PLACEHOLDERS GENÉRICOS P* e S*
+        // Substitui placeholders genéricos (P*, S*, D*)
         query = placeholderService.replaceGenericPlaceholders(query);
         
-        // ADICIONA OS PREFIXOS
+        // Adiciona os prefixos
         String prefixes = placeholderService.getPrefixes();
         
         return prefixes + query; 
     }
 
-    private String toCamelCase(String snakeCase) {
-        if (snakeCase == null || snakeCase.isEmpty()) { return ""; }
-        snakeCase = snakeCase.replace("metrica.", ""); // Limpa o prefixo se existir
+    private String toCamelCase(String text) {
+        if (text == null || text.isEmpty()) { return ""; }
+        String cleanText = text.replace("metrica.", "").replace("b3:", "");
         StringBuilder camelCase = new StringBuilder();
         boolean nextIsUpper = false;
-        for (char c : snakeCase.toCharArray()) {
-            if (c == '_') {
+        
+        char[] chars = cleanText.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i] == '_') {
                 nextIsUpper = true;
             } else {
                 if (nextIsUpper) {
-                    camelCase.append(Character.toUpperCase(c));
+                    camelCase.append(Character.toUpperCase(chars[i]));
                     nextIsUpper = false;
-                } else { camelCase.append(c); }
+                } else {
+                    if (camelCase.length() == 0) {
+                        camelCase.append(Character.toLowerCase(chars[i]));
+                    } else {
+                        camelCase.append(chars[i]);
+                    }
+                }
             }
         }
         return camelCase.toString();
