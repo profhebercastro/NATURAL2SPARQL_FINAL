@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # --- CARREGAMENTO ---
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
@@ -48,6 +49,7 @@ else:
     tfidf_matrix_ref = None
 
 # --- FUNÇÕES AUXILIARES ---
+
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -62,13 +64,17 @@ def extrair_todas_entidades(pergunta_lower):
         entidades['data'] = f"{ano}-{mes}-{dia}"
         texto_restante = texto_restante.replace(match_data.group(0), " ")
 
-    limit_match = re.search(r'\b(as|os)?\s*(\d+|cinco|tres|três)\s+(acoes|ações|papeis|papéis)\b', texto_restante, flags=re.IGNORECASE)
+    limit_match = re.search(r'\b(as|os)?\s*(\d+|cinco|tres|três|duas|dois)\s+(acoes|ações|papeis|papéis)\b', texto_restante, flags=re.IGNORECASE)
     if limit_match:
         num_str = limit_match.group(2)
         if num_str.lower() == 'cinco': entidades['limite'] = '5'
         elif num_str.lower() in ['tres', 'três']: entidades['limite'] = '3'
+        elif num_str.lower() in ['duas', 'dois']: entidades['limite'] = '2'
         else: entidades['limite'] = num_str
         texto_restante = texto_restante.replace(limit_match.group(0), " ")
+    elif re.search(r'\btop\s*(\d+)\b', texto_restante, flags=re.IGNORECASE):
+        limit_match = re.search(r'\btop\s*(\d+)\b', texto_restante, flags=re.IGNORECASE)
+        entidades['limite'] = limit_match.group(1)
     else:
         entidades['limite'] = '1'
 
@@ -78,7 +84,7 @@ def extrair_todas_entidades(pergunta_lower):
     }
     mapa_metricas = {
         'variacao_perc': ['variacao percentual', 'percentual de alta', 'percentual de baixa'],
-        'variacao_abs': ['variacao absoluta', 'variacao intradiaria absoluta', 'variou em reais'],
+        'variacao_abs': ['variacao absoluta', 'variacao intradiaria absoluta', 'variou em reais', 'variação em reais'],
         'intervalo_abs': ['intervalo intradiario absoluto', 'intervalo absoluto'],
         'intervalo_perc': ['intervalo intradiario percentual', 'intervalo percentual'],
         'preco_maximo': ['preco maximo', 'preço máximo', 'valor maximo', 'valor máximo'],
@@ -87,7 +93,7 @@ def extrair_todas_entidades(pergunta_lower):
         'preco_abertura': ['preco de abertura', 'abertura'],
         'preco_medio': ['preco medio', 'preço médio', 'valor medio', 'valor médio'],
         'quantidade': ['quantidade', 'total de negocios', 'quantidade de negocios'],
-        'volume': ['volume'],
+        'volume': ['volume', 'volume negociado', 'volume total'],
     }
     
     texto_sem_acento = remover_acentos(texto_restante)
@@ -156,7 +162,7 @@ def extrair_todas_entidades(pergunta_lower):
 
     return entidades
 
-# --- API FLASK ---
+# --- API FLASK  ---
 app = Flask(__name__)
 @app.route('/process_question', methods=['POST'])
 def process_question():
@@ -171,26 +177,40 @@ def process_question():
     
     template_id_final = None
 
-    is_ranking = 'ranking_calculation' in entidades
-    is_complex_query = is_ranking and ('calculo' in entidades or 'valor_desejado' in entidades) and entidades.get('calculo') != entidades.get('ranking_calculation')
-    is_simple_ranking_list = is_ranking and not is_complex_query
+    # Verifica a presença das entidades chave para facilitar a lógica
+    has_ranking = 'ranking_calculation' in entidades
+    has_calculo = 'calculo' in entidades
+    has_entidade_especifica = 'entidade_nome' in entidades
+    has_setor_ou_indice = 'nome_setor' in entidades or 'lista_tickers' in entidades
+    is_complex_ranking = has_ranking and (has_calculo or 'valor_desejado' in entidades)
 
-    # 1. Pergunta Complexa (duas intenções diferentes) -> 8A/8B
-    if is_complex_query:
-        if 'nome_setor' in entidades or 'lista_tickers' in entidades: template_id_final = 'Template_8B'
-        else: template_id_final = 'Template_8A'
-    
-    # 2. Pergunta de Ranking Simples (lista TOP N ou busca de 1) -> 7A/7B
-    if not template_id_final and is_simple_ranking_list:
-        if 'nome_setor' in entidades or 'lista_tickers' in entidades: template_id_final = 'Template_7B'
-        else: template_id_final = 'Template_7A'
+    # ==========================================================
+    # LÓGICA DE DECISÃO HEURÍSTICA REFINADA E REORDENADA
+    # ==========================================================
 
-    # 3. Pergunta com cálculo sobre entidade única -> 6A
-    if not template_id_final and 'calculo' in entidades and ('entidade_nome' in entidades):
+    # Regra 1: Prioridade Máxima para cálculo em entidade específica.
+
+    if has_calculo and has_entidade_especifica:
         template_id_final = 'Template_6A'
+    
+    # Regra 2: Pergunta Complexa (Ranking com métrica de resultado diferente).
+   
+    elif is_complex_ranking and has_setor_ou_indice:
+        template_id_final = 'Template_8B'
+    elif is_complex_ranking:
+        template_id_final = 'Template_8A'
+    
+    # Regra 3: Pergunta de Ranking Simples (lista TOP N ou busca de 1 no ranking geral).
+  
+    elif has_ranking:
+        if has_setor_ou_indice:
+            template_id_final = 'Template_7B'
+        else:
+            template_id_final = 'Template_7A'
 
-    # 4. Outras perguntas com entidade (nome ou ticker)
-    if not template_id_final and 'entidade_nome' in entidades:
+    # Regra 4: Outras perguntas com entidade específica (buscas pontuais de valor).
+  
+    elif has_entidade_especifica:
         if entidades.get('tipo_entidade') == 'ticker':
             template_id_final = 'Template_1B'
         else: # tipo_entidade == 'nome'
@@ -199,19 +219,24 @@ def process_question():
             elif 'valor_desejado' in entidades: template_id_final = 'Template_1A'
             else: template_id_final = 'Template_2A'
 
-    # 5. Outras perguntas sobre setor ou índice
-    if not template_id_final and ('nome_setor' in entidades or 'lista_tickers' in entidades):
+    # Regra 5: Outras perguntas sobre setor ou índice.
+
+    elif has_setor_ou_indice:
         if 'valor_desejado' in entidades: template_id_final = 'Template_4A'
         else: template_id_final = 'Template_3A'
     
-    # 6. Fallback final para similaridade de texto
+    # Regra 6: Fallback final para similaridade de texto.
+    
     if not template_id_final:
         if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
             tfidf_usuario = vectorizer.transform([pergunta_lower])
             similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-            if similaridades.any(): template_id_final = ref_ids_flat[similaridades.argmax()]
-            else: return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
-        else: return jsonify({"error": "Nenhum template de referência carregado."}), 500
+            if similaridades.any():
+                template_id_final = ref_ids_flat[similaridades.argmax()]
+            else:
+                return jsonify({"error": "Não foi possível encontrar similaridade."}), 404
+        else:
+            return jsonify({"error": "Nenhum template de referência carregado."}), 500
 
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
