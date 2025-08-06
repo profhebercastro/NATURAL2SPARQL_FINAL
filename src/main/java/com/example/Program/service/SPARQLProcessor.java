@@ -147,9 +147,7 @@ public class SPARQLProcessor {
             }
             query = query.replace("#FILTER_BLOCK#", filterBlock);
         }
-        // --- FIM DA CORREÇÃO ---
 
-        // O resto do método para preencher #CALCULO#, #RANKING_CALCULATION#, etc., permanece o mesmo
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
