@@ -7,15 +7,14 @@
 [![Apache Jena](https://img.shields.io/badge/Apache-Jena-orange.svg?style=for-the-badge&logo=apache)](https://jena.apache.org/)
 [![Docker](https://img.shields.io/badge/Docker-gray.svg?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-Framework desenvolvido como parte da dissertação de Mestrado "Geração de consultas SPARQL a partir de linguagem natural", defendida na Universidade de São Paulo (USP). O sistema traduz perguntas em português para consultas **[SPARQL](https://www.w3.org/TR/sparql11-overview/)**, executando-as contra uma base de conhecimento RDF para obter respostas precisas sobre o mercado de ações brasileiro.
+Framework desenvolvido como parte da Dissertação apresentada à Faculdade de Filosofia, Ciências e Letras
+de Ribeirão Preto na área de Computação Aplicada, com o titulo: "Geração de consultas SPARQL a partir de linguagem natural", defendida na Universidade de São Paulo (USP). O sistema traduz perguntas em português para consultas **[SPARQL](https://www.w3.org/TR/sparql11-overview/)**, executando-as contra uma base de conhecimento RDF para obter respostas precisas sobre o mercado de ações brasileiro.
 
-Este projeto visa democratizar o acesso a dados semânticos, permitindo que usuários sem conhecimento técnico possam realizar consultas complexas de forma intuitiva.
+Este projeto visa democratizar o acesso a dados semânticos, permitindo que usuários sem conhecimento técnico possam realizar consultas complexas de forma intuitiva. A instância principal da aplicação está hospedada em um servidor da FFCLRP-USP.
 
 ---
 
-### ✨ **[Acesse a Demonstração Online](https://natural2sparql-final.onrender.com/)** ✨
-
-*(Nota: A primeira requisição do dia pode demorar cerca de 30 a 60 segundos para "acordar" o servidor gratuito da plataforma Render.)*
+### ✨ **[Acesse a Demonstração Online](http://calisto.ffclrp.usp.br:4000)** ✨
 
 ---
 
@@ -38,7 +37,7 @@ Este projeto visa democratizar o acesso a dados semânticos, permitindo que usu�
     2.  **Seleção por Similaridade Semântica**: Para casos gerais, emprega um modelo de **TF-IDF** para calcular a similaridade de cosseno entre a pergunta do usuário e um conjunto de **perguntas de referência**, selecionando o template mais adequado.
 *   **🎯 Extração de Entidades Robusta**: O serviço de PLN utiliza uma pipeline de extração com ordem de prioridade para identificar datas, métricas, tickers, nomes de empresas, setores e índices, minimizando ambiguidades.
 *   **쿼 Consultas Analíticas Complexas**: O framework vai além de simples buscas, gerando consultas SPARQL que realizam **cálculos em tempo de execução** (`BIND`), aplicam **filtros dinâmicos** (`FILTER`) e executam **consultas aninhadas (subqueries)** para responder a perguntas analíticas complexas.
-*   **☁️ Pronto para a Nuvem**: Containerizado com **Docker** (usando build multi-stage para otimização) e configurado para deploy em plataformas como a **Render**, com um script de inicialização que gerencia os dois serviços (Java e Python).
+*   **☁️ Pronto para a Nuvem**: Containerizado com **Docker** (usando build multi-stage para otimização) e configurado para deploy em qualquer ambiente que suporte contêineres, com um script de inicialização que gerencia os dois serviços (Java e Python).
 
 ## ⚙️ Tecnologias Utilizadas
 
@@ -59,14 +58,14 @@ O sistema opera com uma arquitetura desacoplada onde o serviço Java orquestra o
 3.  **Chamada ao Serviço de NLP**: O `SPARQLProcessor` (Java) faz uma chamada HTTP para o microserviço Python/Flask (`http://localhost:5000`).
 4.  **Processamento em Python (`nlp_controller.py`)**:
     *   **Extração de Entidades**: A pergunta é processada por uma pipeline de regras que extrai entidades como datas, tickers, nomes de empresas, setores, índices e métricas.
-    *   **Seleção de Template Híbrida**: O sistema primeiro aplica regras heurísticas para identificar perguntas complexas e selecionar o template apropriado (ex: `Template_8B`). Se nenhuma regra se aplica, ele recorre à similaridade de texto com as `Reference_questions.txt`.
+    *   **Seleção de Template Híbrida**: O sistema primeiro aplica regras heurísticas para identificar perguntas complexas e selecionar o template apropriado. Se nenhuma regra se aplica, ele recorre à similaridade de texto com as `Reference_questions.txt`.
     *   **Resposta JSON**: Devolve um objeto JSON para o Java, contendo o `templateId` selecionado e um dicionário com todas as `entidades` extraídas.
 5.  **Geração da Consulta SPARQL (Java)**:
-    *   O `SPARQLProcessor` carrega o conteúdo do template (`.txt`) correspondente.
-    *   Ele preenche os placeholders dinâmicos (`#DATA#`, `#CALCULO#`, etc.) com os valores do JSON. Uma lógica otimizada gera um `BIND` para tickers e um `FILTER(REGEX)` para nomes de empresas.
-    *   O `PlaceholderService` traduz os placeholders estruturais (`P1`, `S1`, etc.) para seus URIs e variáveis da ontologia, usando o `placeholders.properties`.
-    *   A consulta final é montada com os prefixos e retornada ao Frontend.
-6.  **Execução e Formatação**: O Frontend envia a consulta gerada para o endpoint `/api/executar`. O backend executa a query no grafo Apache Jena e formata os resultados numéricos (moeda, percentual, etc.) para uma exibição amigável.
+    *   O `SPARQLProcessor` carrega o conteúdo do template (`.txt`).
+    *   Ele preenche os placeholders dinâmicos (`#DATA#`, `#CALCULO#`, etc.) e otimiza a busca (`BIND` para tickers, `FILTER` para nomes).
+    *   O `PlaceholderService` traduz os placeholders estruturais (`P1`, `S1`, etc.) para seus URIs da ontologia.
+    *   A consulta final é montada e retornada ao Frontend.
+6.  **Execução e Formatação**: O Frontend envia a consulta gerada para o endpoint `/api/executar`. O backend executa a query e formata os resultados numéricos para uma exibição amigável.
 
 ## 🚀 Como Executar o Projeto
 
@@ -81,7 +80,7 @@ O sistema opera com uma arquitetura desacoplada onde o serviço Java orquestra o
 <details>
 <summary><strong>Opção 1 (Recomendada): Execução com Docker</strong></summary>
 
-A maneira mais fácil e que melhor simula o ambiente de produção é usar o `Dockerfile` incluído no projeto.
+A maneira mais fácil e robusta de executar o projeto, simulando um ambiente de produção.
 
 1.  **Clone o repositório:**
     ```bash
@@ -98,19 +97,23 @@ A maneira mais fácil e que melhor simula o ambiente de produção é usar o `Do
 3.  **Execute o contêiner:**
     O script `start.sh` orquestra a inicialização dos dois processos (Java e Python).
     ```bash
-    # Mapeia a porta 8080 do seu computador para a porta 4000 do contêiner.
-    docker run --rm -p 8080:4000 -e PORT=4000 -it natural2sparql-app
+    docker run -d --restart always -p 4000:4000 --name natural2sparql-container -e PORT=4000 natural2sparql-app
     ```
-    *Nota: A variável de ambiente `-e PORT=4000` informa ao Spring Boot em qual porta rodar dentro do contêiner.*
+    Análise do comando:
+    - `-d`: Roda o contêiner em segundo plano.
+    - `--restart always`: Garante que o contêiner reinicie automaticamente com o servidor.
+    - `-p 4000:4000`: Mapeia a porta 4000 do seu computador (host) para a porta 4000 do contêiner.
+    - `--name natural2sparql-container`: Dá um nome fácil de gerenciar ao contêiner.
+    - `-e PORT=4000`: Define a porta em que o serviço Java irá rodar dentro do contêiner.
 
-4.  Acesse a aplicação em [**http://localhost:8080**](http://localhost:8080).
+4.  Acesse a aplicação em [**http://localhost:4000**](http://localhost:4000).
 
 </details>
 
 <details>
 <summary><strong>Opção 2: Execução Local (para Desenvolvimento)</strong></summary>
 
-Esta abordagem permite executar cada serviço separadamente, ideal para desenvolvimento e depuração.
+Ideal para desenvolvimento e depuração, executando cada serviço separadamente.
 
 1.  **Clone o repositório:**
     ```bash
@@ -130,11 +133,11 @@ Esta abordagem permite executar cada serviço separadamente, ideal para desenvol
         source venv/bin/activate  # macOS/Linux
         # venv\Scripts\activate    # Windows
         ```
-    *   Instale as dependências:
+    *   Instale as dependências (o arquivo está na raiz do projeto):
         ```bash
         pip install -r ../../../requirements.txt
         ```
-    *   Inicie o servidor Gunicorn:
+    *   Inicie o servidor de produção Gunicorn:
         ```bash
         gunicorn --bind 0.0.0.0:5000 nlp_controller:app
         ```
@@ -156,7 +159,6 @@ Esta abordagem permite executar cada serviço separadamente, ideal para desenvol
 
 > **Buscas Diretas:**
 > *   `Qual foi o preço de fechamento da ação da CSN em 18/06/2025?`
-> *   `Qual foi o preço de abertura da CBAV3 em 10/06/2025?`
 > *   `Qual o código de negociação da empresa Gerdau?`
 > *   `Quais são as ações do setor de energia elétrica?`
 >
