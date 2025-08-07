@@ -7,10 +7,11 @@
 [![Apache Jena](https://img.shields.io/badge/Apache-Jena-orange.svg?style=for-the-badge&logo=apache)](https://jena.apache.org/)
 [![Docker](https://img.shields.io/badge/Docker-gray.svg?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-Framework desenvolvido como parte da Dissertação apresentada à Faculdade de Filosofia, Ciências e Letras
-de Ribeirão Preto na área de Computação Aplicada, com o titulo: "Geração de consultas SPARQL a partir de linguagem natural", defendida na Universidade de São Paulo (USP). O sistema traduz perguntas em português para consultas **[SPARQL](https://www.w3.org/TR/sparql11-overview/)**, executando-as contra uma base de conhecimento RDF para obter respostas precisas sobre o mercado de ações brasileiro.
+Este framework é o resultado da dissertação de Mestrado em Computação Aplicada, apresentada na Faculdade de Filosofia, Ciências e Letras de Ribeirão Preto (FFCLRP) no Programa de Pós-Graduação em Computação Aplicada da Universidade de São Paulo (USP), sob o título: *Geração de consultas SPARQL a partir de linguagem natural*.
 
-Este projeto visa democratizar o acesso a dados semânticos, permitindo que usuários sem conhecimento técnico possam realizar consultas complexas de forma intuitiva. A instância principal da aplicação está hospedada em um servidor da FFCLRP-USP.
+O sistema traduz perguntas em português para consultas **[SPARQL](https://www.w3.org/TR/sparql11-overview/)**, executando-as contra uma base de conhecimento RDF para obter respostas precisas sobre o mercado de ações brasileiro.
+
+O principal objetivo do projeto é democratizar o acesso a dados semânticos, permitindo que usuários sem conhecimento técnico possam realizar consultas complexas de forma intuitiva.
 
 ---
 
@@ -34,7 +35,7 @@ Este projeto visa democratizar o acesso a dados semânticos, permitindo que usu�
 *   **⚙️ Arquitetura de Microserviços**: Combina a robustez do **Java/Spring Boot** para orquestração e manipulação do grafo RDF com a agilidade de um microserviço **Python/Flask** dedicado ao Processamento de Linguagem Natural (PLN).
 *   **🧠 Motor de PLN Híbrido**: Utiliza uma abordagem de duas etapas para máxima precisão:
     1.  **Seleção por Regras Heurísticas**: Identifica padrões em perguntas complexas (ex: "a ação do setor X com a maior métrica Y") para selecionar diretamente templates com subconsultas.
-    2.  **Seleção por Similaridade Semântica**: Para casos gerais, emprega um modelo de **TF-IDF** para calcular a similaridade de cosseno entre a pergunta do usuário e um conjunto de **perguntas de referência**, selecionando o template mais adequado.
+    2.  **Seleção por Similaridade Semântica**: Para casos gerais, emprega um modelo para calcular a similaridade de cosseno entre a pergunta do usuário e um conjunto de **perguntas de referência**, selecionando o template mais adequado.
 *   **🎯 Extração de Entidades Robusta**: O serviço de PLN utiliza uma pipeline de extração com ordem de prioridade para identificar datas, métricas, tickers, nomes de empresas, setores e índices, minimizando ambiguidades.
 *   **쿼 Consultas Analíticas Complexas**: O framework vai além de simples buscas, gerando consultas SPARQL que realizam **cálculos em tempo de execução** (`BIND`), aplicam **filtros dinâmicos** (`FILTER`) e executam **consultas aninhadas (subqueries)** para responder a perguntas analíticas complexas.
 *   **☁️ Pronto para a Nuvem**: Containerizado com **Docker** (usando build multi-stage para otimização) e configurado para deploy em qualquer ambiente que suporte contêineres, com um script de inicialização que gerencia os dois serviços (Java e Python).
