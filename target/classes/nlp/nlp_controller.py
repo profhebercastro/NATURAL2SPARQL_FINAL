@@ -191,33 +191,36 @@ def process_question():
     has_calculo = 'calculo' in entidades
     has_entidade_especifica = 'entidade_nome' in entidades
     has_setor_ou_indice = 'nome_setor' in entidades or 'lista_tickers' in entidades
-    # CORREÇÃO: A condição para ser uma consulta complexa é mais estrita.
-    # Só é complexa se a métrica de ranking for DIFERENTE da métrica de resultado.
+    # Condição para ser uma consulta complexa: ranking de uma métrica, resultado de outra
     is_complex_ranking = has_ranking and (has_calculo or 'valor_desejado' in entidades) and entidades.get('calculo') != entidades.get('ranking_calculation')
     
     # ==========================================================
-    # LÓGICA DE DECISÃO HEURÍSTICA REFINADA E REORDENADA
+    # LÓGICA DE DECISÃO HEURÍSTICA - VERSÃO CORRIGIDA
     # ==========================================================
-
-    # Regra 1: Prioridade Máxima para cálculo em entidade específica (não é ranking).
-    if has_calculo and has_entidade_especifica and not has_ranking:
-        template_id_final = 'Template_6A'
     
-    # Regra 2: Pergunta Complexa (Ranking com métrica de resultado diferente).
+    # Regra 1: Se a pergunta especifica UMA empresa/ticker E pede um CÁLCULO,
+    # a intenção é uma busca pontual, não um ranking. Deve usar Template_6A.
+    if has_calculo and has_entidade_especifica:
+        template_id_final = 'Template_6A'
+
+    # Regra 2: Se a pergunta pede um RANKING (maior/menor) E envolve DUAS métricas
+    # diferentes (uma para ranking, outra para resultado), é uma subconsulta complexa.
     elif is_complex_ranking:
         if has_setor_ou_indice:
             template_id_final = 'Template_8B'
         else:
             template_id_final = 'Template_8A'
     
-    # Regra 3: Pergunta de Ranking Simples (lista TOP N ou busca de 1).
+    # Regra 3: Se a pergunta pede um RANKING (maior/menor) de uma ÚNICA métrica,
+    # é um ranking simples.
     elif has_ranking:
         if has_setor_ou_indice:
             template_id_final = 'Template_7B'
         else:
             template_id_final = 'Template_7A'
-
-    # Regra 4: Outras perguntas com entidade específica (buscas pontuais de valor).
+            
+    # Regra 4: Se não for cálculo nem ranking, mas tiver uma entidade específica,
+    # é uma busca de valor simples.
     elif has_entidade_especifica:
         if entidades.get('tipo_entidade') == 'ticker':
             template_id_final = 'Template_1B'
@@ -227,12 +230,12 @@ def process_question():
             elif 'valor_desejado' in entidades: template_id_final = 'Template_1A'
             else: template_id_final = 'Template_2A'
 
-    # Regra 5: Outras perguntas sobre setor ou índice.
+    # Regra 5: Se for sobre um setor ou índice, mas sem ranking ou cálculo.
     elif has_setor_ou_indice:
         if 'valor_desejado' in entidades: template_id_final = 'Template_4A'
         else: template_id_final = 'Template_3A'
     
-    # Regra 6: Fallback final para similaridade de texto.
+    # Regra 6: Se nenhuma regra heurística funcionar, usa similaridade de texto.
     if not template_id_final:
         if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
             tfidf_usuario = vectorizer.transform([pergunta_lower])
