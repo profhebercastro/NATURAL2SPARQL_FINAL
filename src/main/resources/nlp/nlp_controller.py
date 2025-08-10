@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO ---
+# --- CARREGAMENTO DOS ARTEFATOS DE CONHECIMENTO ---
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def carregar_arquivo_json(nome_arquivo):
@@ -34,6 +34,7 @@ try:
 except FileNotFoundError:
     reference_templates = {}
 
+# Prepara os dados para o cálculo de similaridade
 ref_questions_flat = []
 ref_ids_flat = []
 for template_id, questions in reference_templates.items():
@@ -48,22 +49,27 @@ else:
     vectorizer = None
     tfidf_matrix_ref = None
 
-# --- FUNÇÕES AUXILIARES ---
+# --- FUNÇÕES AUXILIARES DE PROCESSAMENTO DE TEXTO ---
 
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def extrair_todas_entidades(pergunta_lower):
+    """
+    Pipeline de extração de entidades com ordem de prioridade para minimizar ambiguidades.
+    """
     entidades = {}
     texto_restante = ' ' + pergunta_lower + ' '
     
+    # 1. Extrai datas
     match_data = re.search(r'(\d{2})/(\d{2})/(\d{4})', texto_restante)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes}-{dia}"
         texto_restante = texto_restante.replace(match_data.group(0), " ")
 
+    # 2. Extrai limites numéricos (ex: "as 5 ações", "top 2")
     limit_match = re.search(r'\b(as|os)?\s*(\d+|cinco|tres|três|duas|dois)\s+(acoes|ações|papeis|papéis)\b', texto_restante, flags=re.IGNORECASE)
     if limit_match:
         num_str = limit_match.group(2)
@@ -78,6 +84,7 @@ def extrair_todas_entidades(pergunta_lower):
     else:
         entidades['limite'] = '1'
 
+    # 3. Extrai métricas de ranking e de resultado
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'maiores altas', 'maiores baixas', 'mais subiu percentualmente'],
         'variacao_abs_abs': ['menor variacao', 'menor variação', 'menor variacao absoluta'],
@@ -123,6 +130,7 @@ def extrair_todas_entidades(pergunta_lower):
     if 'calculo' in entidades and 'ranking_calculation' not in entidades:
         entidades['ranking_calculation'] = entidades['calculo']
 
+    # 4. Extrai entidades principais (Ticker > Índice > Setor > Nome de Empresa)
     entidade_principal_encontrada = False
     
     ticker_match = re.search(r'\b([A-Z]{4}[0-9]{1,2})\b', texto_restante.upper())
@@ -152,6 +160,7 @@ def extrair_todas_entidades(pergunta_lower):
                 entidades['tipo_entidade'] = 'nome'
                 break
 
+    # 5. Extrai filtros secundários (Tipo de ação, Ordem)
     pergunta_sem_acento_original = remover_acentos(pergunta_lower)
     if "ordinaria" in pergunta_sem_acento_original: entidades["regex_pattern"] = "3$"
     elif "preferencial" in pergunta_sem_acento_original: entidades["regex_pattern"] = "[456]$"
@@ -162,7 +171,7 @@ def extrair_todas_entidades(pergunta_lower):
 
     return entidades
 
-# --- API FLASK  ---
+# --- API FLASK ---
 app = Flask(__name__)
 @app.route('/process_question', methods=['POST'])
 def process_question():
@@ -182,26 +191,26 @@ def process_question():
     has_calculo = 'calculo' in entidades
     has_entidade_especifica = 'entidade_nome' in entidades
     has_setor_ou_indice = 'nome_setor' in entidades or 'lista_tickers' in entidades
-    is_complex_ranking = has_ranking and (has_calculo or 'valor_desejado' in entidades)
-
+    # CORREÇÃO: A condição para ser uma consulta complexa é mais estrita.
+    # Só é complexa se a métrica de ranking for DIFERENTE da métrica de resultado.
+    is_complex_ranking = has_ranking and (has_calculo or 'valor_desejado' in entidades) and entidades.get('calculo') != entidades.get('ranking_calculation')
+    
     # ==========================================================
     # LÓGICA DE DECISÃO HEURÍSTICA REFINADA E REORDENADA
     # ==========================================================
 
-    # Regra 1: Prioridade Máxima para cálculo em entidade específica.
-
-    if has_calculo and has_entidade_especifica:
+    # Regra 1: Prioridade Máxima para cálculo em entidade específica (não é ranking).
+    if has_calculo and has_entidade_especifica and not has_ranking:
         template_id_final = 'Template_6A'
     
     # Regra 2: Pergunta Complexa (Ranking com métrica de resultado diferente).
-   
-    elif is_complex_ranking and has_setor_ou_indice:
-        template_id_final = 'Template_8B'
     elif is_complex_ranking:
-        template_id_final = 'Template_8A'
+        if has_setor_ou_indice:
+            template_id_final = 'Template_8B'
+        else:
+            template_id_final = 'Template_8A'
     
-    # Regra 3: Pergunta de Ranking Simples (lista TOP N ou busca de 1 no ranking geral).
-  
+    # Regra 3: Pergunta de Ranking Simples (lista TOP N ou busca de 1).
     elif has_ranking:
         if has_setor_ou_indice:
             template_id_final = 'Template_7B'
@@ -209,7 +218,6 @@ def process_question():
             template_id_final = 'Template_7A'
 
     # Regra 4: Outras perguntas com entidade específica (buscas pontuais de valor).
-  
     elif has_entidade_especifica:
         if entidades.get('tipo_entidade') == 'ticker':
             template_id_final = 'Template_1B'
@@ -220,13 +228,11 @@ def process_question():
             else: template_id_final = 'Template_2A'
 
     # Regra 5: Outras perguntas sobre setor ou índice.
-
     elif has_setor_ou_indice:
         if 'valor_desejado' in entidades: template_id_final = 'Template_4A'
         else: template_id_final = 'Template_3A'
     
     # Regra 6: Fallback final para similaridade de texto.
-    
     if not template_id_final:
         if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
             tfidf_usuario = vectorizer.transform([pergunta_lower])

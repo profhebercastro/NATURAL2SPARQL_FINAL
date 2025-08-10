@@ -39,5 +39,5 @@ Template_7B;Qual ação do setor de financeiro que teve a maior baixa percentual
 Template_7B;Qual ação do setor de consumo não cíclico que a menor variação absoluta no dia 10/06/2025?
 
 # --- [GRUPO 9] Buscas Complexas com Subconsulta ---
-Template_8A;Qual foi a variação intradiária absoluta da ação do IBovespa com o maior percentual de alta no pregão de 30/06/2025?
+Template_8A;Qual foi a variação intradiária absoluta do índice IBOV com o maior percentual de alta no pregão de 30/06/2025?
 Template_8B;Qual foi o intervalo intradiário percentual da ação com o maior percentual de baixa entre as ações do IMAT no pregão de 30/06/2025?

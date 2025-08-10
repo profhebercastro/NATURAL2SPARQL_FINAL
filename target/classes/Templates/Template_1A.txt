@@ -2,10 +2,14 @@
 # Finalidade: Busca um valor pontual de uma empresa por NOME em uma data.
 # Exemplo: "Qual o preço de fechamento da Petrobras em 10/06/2025?"
 # ----------------------------------------------------------
-SELECT ?valor WHERE {
+SELECT ?ticker ?valor WHERE {
+    
     ?S1 P7 ?label .
     FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
     ?S1 P1 ?SO1 .
+   
+    ?SO1 P8 ?ticker .
+
     ?SO1 P3 ?SO2 .
     ?SO2 P5 ?S2 .
     ?S2 P6 "#DATA#"^^xsd:date .
