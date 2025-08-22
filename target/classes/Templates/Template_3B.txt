@@ -1,0 +1,9 @@
+# --- Template_3B.txt ---
+# Finalidade: Lista todos os NOMES de empresas de um determinado SETOR.
+# Exemplo: "Quais são as empresas do setor de Saúde?"
+# ----------------------------------------------------------
+SELECT DISTINCT ?nomeEmpresa WHERE {
+  #FILTER_BLOCK_SETOR#
+  ?S1 P7 ?nomeEmpresa .
+}
+ORDER BY ?nomeEmpresa

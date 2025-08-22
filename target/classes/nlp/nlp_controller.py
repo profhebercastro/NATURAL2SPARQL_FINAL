@@ -191,51 +191,53 @@ def process_question():
     has_calculo = 'calculo' in entidades
     has_entidade_especifica = 'entidade_nome' in entidades
     has_setor_ou_indice = 'nome_setor' in entidades or 'lista_tickers' in entidades
+    has_valor_desejado = 'valor_desejado' in entidades
+    
     # Condição para ser uma consulta complexa: ranking de uma métrica, resultado de outra
-    is_complex_ranking = has_ranking and (has_calculo or 'valor_desejado' in entidades) and entidades.get('calculo') != entidades.get('ranking_calculation')
+    is_complex_ranking = has_ranking and has_valor_desejado
     
     # ==========================================================
-    # LÓGICA DE DECISÃO HEURÍSTICA - VERSÃO CORRIGIDA
+    # LÓGICA DE DECISÃO HEURÍSTICA - VERSÃO FINAL ATUALIZADA
     # ==========================================================
     
-    # Regra 1: Se a pergunta especifica UMA empresa/ticker E pede um CÁLCULO,
-    # a intenção é uma busca pontual, não um ranking. Deve usar Template_6A.
+    # Regra 1: Se for um CÁLCULO DERIVADO em UMA entidade específica.
     if has_calculo and has_entidade_especifica:
-        template_id_final = 'Template_6A'
+        template_id_final = 'Template_6'
 
-    # Regra 2: Se a pergunta pede um RANKING (maior/menor) E envolve DUAS métricas
-    # diferentes (uma para ranking, outra para resultado), é uma subconsulta complexa.
+    # Regra 2: Se for um RANKING COMPLEXO (ranking de métrica A, resultado de métrica B).
     elif is_complex_ranking:
         if has_setor_ou_indice:
             template_id_final = 'Template_8B'
         else:
             template_id_final = 'Template_8A'
     
-    # Regra 3: Se a pergunta pede um RANKING (maior/menor) de uma ÚNICA métrica,
-    # é um ranking simples.
+    # Regra 3: Se for um RANKING SIMPLES (ranking e resultado são a mesma métrica).
     elif has_ranking:
         if has_setor_ou_indice:
             template_id_final = 'Template_7B'
         else:
             template_id_final = 'Template_7A'
             
-    # Regra 4: Se não for cálculo nem ranking, mas tiver uma entidade específica,
-    # é uma busca de valor simples.
+    # Regra 4: Se não for cálculo nem ranking, mas tiver uma entidade específica.
     elif has_entidade_especifica:
         if entidades.get('tipo_entidade') == 'ticker':
             template_id_final = 'Template_1B'
         else: # tipo_entidade == 'nome'
-            if 'regex_pattern' in entidades: template_id_final = 'Template_5A'
-            elif 'total' in pergunta_lower or 'some' in pergunta_lower: template_id_final = 'Template_4A'
+            if 'regex_pattern' in entidades: template_id_final = 'Template_5'
+            elif 'total' in pergunta_lower or 'some' in pergunta_lower: template_id_final = 'Template_4'
             elif 'valor_desejado' in entidades: template_id_final = 'Template_1A'
-            else: template_id_final = 'Template_2A'
+            else: template_id_final = 'Template_2'
 
     # Regra 5: Se for sobre um setor ou índice, mas sem ranking ou cálculo.
     elif has_setor_ou_indice:
-        if 'valor_desejado' in entidades: template_id_final = 'Template_4A'
-        else: template_id_final = 'Template_3A'
+        if 'valor_desejado' in entidades:
+            template_id_final = 'Template_4'
+        elif 'empresas' in pergunta_lower:
+            template_id_final = 'Template_3B'
+        else:
+            template_id_final = 'Template_3A'
     
-    # Regra 6: Se nenhuma regra heurística funcionar, usa similaridade de texto.
+    # Regra 6 (Fallback): Se nenhuma regra heurística funcionar, usa similaridade de texto.
     if not template_id_final:
         if tfidf_matrix_ref is not None and len(ref_questions_flat) > 0:
             tfidf_usuario = vectorizer.transform([pergunta_lower])
@@ -249,6 +251,10 @@ def process_question():
 
     if not template_id_final:
         return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
+    
+    # Garante que a entidade CALCULO seja passada para o Java nos casos de ranking simples.
+    if template_id_final in ['Template_7A', 'Template_7B'] and 'ranking_calculation' in entidades and 'calculo' not in entidades:
+        entidades['calculo'] = entidades['ranking_calculation']
 
     entidades_maiusculas = {k.upper(): v for k, v in entidades.items()}
     return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})

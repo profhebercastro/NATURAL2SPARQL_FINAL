@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +50,7 @@ public class SPARQLProcessor {
             String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
             if (templateId == null || templateId.isEmpty()) {
-                 throw new IOException("NLP não retornou um templateId.");
+                throw new IOException("NLP não retornou um templateId.");
             }
             String templateContent = loadTemplate(templateId);
             String finalQuery = buildQuery(templateContent, entitiesNode);
@@ -69,22 +70,15 @@ public class SPARQLProcessor {
         }
     }
 
-    /**
-     * MÉTODO ATUALIZADO COM AS CORREÇÕES
-     */
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
 
-        // Lógica inicial de ?valor e ?ANS permanece a mesma
         if (entities.has("VALOR_DESEJADO") && (query.contains("?valor") || query.contains("?ANS"))) {
             String metricaKey = entities.get("VALOR_DESEJADO").asText();
             String varName = toCamelCase(metricaKey);
             query = query.replace("?valor", "?" + varName);
             query = query.replace("?ANS", "?" + varName);
         }
-
-        // --- INÍCIO DA CORREÇÃO ---
-        // Prepara TODOS os possíveis blocos de filtro primeiro
 
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
@@ -121,21 +115,15 @@ public class SPARQLProcessor {
                     uris.add("b3:" + ticker.asText());
                 }
                 String inClause = String.join(" ", uris);
-                // Gera um filtro que busca por múltiplos tickers
                 tickersFilter = "VALUES ?SO1 { " + inClause + " }";
             }
         }
 
-        // DECIDE QUAL FILTRO USAR COM BASE NA PRIORIDADE E APLICA
-
-        // Para #FILTER_BLOCK_SETOR#, a prioridade é a lista de tickers, se existir.
         String setorOuIndiceFilter = !tickersFilter.isEmpty() ? tickersFilter : setorFilter;
         query = query.replace("#FILTER_BLOCK_SETOR#", setorOuIndiceFilter);
 
-        // Para #FILTER_BLOCK_ENTIDADE#, a lógica permanece a mesma.
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
 
-        // Para o #FILTER_BLOCK# genérico, a prioridade é: Lista de Tickers > Setor > Entidade
         if (query.contains("#FILTER_BLOCK#")) {
             String filterBlock = "";
             if (!tickersFilter.isEmpty()) {
@@ -148,61 +136,82 @@ public class SPARQLProcessor {
             query = query.replace("#FILTER_BLOCK#", filterBlock);
         }
 
+        // --- INÍCIO DA NOVA LÓGICA DE SUBSTITUIÇÃO REESTRUTURADA ---
+
+        // 1. Substitui placeholders de cálculo primeiro, pois são mais complexos.
+        if (query.contains("#CALCULO#")) {
+            String calculoSparql;
+            // Caso de cálculo derivado explícito (Template 6)
+            if (entities.has("CALCULO")) {
+                String calculoKey = entities.get("CALCULO").asText();
+                switch (calculoKey) {
+                    case "variacao_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                    case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
+                    case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
+                    case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
+                    case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
+                    default: calculoSparql = "?undefinedCalculation";
+                }
+            }
+            // Caso de consulta complexa onde o resultado é uma variável existente (Templates 8A, 8B)
+            else if (entities.has("VALOR_DESEJADO")) {
+                String metricaKey = entities.get("VALOR_DESEJADO").asText();
+                switch (metricaKey) {
+                    case "metrica.volume": calculoSparql = "?volumeNegociacao"; break;
+                    case "metrica.quantidade": calculoSparql = "?totalNegocios"; break;
+                    case "metrica.preco_medio": calculoSparql = "?precoMedio"; break;
+                    case "metrica.preco_maximo": calculoSparql = "?maximo"; break;
+                    case "metrica.preco_minimo": calculoSparql = "?minimo"; break;
+                    case "metrica.preco_fechamento": calculoSparql = "?fechamento"; break;
+                    case "metrica.preco_abertura": calculoSparql = "?abertura"; break;
+                    default: calculoSparql = "?undefinedValue";
+                }
+            } else {
+                calculoSparql = "?fallbackCalculation"; // Fallback, não deveria acontecer
+            }
+            query = query.replace("#CALCULO#", calculoSparql);
+        }
+
+        if (query.contains("#RANKING_CALCULATION#") && entities.has("RANKING_CALCULATION")) {
+            String rankingKey = entities.get("RANKING_CALCULATION").asText();
+            String rankingCalculoSql;
+            switch (rankingKey) {
+                case "variacao_abs": rankingCalculoSql = "ABS(?fechamento_rank - ?abertura_rank)"; break;
+                case "variacao_perc": rankingCalculoSql = "((?fechamento_rank - ?abertura_rank) / ?abertura_rank) * 100"; break;
+                case "intervalo_abs": rankingCalculoSql = "ABS(?maximo_rank - ?minimo_rank)"; break;
+                case "intervalo_perc": rankingCalculoSql = "((?maximo_rank - ?minimo_rank) / ?abertura_rank) * 100"; break;
+                case "variacao_abs_abs": rankingCalculoSql = "ABS(?fechamento_rank - ?abertura_rank)"; break;
+                default: rankingCalculoSql = "0";
+            }
+            query = query.replace("#RANKING_CALCULATION#", rankingCalculoSql);
+        }
+
+        // 2. Substitui outros placeholders dinâmicos
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
             String value = field.getValue().asText();
 
+            // Os placeholders de cálculo já foram tratados, então vamos ignorá-los aqui.
+            if (placeholder.equals("#CALCULO#") || placeholder.equals("#RANKING_CALCULATION#")) {
+                continue;
+            }
+
             if (placeholder.equals("#VALOR_DESEJADO#")) {
                 String predicadoRDF = placeholderService.getPlaceholderValue(value);
                 if (predicadoRDF != null) query = query.replace(placeholder, predicadoRDF);
-
-            } else if (placeholder.equals("#CALCULO#")) {
-                String calculoSparql;
-                if (entities.has("VALOR_DESEJADO")) {
-                    String metricaKey = entities.get("VALOR_DESEJADO").asText();
-                    String predicado = placeholderService.getPlaceholderValue(metricaKey);
-                    if (predicado != null) {
-                        String varName = toCamelCase(predicado);
-                        calculoSparql = "?" + varName;
-                    } else {
-                        calculoSparql = "?undefinedValue";
-                    }
-                } else {
-                    switch (value) {
-                        case "variacao_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                        case "variacao_perc": calculoSparql = "((?fechamento - ?abertura) / ?abertura) * 100"; break;
-                        case "intervalo_abs": calculoSparql = "ABS(?maximo - ?minimo)"; break;
-                        case "intervalo_perc": calculoSparql = "((?maximo - ?minimo) / ?abertura) * 100"; break;
-                        case "variacao_abs_abs": calculoSparql = "ABS(?fechamento - ?abertura)"; break;
-                        default: calculoSparql = "?undefinedCalculation";
-                    }
-                }
-                query = query.replace(placeholder, calculoSparql);
-
-            } else if (placeholder.equals("#RANKING_CALCULATION#")) {
-                String rankingCalculoSql;
-                 switch (value) {
-                    case "variacao_abs": rankingCalculoSql = "ABS(?fechamento_rank - ?abertura_rank)"; break;
-                    case "variacao_perc": rankingCalculoSql = "((?fechamento_rank - ?abertura_rank) / ?abertura_rank) * 100"; break;
-                    case "intervalo_abs": rankingCalculoSql = "ABS(?maximo_rank - ?minimo_rank)"; break;
-                    case "intervalo_perc": rankingCalculoSql = "((?maximo_rank - ?minimo_rank) / ?abertura_rank) * 100"; break;
-                    case "variacao_abs_abs": rankingCalculoSql = "ABS(?fechamento_rank - ?abertura_rank)"; break;
-                    default: rankingCalculoSql = "0";
-                }
-                query = query.replace(placeholder, rankingCalculoSql);
-
             } else if (placeholder.equals("#REGEX_PATTERN#")) {
                 String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + value + "\"))";
                 query = query.replace("#REGEX_FILTER#", regexFilter);
-
             } else {
+                // Substitui placeholders simples como #DATA#, #LIMITE#, #ORDEM#
                 if (!placeholder.matches("#FILTER_BLOCK.*#")) {
                     query = query.replace(placeholder, value);
                 }
             }
         }
+        // --- FIM DA NOVA LÓGICA DE SUBSTITUIÇÃO ---
 
         query = query.replaceAll("#[A-Z_]+#", "");
         query = placeholderService.replaceGenericPlaceholders(query);
@@ -212,7 +221,9 @@ public class SPARQLProcessor {
     }
 
     private String toCamelCase(String text) {
-        if (text == null || text.isEmpty()) { return ""; }
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
         String cleanText = text.replaceAll("^(metrica\\.|b3:)", "");
 
         StringBuilder camelCase = new StringBuilder();
@@ -240,22 +251,28 @@ public class SPARQLProcessor {
 
         return camelCase.toString();
     }
-    
+
     private String callNlpService(String query) throws IOException, InterruptedException {
         String jsonBody = "{\"question\": \"" + query.replace("\"", "\\\"") + "\"}";
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(NLP_SERVICE_URL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonBody)).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) { throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body()); }
+        if (response.statusCode() != 200) {
+            throw new IOException("Serviço NLP falhou com status " + response.statusCode() + " e corpo: " + response.body());
+        }
         return response.body();
     }
 
     private String loadTemplate(String templateName) {
         String path = "/Templates/" + templateName + ".txt";
         try (InputStream is = SPARQLProcessor.class.getResourceAsStream(path)) {
-            if (is == null) { throw new IOException("Arquivo de template não encontrado: " + path); }
+            if (is == null) {
+                throw new IOException("Arquivo de template não encontrado: " + path);
+            }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 return reader.lines().collect(Collectors.joining(System.lineSeparator()));
             }
-        } catch (IOException e) { throw new RuntimeException("Falha ao carregar template: " + path, e); }
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao carregar template: " + path, e);
+        }
     }
 }

@@ -12,20 +12,21 @@ Template_1A;Qual foi o preço mínimo da ação da Vale em 26/06/2025?
 Template_1B;Qual foi o preço de abertura da CBAV3 em 10/06/2025?
 
 # --- [GRUPO 3] Buscas de Informações Descritivas ---
-Template_2A;Qual o código de negociação da ação da Gerdau?
+Template_2;Qual o código de negociação da ação da Gerdau?
 Template_3A;Quais são as ações do setor de energia elétrica?
+Template_3B;Quais são as empresas do setor de saúde?
 
 # --- [GRUPO 4] Buscas com Agregação ---
-Template_4A;Qual foi o volume negociado nas ações do setor financeiro em 12/06/2025?
-Template_4A;Qual foi o volume negociado nas ações de bancos em 13/06/2025?
-Template_4A;Qual foi a quantidade de ações do Itau negociadas no pregão de 23/06/2025?
+Template_4;Qual foi o volume negociado nas ações do setor financeiro em 12/06/2025?
+Template_4;Qual foi o volume negociado nas ações de bancos em 13/06/2025?
+Template_4;Qual foi a quantidade de ações do Itau negociadas no pregão de 23/06/2025?
 
 # --- [GRUPO 5] Buscas com Filtro por Tipo de Ação ---
-Template_5A;Qual foi o preço mínimo da ação preferencial do Itau em 17/06/2025?
-Template_5A;Qual foi o preço máximo da ação ordinária da Gerdau em 17/06/2025?
+Template_5;Qual foi o preço mínimo da ação preferencial do Itau em 17/06/2025?
+Template_5;Qual foi o preço máximo da ação ordinária da Gerdau em 17/06/2025?
 
 # --- [GRUPO 6] Buscas com Cálculo Simples ---
-Template_6A;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 30/06/2025?
+Template_6;Qual foi a variação intradiária absoluta da ação da CSN no pregão de 30/06/2025?
 
 # --- [GRUPO 7] Buscas com Ranking Geral (TOP N) ---
 Template_7A;Qual a ação com o maior percentual de alta no pregão de 10/06/2025?
