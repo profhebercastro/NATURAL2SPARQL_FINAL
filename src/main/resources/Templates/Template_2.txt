@@ -1,4 +1,4 @@
-# --- Template_2A.txt ---
+# --- Template_2.txt ---
 # Finalidade: Busca o(s) ticker(s) de uma empresa pelo NOME.
 # Exemplo: "Qual o código de negociação da Vale?"
 # ----------------------------------------------------------
