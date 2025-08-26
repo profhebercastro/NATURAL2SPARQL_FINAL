@@ -4,8 +4,8 @@ import com.example.Program.model.ExecuteQueryRequest;
 import com.example.Program.model.PerguntaRequest;
 import com.example.Program.model.ProcessamentoDetalhadoResposta;
 import com.example.Program.ontology.Ontology;
-import com.example.Program.service.ResultFormatterService; // Assumindo que você tem um serviço de formatação
 import com.example.Program.service.SPARQLProcessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.jena.rdf.model.Model;
 import org.slf4j.Logger;
@@ -14,13 +14,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.io.StringWriter;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @SpringBootApplication
@@ -30,10 +35,14 @@ public class Main {
     
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    @Autowired private SPARQLProcessor sparqlProcessor;
-    @Autowired private Ontology ontology;
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private ResultFormatterService resultFormatter; // Injetando o formatador
+    @Autowired
+    private SPARQLProcessor sparqlProcessor;
+
+    @Autowired
+    private Ontology ontology;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
@@ -42,42 +51,121 @@ public class Main {
     @PostMapping("/processar")
     public ResponseEntity<ProcessamentoDetalhadoResposta> gerarConsulta(@RequestBody PerguntaRequest request) {
         String pergunta = request.getPergunta();
-        logger.info("Recebida requisição para GERAR consulta para: '{}'", pergunta);
-        ProcessamentoDetalhadoResposta resposta = sparqlProcessor.generateSparqlQuery(pergunta);
-        if (resposta.getErro() != null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resposta);
+        if (pergunta == null || pergunta.trim().isEmpty()) {
+            ProcessamentoDetalhadoResposta erro = new ProcessamentoDetalhadoResposta();
+            erro.setErro("A pergunta não pode estar vazia.");
+            return ResponseEntity.badRequest().body(erro);
         }
-        return ResponseEntity.ok(resposta);
+        logger.info("Recebida requisição para GERAR consulta para: '{}'", pergunta);
+        try {
+            ProcessamentoDetalhadoResposta resposta = sparqlProcessor.generateSparqlQuery(pergunta);
+            if (resposta.getErro() != null) {
+                return ResponseEntity.status(500).body(resposta);
+            }
+            return ResponseEntity.ok(resposta);
+        } catch (Exception e) {
+            logger.error("Erro no endpoint /processar: {}", e.getMessage(), e);
+            ProcessamentoDetalhadoResposta erro = new ProcessamentoDetalhadoResposta();
+            erro.setErro("Erro interno ao gerar a consulta: " + e.getMessage());
+            return ResponseEntity.status(500).body(erro);
+        }
     }
 
     @PostMapping("/executar")
-    public ResponseEntity<?> executarQuery(@RequestBody ExecuteQueryRequest request) {
+    public ResponseEntity<String> executarQuery(@RequestBody ExecuteQueryRequest request) {
         String sparqlQuery = request.getQuery();
-        String queryType = request.getQueryType();
-        
-        logger.info("Executando query. Tipo: {}.", queryType);
-        
+        String tipoMetrica = request.getTipoMetrica();
+
+        if (sparqlQuery == null || sparqlQuery.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("{\"error\": \"A consulta SPARQL não pode estar vazia.\"}");
+        }
+        logger.info("Executando query. Tipo de métrica recebido: {}", tipoMetrica);
         try {
-            if ("ASK".equalsIgnoreCase(queryType)) {
-                boolean result = ontology.executeAskQuery(sparqlQuery);
-                // Retorna um objeto JSON simples para o resultado booleano
-                return ResponseEntity.ok(Map.of("result", result));
-            } else {
-                // Lógica de execução e formatação para SELECT
-                List<Map<String, String>> bindings = ontology.executeSelectQuery(sparqlQuery);
-                logger.info("Consulta SELECT retornou {} resultados.", bindings.size());
-                String resultadoJson = resultFormatter.formatSelectResults(bindings, request.getTipoMetrica());
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultadoJson);
+            List<Map<String, String>> bindings = ontology.executeQuery(sparqlQuery);
+            Map<String, Object> head = new HashMap<>();
+            List<String> vars = bindings.isEmpty() ? Collections.emptyList() : new ArrayList<>(bindings.get(0).keySet());
+            head.put("vars", vars);
+
+            Map<String, Object> results = new HashMap<>();
+            
+            List<String> priceVarNames = List.of("precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio");
+            List<String> largeNumberVarNames = List.of("volume", "volumeIndividual", "quantidade", "totalNegocios");
+            
+            NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
+            NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
+            DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(new Locale("pt", "BR")));
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setGroupingSeparator('.');
+            DecimalFormat volumeFormatter = new DecimalFormat("'R$ ' #,##0", symbols);
+
+            List<Map<String, Object>> formattedBindings = new ArrayList<>();
+            for(Map<String, String> row : bindings) {
+                Map<String, Object> newRow = new HashMap<>();
+                for(Map.Entry<String, String> entry : row.entrySet()) {
+                    Map<String, String> valueMap = new HashMap<>();
+                    valueMap.put("type", "literal");
+
+                    String currentValue = entry.getValue();
+                    String varName = entry.getKey();
+                    String formattedValue = currentValue; 
+
+                    try {
+                        double numericValue = Double.parseDouble(currentValue);
+
+                        if (tipoMetrica != null && (varName.equals("resultadoCalculado") || varName.equals("resultadoFinal"))) {
+                            if (tipoMetrica.contains("perc")) { 
+                 
+                                formattedValue = percentageFormatter.format(numericValue);
+                            } else { 
+                                formattedValue = currencyFormatter.format(numericValue);
+                            }
+                        } else if (priceVarNames.contains(varName)) {
+                            formattedValue = currencyFormatter.format(numericValue);
+                        } else if (largeNumberVarNames.contains(varName)) {
+                            if (varName.toLowerCase().contains("volume")) {
+                                formattedValue = volumeFormatter.format(numericValue);
+                            } else {
+                                formattedValue = integerFormatter.format(numericValue);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                      
+                    }
+                    
+                    valueMap.put("value", formattedValue);
+                    newRow.put(entry.getKey(), valueMap);
+                }
+                formattedBindings.add(newRow);
             }
+            results.put("bindings", formattedBindings);
+            Map<String, Object> finalJsonResponse = new HashMap<>();
+            finalJsonResponse.put("head", head);
+            finalJsonResponse.put("results", results);
+            String resultadoJson = objectMapper.writeValueAsString(finalJsonResponse);
+            return ResponseEntity.ok(resultadoJson);
         } catch (Exception e) {
             logger.error("Erro no endpoint /executar: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Erro interno ao executar a consulta: " + e.getMessage()));
+            return ResponseEntity.status(500).body("{\"error\": \"Erro interno ao executar a consulta: " + e.getMessage() + "\"}");
         }
     }
 
     @GetMapping("/debug/get-inferred-ontology")
     public ResponseEntity<String> getInferredOntology() {
-        // ... (seu método de debug permanece o mesmo) ...
+        logger.info("Recebida requisição de DEBUG para obter a ontologia inferida.");
+        Model inferredModel = ontology.getInferredModel();
+        if (inferredModel == null) {
+            logger.warn("Tentativa de acessar modelo inferido, mas ele é nulo.");
+            return ResponseEntity.status(500).body("Erro: O modelo inferido ainda não foi gerado ou está nulo.");
+        }
+        StringWriter out = new StringWriter();
+        inferredModel.write(out, "TURTLE");
+        String ontologyAsString = out.toString();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ontology_inferred_from_render.ttl");
+        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE);
+        logger.info("Enviando ontologia inferida como anexo para download.");
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(ontologyAsString);
     }
 }

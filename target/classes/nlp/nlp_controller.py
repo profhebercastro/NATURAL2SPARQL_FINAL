@@ -17,12 +17,10 @@ def carregar_arquivo_json(nome_arquivo):
         print(f"AVISO: Arquivo {nome_arquivo} não encontrado em {caminho_completo}.")
         return {}
 
-# Carrega dicionários de entidades
 empresa_map = carregar_arquivo_json('Named_entity_dictionary.json')
 setor_map = carregar_arquivo_json('sector_map.json')
 index_map = carregar_arquivo_json('index_map.json')
 
-# Carrega as perguntas de referência
 reference_templates = {}
 try:
     with open(os.path.join(SCRIPT_DIR, 'Reference_questions.txt'), 'r', encoding='utf-8') as f:
@@ -37,7 +35,6 @@ except FileNotFoundError:
     print("AVISO: Arquivo Reference_questions.txt não encontrado.")
     reference_templates = {}
 
-# Prepara os dados para o cálculo de similaridade por texto
 ref_questions_flat = [q for questions in reference_templates.values() for q in questions]
 ref_ids_flat = [tid for tid, questions in reference_templates.items() for _ in questions]
 
@@ -54,9 +51,6 @@ def remover_acentos(texto):
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def extrair_todas_entidades(pergunta_lower):
-    """
-    Pipeline de extração de entidades com ordem de prioridade para minimizar ambiguidades.
-    """
     entidades = {}
     texto_restante = ' ' + pergunta_lower + ' '
     
@@ -114,7 +108,7 @@ def extrair_todas_entidades(pergunta_lower):
     if 'ranking_calculation' in entidades and 'calculo' not in entidades and 'valor_desejado' not in entidades:
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
 
-    # 4. Entidades principais
+    # 4. Entidades principais (ordem de prioridade ajustada)
     ticker_match = re.search(r'\b([A-Z]{4}[0-9]{1,2})\b', texto_restante.upper())
     if ticker_match:
         entidades['entidade_nome'] = ticker_match.group(1); entidades['tipo_entidade'] = 'ticker'
@@ -122,13 +116,13 @@ def extrair_todas_entidades(pergunta_lower):
     for key in sorted(index_map.keys(), key=len, reverse=True):
         if re.search(r'\b(do|da|de|entre as|do indice|acoes do)?\s*' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
             entidades['nome_indice'] = key; break
-
-    # A extração de setor e empresa pode coexistir, especialmente para perguntas ASK
+            
+    # Extrai setor e empresa separadamente para permitir co-ocorrência
     for key in sorted(setor_map.keys(), key=len, reverse=True):
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_restante)):
             entidades['nome_setor'] = setor_map[key]; break
             
-    if not 'entidade_nome' in entidades:
+    if not 'entidade_nome' in entidades: # Só busca por nome de empresa se um ticker não foi encontrado
         for key in sorted(empresa_map.keys(), key=len, reverse=True):
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
                 entidades['entidade_nome'] = key; entidades['tipo_entidade'] = 'nome'; break
@@ -165,9 +159,11 @@ def process_question():
     is_complex_ranking = has_ranking and has_valor_desejado and entidades.get('valor_desejado') != 'metrica.' + entidades.get('ranking_calculation')
     
     # ==========================================================
-    # LÓGICA DE DECISÃO HEURÍSTICA ATUALIZADA E FINAL
+    # LÓGICA DE DECISÃO HEURÍSTICA FINAL
     # ==========================================================
     
+    pergunta_sem_acento = remover_acentos(pergunta_lower)
+
     # Regra 0: Perguntas de Verificação (ASK) - Template 3D
     is_ask_question = (pergunta_lower.strip().startswith(('a ', 'o '))) and has_entidade_nome and has_setor
     if is_ask_question:
@@ -183,26 +179,28 @@ def process_question():
             
     # Regra 3: Outros tipos de busca
     else:
-        if has_setor or has_indice:
+        # Intenção de busca de setor é priorizada aqui
+        if ('setor de atuacao' in pergunta_sem_acento or 'atua no setor' in pergunta_sem_acento) and has_entidade_nome and not has_setor:
+            template_id_final = 'Template_3C'
+        
+        elif has_setor or has_indice:
             if 'empresas' in pergunta_lower: template_id_final = 'Template_3B'
-            elif 'valor_desejado' in entidades: template_id_final = 'Template_4'
+            elif has_valor_desejado: template_id_final = 'Template_4'
             else: template_id_final = 'Template_3A'
         
         elif has_entidade_nome:
             if has_calculo: template_id_final = 'Template_1D'
-            elif 'setor de atuacao' in pergunta_lower or 'atua no setor' in pergunta_lower:
-                template_id_final = 'Template_3C'
-            elif 'regex_pattern' in entidades: template_id_final = 'Template_1C' # Filtro de tipo de ação
+            elif 'regex_pattern' in entidades: template_id_final = 'Template_1C'
             elif has_valor_desejado:
                 template_id_final = 'Template_1B' if entidades.get('tipo_entidade') == 'ticker' else 'Template_1A'
-            else: # Busca de informação descritiva (ticker)
+            else:
                 template_id_final = 'Template_2'
     
     # Regra 4 (Fallback): Similaridade de texto
     if not template_id_final and vectorizer:
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
-        if similaridades.any():
+        if similaridades.any() and similaridades.max() > 0.1: # Limiar de confiança
             template_id_final = ref_ids_flat[similaridades.argmax()]
 
     if not template_id_final: return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
@@ -212,7 +210,4 @@ def process_question():
         entidades['calculo'] = entidades['ranking_calculation']
 
     entidades_maiusculas = {k.upper(): v for k, v in entidades.items()}
-    return jsonify({"templateId": template_id_final, "entities": entidades_maiusculas})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    return jsonify({"templateId": template_
