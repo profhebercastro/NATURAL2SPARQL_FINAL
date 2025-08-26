@@ -1,4 +1,4 @@
-# --- Template_7A.txt ---
+# --- Template_5A.txt ---
 # Finalidade: Ranking geral de ações por uma métrica calculada (TOP N).
 # Exemplo: "Quais as cinco ações de maior alta percentual em 10/06/2025?"
 # ----------------------------------------------------------
