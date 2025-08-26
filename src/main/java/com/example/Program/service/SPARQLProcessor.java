@@ -30,7 +30,6 @@ public class SPARQLProcessor {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final PlaceholderService placeholderService;
-    // Removido NlpDictionaryService, pois não era utilizado diretamente aqui.
     private static final String NLP_SERVICE_URL = "http://localhost:5000/process_question";
 
     @Autowired
@@ -55,12 +54,19 @@ public class SPARQLProcessor {
             }
 
             String templateContent = loadTemplate(templateId);
+            
+            // --- LÓGICA PARA IDENTIFICAR O TIPO DE QUERY ---
+            if (templateContent.trim().toUpperCase().startsWith("ASK")) {
+                resposta.setQueryType("ASK");
+            } else {
+                resposta.setQueryType("SELECT");
+            }
+
             String finalQuery = buildQuery(templateContent, entitiesNode);
             
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
             
-            // Define o tipo de métrica para exibição no frontend
             if (entitiesNode.has("CALCULO")) {
                 resposta.setTipoMetrica(entitiesNode.get("CALCULO").asText());
             } else if (entitiesNode.has("VALOR_DESEJADO")) {
@@ -82,16 +88,13 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
 
-        // ====================================================================================
-        // ETAPA 1: SUBSTITUIÇÃO DE BLOCOS DE FILTRO (ENTIDADES PRINCIPAIS)
-        // ====================================================================================
-
+        // ETAPA 1: Substituição de Blocos de Filtro
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
-            if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) { // É um Ticker
+            if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) {
                 entidadeFilter = "BIND(b3:" + entidade.toUpperCase() + " AS ?SO1)";
-            } else { // É um Nome
+            } else {
                 entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\")) \n    ?S1 P1 ?SO1 .";
             }
         }
@@ -114,7 +117,6 @@ public class SPARQLProcessor {
             }
         }
 
-        // Lógica de prioridade para o #FILTER_BLOCK# genérico
         String filterBlock = "";
         if (!tickersFilter.isEmpty()) filterBlock = tickersFilter;
         else if (!setorFilter.isEmpty()) filterBlock = setorFilter;
@@ -124,11 +126,7 @@ public class SPARQLProcessor {
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", !tickersFilter.isEmpty() ? tickersFilter : setorFilter);
 
-
-        // ====================================================================================
-        // ETAPA 2: SUBSTITUIÇÃO DE PLACEHOLDERS DINÂMICOS INDIVIDUAIS
-        // ====================================================================================
-
+        // ETAPA 2: Substituição de Placeholders Dinâmicos
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -140,7 +138,6 @@ public class SPARQLProcessor {
                     String predicadoRDF = placeholderService.getPlaceholderValue(value);
                     if (predicadoRDF != null) {
                         query = query.replace(placeholder, predicadoRDF);
-                        // Renomeia a variável de resultado para algo mais semântico
                         String varName = toCamelCase(value);
                         query = query.replace("?valor", "?" + varName).replace("?ANS", "?" + varName);
                     }
@@ -158,21 +155,14 @@ public class SPARQLProcessor {
                     query = query.replace("#REGEX_FILTER#", regexFilter);
                     break;
                 default:
-                    // Substitui placeholders simples como #DATA#, #LIMITE#, #ORDEM#
                     query = query.replace(placeholder, value);
                     break;
             }
         }
         
-        // ====================================================================================
-        // ETAPA 3: LIMPEZA E SUBSTITUIÇÃO FINAL
-        // ====================================================================================
-
-        // Limpa quaisquer placeholders dinâmicos que não foram usados (ex: #REGEX_FILTER#)
-        query = query.replaceAll("#[A-Z_]+#", ""); 
-        // Substitui os placeholders estruturais (P1, D2, ?S1, etc.)
+        // ETAPA 3: Limpeza e Finalização
+        query = query.replaceAll("#[A-Z_]+#", "");
         query = placeholderService.replaceGenericPlaceholders(query);
-        // Adiciona os prefixos SPARQL
         String prefixes = placeholderService.getPrefixes();
 
         return prefixes + query;

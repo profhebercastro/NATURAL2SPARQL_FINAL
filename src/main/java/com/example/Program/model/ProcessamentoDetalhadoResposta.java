@@ -8,10 +8,11 @@ public class ProcessamentoDetalhadoResposta {
     private String sparqlQuery;
     private String resposta;
     private String erro;
-    private String templateId; 
-    private String tipoMetrica; 
+    private String templateId;
+    private String tipoMetrica;
+    private String queryType; // NOVO CAMPO ADICIONADO
 
-    // Getters e Setters 
+    // Getters e Setters
     public String getSparqlQuery() {
         return sparqlQuery;
     }
@@ -50,5 +51,14 @@ public class ProcessamentoDetalhadoResposta {
 
     public void setTipoMetrica(String tipoMetrica) {
         this.tipoMetrica = tipoMetrica;
+    }
+
+    // --- GETTER E SETTER PARA O NOVO CAMPO ---
+    public String getQueryType() {
+        return queryType;
+    }
+
+    public void setQueryType(String queryType) {
+        this.queryType = queryType;
     }
 }

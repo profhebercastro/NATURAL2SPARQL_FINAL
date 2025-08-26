@@ -19,111 +19,86 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Componente responsável por carregar e gerenciar a ontologia da aplicação.
- * ESTA VERSÃO É OTIMIZADA PARA PRODUÇÃO: ela carrega um modelo pré-inferido
- * de um arquivo .ttl no classpath, evitando o custo de processamento de
- * arquivos Excel e inferência durante a inicialização.
- */
 @Component
 public class Ontology {
 
     private static final Logger logger = LoggerFactory.getLogger(Ontology.class);
-    private Model model; // Modelo em memória que será carregado do arquivo
+    private Model model;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-
-    // O nome do arquivo pré-calculado que deve estar em src/main/resources/
     private static final String PRECOMPUTED_ONTOLOGY_FILE = "ontology_inferred_final.ttl";
 
-    /**
-     * Método de inicialização executado pelo Spring Boot ao iniciar a aplicação.
-     * Carrega o modelo de ontologia pré-calculado.
-     */
     @PostConstruct
     public void init() {
-        logger.info(">>> INICIANDO Inicialização do Componente Ontology (@PostConstruct)...");
+        logger.info(">>> INICIANDO Inicialização do Componente Ontology...");
         lock.writeLock().lock();
         try {
-            logger.info("--- Carregando modelo pré-inferido de '{}' para a memória...", PRECOMPUTED_ONTOLOGY_FILE);
-            
             this.model = ModelFactory.createDefaultModel();
             ClassPathResource resource = new ClassPathResource(PRECOMPUTED_ONTOLOGY_FILE);
-
-            // Tenta carregar o arquivo do classpath
             try (InputStream in = resource.getInputStream()) {
                 if (in == null) {
-                    throw new IllegalStateException("Arquivo de ontologia '" + PRECOMPUTED_ONTOLOGY_FILE + "' não encontrado no classpath. Verifique se o arquivo está em 'src/main/resources/'.");
+                    throw new IllegalStateException("Arquivo de ontologia '" + PRECOMPUTED_ONTOLOGY_FILE + "' não encontrado no classpath.");
                 }
-                // Carrega o grafo completo diretamente para a memória.
-                // O RDFDataMgr é eficiente para esta tarefa.
                 RDFDataMgr.read(this.model, in, Lang.TURTLE);
             }
-
             if (this.model.isEmpty()) {
-                throw new IllegalStateException("FALHA CRÍTICA: O modelo pré-calculado foi carregado, mas está vazio.");
+                throw new IllegalStateException("FALHA CRÍTICA: O modelo pré-calculado está vazio.");
             }
-            logger.info("<<< SUCESSO! Ontology inicializada com o modelo pré-calculado. Total de triplas: {} >>>", this.model.size());
-        
+            logger.info("<<< SUCESSO! Ontology inicializada. Total de triplas: {} >>>", this.model.size());
         } catch (Exception e) {
-            logger.error("!!!!!!!! FALHA GRAVE E IRRECUPERÁVEL NA INICIALIZAÇÃO DA ONTOLOGY !!!!!!!!", e);
-            throw new RuntimeException("Falha crítica ao carregar a ontologia pré-inferida.", e);
+            logger.error("!!!!!!!! FALHA GRAVE NA INICIALIZAÇÃO DA ONTOLOGY !!!!!!!!", e);
+            throw new RuntimeException("Falha crítica ao carregar a ontologia.", e);
         } finally {
             lock.writeLock().unlock();
         }
     }
 
     /**
-     * Executa uma consulta SPARQL contra o modelo em memória.
+     * Executa uma consulta SPARQL do tipo SELECT.
      * @param sparqlQuery A consulta a ser executada.
      * @return Uma lista de mapas representando as linhas de resultado.
      */
-    public List<Map<String, String>> executeQuery(String sparqlQuery) {
+    public List<Map<String, String>> executeSelectQuery(String sparqlQuery) {
         lock.readLock().lock();
         try {
-            if (this.model == null) {
-                logger.error("Tentativa de executar consulta em um modelo nulo.");
-                return Collections.emptyList();
-            }
-            
             List<Map<String, String>> resultsList = new ArrayList<>();
             Query query = QueryFactory.create(sparqlQuery);
-
             try (QueryExecution qexec = QueryExecutionFactory.create(query, this.model)) {
                 ResultSet rs = qexec.execSelect();
                 List<String> resultVars = rs.getResultVars();
-                
                 while (rs.hasNext()) {
                     QuerySolution soln = rs.nextSolution();
                     Map<String, String> rowMap = new LinkedHashMap<>();
                     for (String varName : resultVars) {
                         RDFNode node = soln.get(varName);
-                        String value = "N/A";
-                        if (node != null) {
-                            if (node.isLiteral()) {
-                                value = node.asLiteral().getLexicalForm();
-                            } else {
-                                value = node.toString();
-                            }
-                        }
+                        String value = (node == null) ? "N/A" : (node.isLiteral() ? node.asLiteral().getLexicalForm() : node.toString());
                         rowMap.put(varName, value);
                     }
                     resultsList.add(rowMap);
                 }
             }
-            logger.info("Consulta retornou {} resultados.", resultsList.size());
             return resultsList;
-        } catch (Exception e) {
-            logger.error("Erro durante a execução da consulta SPARQL.", e);
-            return Collections.emptyList();
         } finally {
             lock.readLock().unlock();
         }
     }
 
     /**
-     * Retorna o modelo carregado. Útil para o endpoint de debug.
-     * @return O modelo Jena carregado.
+     * Executa uma consulta SPARQL do tipo ASK.
+     * @param sparqlQuery A consulta ASK a ser executada.
+     * @return true se o padrão da consulta for encontrado, false caso contrário.
      */
+    public boolean executeAskQuery(String sparqlQuery) {
+        lock.readLock().lock();
+        try {
+            Query query = QueryFactory.create(sparqlQuery);
+            try (QueryExecution qexec = QueryExecutionFactory.create(query, this.model)) {
+                return qexec.execAsk();
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
     public Model getInferredModel() {
         return this.model;
     }
