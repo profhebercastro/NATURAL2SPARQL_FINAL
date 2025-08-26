@@ -1,4 +1,4 @@
-# --- Template_6.txt ---
+# --- Template_1D.txt ---
 # Finalidade: Calcula uma métrica derivada para uma empresa específica.
 # Exemplo: "Qual foi a variação absoluta da CSN em 30/06/2025?"
 # ----------------------------------------------------------

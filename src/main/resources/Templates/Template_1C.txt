@@ -1,4 +1,4 @@
-# --- Template_5.txt ---
+# --- Template_1C.txt ---
 # Finalidade: Busca um valor com filtro por tipo de ação (ordinária, preferencial).
 # Exemplo: "Qual o preço da ação ordinária da Gerdau em 17/06/2025?"
 # ----------------------------------------------------------
