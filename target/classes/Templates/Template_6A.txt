@@ -1,14 +1,13 @@
-# --- Template_8B.txt ---
-# Finalidade: Consulta complexa com subconsulta sobre o ranking de um SETOR.
-# Exemplo: "Qual o preço de fechamento da ação de maior alta do setor de Energia?"
+# --- Template_6A.txt ---
+# Finalidade: Consulta complexa com subconsulta sobre o ranking geral.
+# Exemplo: "Qual o volume da ação com a maior alta percentual em 30/06/2025?"
 # ----------------------------------------------------------
-#TEMPLATE 8B 
+#TEMPLATE 8A 
 
 SELECT ?ticker ?resultadoFinal WHERE {
     {
         SELECT ?SO1 WHERE {
-            #FILTER_BLOCK_SETOR#
-            ?S1 P1 ?SO1 .
+            #FILTER_BLOCK#
             ?SO1 P3 ?SO2_rank .
             ?SO2_rank P5 ?S2_rank .
             ?S2_rank P6 "#DATA#"^^xsd:date .

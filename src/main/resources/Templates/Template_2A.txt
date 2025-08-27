@@ -1,0 +1,15 @@
+# --- Template_2A.txt ---
+# Finalidade: Busca o(s) ticker(s) de uma empresa pelo NOME, com filtro opcional por tipo de ação.
+# Exemplo 1: "Qual o ticker da Gerdau?"
+# Exemplo 2: "Qual o ticker da ação preferencial da Gerdau?"
+# ----------------------------------------------------------
+SELECT DISTINCT ?ticker WHERE {
+    ?S1 P7 ?label .
+    FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
+    
+    ?S1 P1 ?SO1 .
+    ?SO1 P8 ?ticker .
+    
+    #REGEX_FILTER#
+}
+ORDER BY ?ticker

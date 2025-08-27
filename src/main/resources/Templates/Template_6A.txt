@@ -1,4 +1,4 @@
-# --- Template_8A.txt ---
+# --- Template_6A.txt ---
 # Finalidade: Consulta complexa com subconsulta sobre o ranking geral.
 # Exemplo: "Qual o volume da ação com a maior alta percentual em 30/06/2025?"
 # ----------------------------------------------------------

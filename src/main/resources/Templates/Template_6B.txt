@@ -1,4 +1,4 @@
-# --- Template_8B.txt ---
+# --- Template_6B.txt ---
 # Finalidade: Consulta complexa com subconsulta sobre o ranking de um SETOR.
 # Exemplo: "Qual o preço de fechamento da ação de maior alta do setor de Energia?"
 # ----------------------------------------------------------
