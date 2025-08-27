@@ -45,12 +45,14 @@ else:
     vectorizer, tfidf_matrix_ref = None, None
 
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO DE TEXTO ---
-
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def extrair_todas_entidades(pergunta_lower):
+    """
+    Pipeline de extração de entidades com ordem de prioridade para minimizar ambiguidades.
+    """
     entidades = {}
     texto_restante = ' ' + pergunta_lower + ' '
     
@@ -74,12 +76,13 @@ def extrair_todas_entidades(pergunta_lower):
     else:
         entidades['limite'] = '1'
 
-    # 3. Métricas
+    # 3. Métricas de ranking e de resultado
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual'],
         'variacao_abs': ['menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
     }
     mapa_metricas = {
+        'preco_medio': ['preco medio', 'preço médio', 'valor medio', 'valor médio'],
         'preco_fechamento': ['preco de fechamento', 'fechamento'], 'preco_abertura': ['preco de abertura', 'abertura'],
         'preco_maximo': ['preco maximo', 'preço máximo'], 'preco_minimo': ['preco minimo', 'preço mínimo'],
         'codigo_negociacao': ['codigo de negociacao', 'ticker', 'simbolo'], 'volume': ['volume', 'volume negociado', 'volume total'],
@@ -89,19 +92,26 @@ def extrair_todas_entidades(pergunta_lower):
     
     texto_sem_acento = remover_acentos(texto_restante)
     
-    for chave, sinonimos in mapa_ranking.items():
-        for s in sorted(sinonimos, key=len, reverse=True):
-            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
-                entidades['ranking_calculation'] = chave; texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE); break
-        if 'ranking_calculation' in entidades: break
-
+    metrica_encontrada = False
     for chave, sinonimos in mapa_metricas.items():
         for s in sorted(sinonimos, key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
                 if chave in ['variacao_abs', 'intervalo_perc']: entidades['calculo'] = chave
                 else: entidades['valor_desejado'] = 'metrica.' + chave
+                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
+                metrica_encontrada = True
                 break
-        if 'calculo' in entidades or 'valor_desejado' in entidades: break
+        if metrica_encontrada: break
+
+    ranking_encontrado = False
+    for chave, sinonimos in mapa_ranking.items():
+        for s in sorted(sinonimos, key=len, reverse=True):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+                entidades['ranking_calculation'] = chave
+                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
+                ranking_encontrado = True
+                break
+        if ranking_encontrado: break
 
     if 'ranking_calculation' in entidades and 'calculo' not in entidades and 'valor_desejado' not in entidades:
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
@@ -120,7 +130,6 @@ def extrair_todas_entidades(pergunta_lower):
             if re.search(r'\b' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
                 entidades['entidade_nome'] = key; entidades['tipo_entidade'] = 'nome'; break
     
-    # Extrai setor por último para evitar conflitos com nomes de empresas
     for key in sorted(setor_map.keys(), key=len, reverse=True):
         if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_restante)):
             entidades['nome_setor'] = setor_map[key]; break
@@ -155,44 +164,35 @@ def process_question():
     has_indice = 'nome_indice' in entidades
     has_valor_desejado = 'valor_desejado' in entidades
     is_complex_ranking = has_ranking and has_valor_desejado and entidades.get('valor_desejado') != 'metrica.' + entidades.get('ranking_calculation')
-    
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     
     # ==========================================================
-    # LÓGICA DE DECISÃO HEURÍSTICA FINAL E SIMPLIFICADA
+    # LÓGICA DE DECISÃO HEURÍSTICA FINAL
     # ==========================================================
     
-    # Regra 1: Consultas Complexas
-    if is_complex_ranking:
+    is_ask_question = (pergunta_lower.strip().startswith(('a ', 'o '))) and has_entidade_nome and has_setor
+    if is_ask_question:
+        template_id_final = 'Template_3D'
+    elif is_complex_ranking:
         template_id_final = 'Template_6B' if has_setor or has_indice else 'Template_6A'
-    
-    # Regra 2: Rankings Simples
     elif has_ranking:
         template_id_final = 'Template_5B' if has_setor or has_indice else 'Template_5A'
-            
-    # Regra 3: Outros tipos de busca
     else:
-        # Busca por "setor de atuação" de uma empresa específica
         if ('setor de atuacao' in pergunta_sem_acento) and has_entidade_nome:
             template_id_final = 'Template_2B'
-        # Busca por "ticker" de uma empresa específica
         elif ('ticker' in pergunta_sem_acento or 'codigo de negociacao' in pergunta_sem_acento or 'simbolo' in pergunta_sem_acento) and has_entidade_nome:
             template_id_final = 'Template_2A'
-        
-        # Lógica para buscas em grupo (setor/índice)
         elif has_setor or has_indice:
             if 'empresas' in pergunta_lower: template_id_final = 'Template_3B'
             elif has_valor_desejado: template_id_final = 'Template_4'
             else: template_id_final = 'Template_3A'
-        
-        # Lógica para buscas em uma entidade específica
         elif has_entidade_nome:
             if has_calculo: template_id_final = 'Template_1D'
             elif 'regex_pattern' in entidades: template_id_final = 'Template_1C'
             elif has_valor_desejado:
                 template_id_final = 'Template_1B' if entidades.get('tipo_entidade') == 'ticker' else 'Template_1A'
     
-    # Regra 4 (Fallback): Similaridade de texto
+    # Fallback
     if not template_id_final and vectorizer:
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
@@ -201,7 +201,7 @@ def process_question():
 
     if not template_id_final: return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
     
-    # Ajuste final de entidades
+    # Ajuste final
     if template_id_final in ['Template_5A', 'Template_5B'] and 'ranking_calculation' in entidades and 'calculo' not in entidades:
         entidades['calculo'] = entidades['ranking_calculation']
 

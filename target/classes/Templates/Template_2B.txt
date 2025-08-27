@@ -1,0 +1,11 @@
+# --- Template_2B.txt ---
+# Finalidade: Busca o NOME do setor de atuação de uma empresa.
+# Exemplo: "Qual o setor de atuação da Gerdau?"
+# ----------------------------------------------------------
+SELECT DISTINCT ?setorLabel WHERE {
+    ?S1 P7 ?label .
+    FILTER(REGEX(STR(?label), "#ENTIDADE_NOME#", "i"))
+    
+    ?S1 P9 ?setor .
+    ?setor P7 ?setorLabel .
+}
