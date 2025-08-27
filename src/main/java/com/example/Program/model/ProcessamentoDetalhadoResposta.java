@@ -9,9 +9,12 @@ public class ProcessamentoDetalhadoResposta {
     private String resposta;
     private String erro;
     private String templateId; 
-    private String tipoMetrica; 
+    private String tipoMetrica;
+    
+    // NOVO CAMPO ADICIONADO PARA IDENTIFICAR O TIPO DE CONSULTA (SELECT ou ASK)
+    private String queryType; 
 
-    // Getters e Setters 
+    // Getters e Setters existentes
     public String getSparqlQuery() {
         return sparqlQuery;
     }
@@ -50,5 +53,14 @@ public class ProcessamentoDetalhadoResposta {
 
     public void setTipoMetrica(String tipoMetrica) {
         this.tipoMetrica = tipoMetrica;
+    }
+
+    // --- GETTER E SETTER PARA O NOVO CAMPO ---
+    public String getQueryType() {
+        return queryType;
+    }
+
+    public void setQueryType(String queryType) {
+        this.queryType = queryType;
     }
 }

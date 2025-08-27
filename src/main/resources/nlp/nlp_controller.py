@@ -52,8 +52,7 @@ def remover_acentos(texto):
 
 def extrair_todas_entidades(pergunta_lower):
     """
-    Pipeline de extração de entidades com ordem de prioridade para minimizar ambiguidades.
-    VERSÃO CORRIGIDA.
+    Pipeline de extração de entidades com ordem de prioridade. VERSÃO FINAL CORRIGIDA.
     """
     entidades = {}
     texto_restante = ' ' + pergunta_lower + ' '
@@ -75,13 +74,13 @@ def extrair_todas_entidades(pergunta_lower):
     elif re.search(r'\btop\s*(\d+)\b', texto_restante, re.IGNORECASE):
         limit_match = re.search(r'\btop\s*(\d+)\b', texto_restante, re.IGNORECASE)
         entidades['limite'] = limit_match.group(1)
-    else:
-        entidades['limite'] = '1'
-
+    
     # 3. Métricas
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual'],
         'variacao_abs': ['menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta', 'maior baixa absoluta'],
+        'preco_fechamento': ['menor preco de fechamento', 'menor preço de fechamento', 'maior preco de fechamento', 'maior preço de fechamento'],
+        'volume': ['maior volume', 'maior volume negociado'],
     }
     mapa_metricas = {
         'variacao_perc': ['variacao percentual', 'variação percentual'],
@@ -99,7 +98,6 @@ def extrair_todas_entidades(pergunta_lower):
     
     texto_sem_acento = remover_acentos(texto_restante)
     
-    # Extrai Ranking primeiro
     for chave, sinonimos in mapa_ranking.items():
         for s in sorted(sinonimos, key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
@@ -108,16 +106,13 @@ def extrair_todas_entidades(pergunta_lower):
                 break
         if 'ranking_calculation' in entidades: break
     
-    # Extrai Métrica principal (cálculo ou valor)
     for chave, sinonimos in mapa_metricas.items():
         for s in sorted(sinonimos, key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
                 if chave in ['variacao_abs', 'intervalo_perc', 'variacao_perc']:
-                    if 'calculo' not in entidades:
-                        entidades['calculo'] = chave
+                    if 'calculo' not in entidades: entidades['calculo'] = chave
                 else:
-                    if 'valor_desejado' not in entidades:
-                        entidades['valor_desejado'] = 'metrica.' + chave
+                    if 'valor_desejado' not in entidades: entidades['valor_desejado'] = 'metrica.' + chave
                 texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
 
     if 'ranking_calculation' in entidades and 'calculo' not in entidades and 'valor_desejado' not in entidades:
@@ -150,6 +145,8 @@ def extrair_todas_entidades(pergunta_lower):
     if "baixa" in pergunta_sem_acento_original or "menor" in pergunta_sem_acento_original: entidades['ordem'] = "ASC"
     else: entidades['ordem'] = "DESC"
 
+    if 'limite' not in entidades: entidades['limite'] = '1'
+    
     return entidades
 
 # --- API FLASK ---
@@ -173,10 +170,7 @@ def process_question():
     is_complex_ranking = has_ranking and has_valor_desejado and entidades.get('valor_desejado') != 'metrica.' + entidades.get('ranking_calculation')
     pergunta_sem_acento = remover_acentos(pergunta_lower)
     
-    # ==========================================================
-    # LÓGICA DE DECISÃO HEURÍSTICA FINAL
-    # ==========================================================
-    
+    # Lógica de Decisão Heurística
     is_ask_question = (pergunta_lower.strip().startswith(('a ', 'o '))) and has_entidade_nome and has_setor
     if is_ask_question:
         template_id_final = 'Template_3D'
@@ -198,8 +192,8 @@ def process_question():
             elif 'regex_pattern' in entidades: template_id_final = 'Template_1C'
             elif has_valor_desejado:
                 template_id_final = 'Template_1B' if entidades.get('tipo_entidade') == 'ticker' else 'Template_1A'
-    
-    # Fallback
+
+    # Fallback por similaridade
     if not template_id_final and vectorizer:
         tfidf_usuario = vectorizer.transform([pergunta_lower])
         similaridades = cosine_similarity(tfidf_usuario, tfidf_matrix_ref).flatten()
