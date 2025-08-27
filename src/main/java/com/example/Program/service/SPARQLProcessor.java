@@ -91,9 +91,9 @@ public class SPARQLProcessor {
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
-            if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) {
+            if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) { // É um Ticker
                 entidadeFilter = "BIND(b3:" + entidade.toUpperCase() + " AS ?SO1)";
-            } else {
+            } else { // É um Nome
                 entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\")) \n    ?S1 P1 ?SO1 .";
             }
         }
@@ -125,18 +125,8 @@ public class SPARQLProcessor {
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", !tickersFilter.isEmpty() ? tickersFilter : setorFilter);
 
+
         // ETAPA 2: Substituição de Placeholders Dinâmicos
-        
-        // --- CORREÇÃO: Renomeação dinâmica da variável de resultado ---
-        String nomeVariavelResultado = "resultadoCalculado"; // Nome padrão
-        if (entities.has("CALCULO")) {
-            nomeVariavelResultado = toCamelCase(entities.get("CALCULO").asText());
-        } else if (entities.has("VALOR_DESEJADO")) {
-            nomeVariavelResultado = toCamelCase(entities.get("VALOR_DESEJADO").asText());
-        }
-        query = query.replace("?resultadoCalculado", "?" + nomeVariavelResultado);
-        // --- FIM DA CORREÇÃO ---
-        
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
@@ -180,19 +170,15 @@ public class SPARQLProcessor {
 
     private String getFormulaCalculo(String calculoKey, String suffix) {
         switch (calculoKey) {
-            // Cálculos compostos
             case "variacao_abs": return "ABS(?fechamento" + suffix + " - ?abertura" + suffix + ")";
             case "variacao_perc": return "((?fechamento" + suffix + " - ?abertura" + suffix + ") / ?abertura" + suffix + ") * 100";
             case "intervalo_abs": return "ABS(?maximo" + suffix + " - ?minimo" + suffix + ")";
             case "intervalo_perc": return "((?maximo" + suffix + " - ?minimo" + suffix + ") / ?abertura" + suffix + ") * 100";
-            
-            // Mapeamento de métricas simples para variáveis de ordenação
             case "preco_fechamento": return "?fechamento" + suffix;
             case "volume": return "?volumeNegociacao" + suffix;
             case "preco_abertura": return "?abertura" + suffix;
             case "preco_maximo": return "?maximo" + suffix;
             case "preco_minimo": return "?minimo" + suffix;
-            
             default: return "?undefinedCalculation";
         }
     }
