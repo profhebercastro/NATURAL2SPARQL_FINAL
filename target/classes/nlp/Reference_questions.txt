@@ -10,6 +10,7 @@ Template_1A;Qual foi o preço mínimo da ação da Vale em 26/06/2025?
 
 # --- [GRUPO 2] Buscas de Valor Pontual por TICKER ---
 Template_1B;Qual foi o preço de abertura da CBAV3 em 10/06/2025?
+Template_1B;Qual foi o preço médio da GGBR3 em 10/06/2025?
 
 # --- [GRUPO 3] Buscas com Filtro por Tipo de Ação ---
 Template_1C;Qual foi o preço mínimo da ação preferencial do Itau em 17/06/2025?
