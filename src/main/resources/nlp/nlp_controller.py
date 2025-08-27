@@ -81,7 +81,7 @@ def extrair_todas_entidades(pergunta_lower):
     # 3. Métricas
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual'],
-        'variacao_abs': ['menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
+        'variacao_abs': ['menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta', 'maior baixa absoluta'],
     }
     mapa_metricas = {
         'variacao_perc': ['variacao percentual', 'variação percentual'],
@@ -119,8 +119,7 @@ def extrair_todas_entidades(pergunta_lower):
                     if 'valor_desejado' not in entidades:
                         entidades['valor_desejado'] = 'metrica.' + chave
                 texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
-                # Não usamos break aqui para permitir que outras métricas sejam encontradas se necessário (ex: complex ranking)
-    
+
     if 'ranking_calculation' in entidades and 'calculo' not in entidades and 'valor_desejado' not in entidades:
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
 

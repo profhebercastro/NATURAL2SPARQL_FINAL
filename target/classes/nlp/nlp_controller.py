@@ -45,6 +45,7 @@ else:
     vectorizer, tfidf_matrix_ref = None, None
 
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO DE TEXTO ---
+
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -52,6 +53,7 @@ def remover_acentos(texto):
 def extrair_todas_entidades(pergunta_lower):
     """
     Pipeline de extração de entidades com ordem de prioridade para minimizar ambiguidades.
+    VERSÃO CORRIGIDA.
     """
     entidades = {}
     texto_restante = ' ' + pergunta_lower + ' '
@@ -76,43 +78,49 @@ def extrair_todas_entidades(pergunta_lower):
     else:
         entidades['limite'] = '1'
 
-    # 3. Métricas de ranking e de resultado
+    # 3. Métricas
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual'],
         'variacao_abs': ['menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
     }
     mapa_metricas = {
-        'preco_medio': ['preco medio', 'preço médio', 'valor medio', 'valor médio'],
-        'preco_fechamento': ['preco de fechamento', 'fechamento'], 'preco_abertura': ['preco de abertura', 'abertura'],
-        'preco_maximo': ['preco maximo', 'preço máximo'], 'preco_minimo': ['preco minimo', 'preço mínimo'],
-        'codigo_negociacao': ['codigo de negociacao', 'ticker', 'simbolo'], 'volume': ['volume', 'volume negociado', 'volume total'],
-        'quantidade': ['quantidade de acoes', 'quantidade de ações'], 'variacao_abs': ['variacao intradiaria absoluta', 'variação intradiária absoluta'],
+        'variacao_perc': ['variacao percentual', 'variação percentual'],
+        'variacao_abs': ['variacao absoluta', 'variação absoluta', 'variacao intradiaria absoluta', 'variação intradiária absoluta'],
         'intervalo_perc': ['intervalo intradiario percentual', 'intervalo intradiário percentual'],
+        'preco_medio': ['preco medio', 'preço médio', 'valor medio', 'valor médio'],
+        'preco_fechamento': ['preco de fechamento', 'fechamento'],
+        'preco_abertura': ['preco de abertura', 'abertura'],
+        'preco_maximo': ['preco maximo', 'preço máximo'],
+        'preco_minimo': ['preco minimo', 'preço mínimo'],
+        'codigo_negociacao': ['codigo de negociacao', 'ticker', 'simbolo'],
+        'volume': ['volume', 'volume negociado'],
+        'quantidade': ['quantidade de acoes', 'quantidade de ações'],
     }
     
     texto_sem_acento = remover_acentos(texto_restante)
     
-    metrica_encontrada = False
-    for chave, sinonimos in mapa_metricas.items():
-        for s in sorted(sinonimos, key=len, reverse=True):
-            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
-                if chave in ['variacao_abs', 'intervalo_perc']: entidades['calculo'] = chave
-                else: entidades['valor_desejado'] = 'metrica.' + chave
-                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
-                metrica_encontrada = True
-                break
-        if metrica_encontrada: break
-
-    ranking_encontrado = False
+    # Extrai Ranking primeiro
     for chave, sinonimos in mapa_ranking.items():
         for s in sorted(sinonimos, key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
                 entidades['ranking_calculation'] = chave
                 texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
-                ranking_encontrado = True
                 break
-        if ranking_encontrado: break
-
+        if 'ranking_calculation' in entidades: break
+    
+    # Extrai Métrica principal (cálculo ou valor)
+    for chave, sinonimos in mapa_metricas.items():
+        for s in sorted(sinonimos, key=len, reverse=True):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+                if chave in ['variacao_abs', 'intervalo_perc', 'variacao_perc']:
+                    if 'calculo' not in entidades:
+                        entidades['calculo'] = chave
+                else:
+                    if 'valor_desejado' not in entidades:
+                        entidades['valor_desejado'] = 'metrica.' + chave
+                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
+                # Não usamos break aqui para permitir que outras métricas sejam encontradas se necessário (ex: complex ranking)
+    
     if 'ranking_calculation' in entidades and 'calculo' not in entidades and 'valor_desejado' not in entidades:
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
 
