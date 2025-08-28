@@ -71,13 +71,13 @@ def extrair_todas_entidades(pergunta_lower):
     
     texto_sem_acento = remover_acentos(texto_restante)
     
-    # 3. Métricas (com prioridade para ranking)
+    # 3. Métricas
     mapa_ranking = {
         'variacao_perc': [
             'maior percentual de alta', 'maior alta percentual',
             'maior percentual de baixa', 'maior baixa percentual',
             'menor variacao percentual', 'menor variação percentual',
-            'maior variacao percentual', 'maior variação percentual'  # <-- CORREÇÃO APLICADA AQUI
+            'maior variacao percentual', 'maior variação percentual'
         ],
         'variacao_abs': [
             'maior baixa absoluta', 'menor variacao absoluta',
@@ -87,9 +87,9 @@ def extrair_todas_entidades(pergunta_lower):
         'volume': ['maior volume', 'menor volume'],
     }
     mapa_metricas = {
-        'variacao_perc': ['variacao intradiaria percentual', 'variação intradiária percentual'], 'variacao_abs': ['variacao intradiaria absoluta', 'variação intradiária absoluta'],
+        'variacao_perc': ['variacao percentual', 'variação percentual', 'variacao intradiaria percentual', 'variação intradiária percentual'], 'variacao_abs': ['variacao absoluta', 'variação absoluta', 'variacao intradiaria absoluta', 'variação intradiária absoluta'],
         'intervalo_perc': ['intervalo intradiario percentual', 'intervalo intradiário percentual'], 'intervalo_abs': ['intervalo intradiario absoluto', 'intervalo intradiário absoluto'],
-        'preco_fechamento': ['preco de fechamento', 'preço de fechamento'], 'preco_abertura': ['preco de abertura', 'preço de abertura'],
+        'preco_fechamento': ['preco de fechamento', 'fechamento'], 'preco_abertura': ['preco de abertura', 'abertura'],
         'preco_maximo': ['preco maximo', 'preço máximo'], 'preco_minimo': ['preco minimo', 'preço mínimo'], 'preco_medio': ['preco medio', 'preço médio'],
         'volume': ['volume'], 'quantidade': ['quantidade de negocios', 'quantidade de negócios'], 'ticker': ['ticker', 'codigo de negociacao', 'código de negociação', 'simbolo']
     }
@@ -109,7 +109,7 @@ def extrair_todas_entidades(pergunta_lower):
     if 'ranking_calculation' in entidades and not ('calculo' in entidades or 'valor_desejado' in entidades):
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
 
-    # 4. Entidades principais (com lógica de conversão de índice)
+    # 4. Entidades principais
     entidade_principal_encontrada = False
     for key, tickers in index_map.items():
         if re.search(r'\b(no|do|da|de|entre as|do indice|acoes do)?\s*' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
@@ -166,21 +166,22 @@ def process_question():
         template_id_final = 'Template_6B' if has_filtro_grupo else 'Template_6A'
     elif has_ranking:
         template_id_final = 'Template_5B' if has_filtro_grupo else 'Template_5A'
+    elif has_entidade_nome and has_calculo:
+        template_id_final = 'Template_1D'
     elif has_valor_desejado and entidades['valor_desejado'] == 'metrica.ticker':
-        template_id_final = 'Template_2'
+        template_id_final = 'Template_2A'
     elif has_filtro_grupo:
         if 'empresas' in pergunta_lower: template_id_final = 'Template_3B'
         elif has_valor_desejado: template_id_final = 'Template_4'
         else: template_id_final = 'Template_3A'
     elif has_entidade_nome:
-        if has_calculo: template_id_final = 'Template_1D' # Nome antigo: Template_6
-        elif 'regex_pattern' in entidades: template_id_final = 'Template_1C' # Nome antigo: Template_5
+        if 'regex_pattern' in entidades: template_id_final = 'Template_1C'
         elif has_valor_desejado:
             template_id_final = 'Template_1B' if entidades.get('tipo_entidade') == 'ticker' else 'Template_1A'
         else:
-             template_id_final = 'Template_2' # Default para nome de empresa é buscar o ticker
+             template_id_final = 'Template_2A'
     
-    # Fallback por similaridade se nenhuma regra se aplicar
+    # Fallback por similaridade
     if not template_id_final and vectorizer:
         similaridades = cosine_similarity(vectorizer.transform([pergunta_lower]), tfidf_matrix_ref).flatten()
         if similaridades.any() and similaridades.max() > 0.3:

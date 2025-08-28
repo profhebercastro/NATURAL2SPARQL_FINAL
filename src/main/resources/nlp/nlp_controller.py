@@ -175,11 +175,16 @@ def process_question():
         elif has_valor_desejado: template_id_final = 'Template_4'
         else: template_id_final = 'Template_3A'
     elif has_entidade_nome:
-        if 'regex_pattern' in entidades: template_id_final = 'Template_1C'
+        pergunta_sem_acento = remover_acentos(pergunta_lower)
+        # CORREÇÃO APLICADA AQUI: Verifica a intenção de buscar o setor
+        if 'setor de atuacao' in pergunta_sem_acento:
+            template_id_final = 'Template_2B'
+        elif 'regex_pattern' in entidades: 
+            template_id_final = 'Template_1C'
         elif has_valor_desejado:
             template_id_final = 'Template_1B' if entidades.get('tipo_entidade') == 'ticker' else 'Template_1A'
         else:
-             template_id_final = 'Template_2A'
+             template_id_final = 'Template_2A' # Default para nome de empresa é buscar o ticker
     
     # Fallback por similaridade
     if not template_id_final and vectorizer:
