@@ -75,6 +75,7 @@ def extrair_todas_entidades(pergunta_lower):
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual'],
         'variacao_abs': ['maior baixa absoluta', 'menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
+        'volume': ['maior volume', 'menor volume'],
     }
     mapa_metricas = {
         'variacao_perc': ['variacao intradiaria percentual', 'variação intradiária percentual'], 'variacao_abs': ['variacao intradiaria absoluta', 'variação intradiária absoluta'],
@@ -129,7 +130,7 @@ def extrair_todas_entidades(pergunta_lower):
     elif "preferencial" in pergunta_sem_acento_original: entidades["regex_pattern"] = "[456]$"
     elif "unit" in pergunta_sem_acento_original: entidades["regex_pattern"] = "11$"
     
-    entidades.setdefault('ordem', 'DESC' if "baixa" not in pergunta_sem_acento_original and "menor" not in pergunta_sem_acento_original else "ASC")
+    entidades.setdefault('ordem', 'DESC' if "baixa" not in pergunta_lower and "menor" not in pergunta_lower else "ASC")
     entidades.setdefault('limite', '1')
     return entidades
 
@@ -141,45 +142,49 @@ def process_question():
         
     entidades = extrair_todas_entidades(pergunta_lower)
     
-    # Flags de decisão
+    # Flags de decisão para clareza
     has_ranking = 'ranking_calculation' in entidades
-    has_valor_desejado = 'valor_desejado' in entidades
+    has_calculo = 'calculo' in entidades
+    has_entidade_nome = 'entidade_nome' in entidades
     has_filtro_grupo = 'nome_setor' in entidades or 'lista_tickers' in entidades
+    has_valor_desejado = 'valor_desejado' in entidades
     is_complex_ranking = has_ranking and has_valor_desejado and entidades['valor_desejado'] != 'metrica.' + entidades['ranking_calculation']
     
+    template_id_final = None
+
     # Lógica de Decisão Hierárquica
     if is_complex_ranking:
         template_id_final = 'Template_6B' if has_filtro_grupo else 'Template_6A'
     elif has_ranking:
         template_id_final = 'Template_5B' if has_filtro_grupo else 'Template_5A'
-        entidades.setdefault('calculo', entidades['ranking_calculation'])
     elif has_valor_desejado and entidades['valor_desejado'] == 'metrica.ticker':
-        template_id_final = 'Template_2A'
+        template_id_final = 'Template_2'
     elif has_filtro_grupo:
         if 'empresas' in pergunta_lower: template_id_final = 'Template_3B'
         elif has_valor_desejado: template_id_final = 'Template_4'
         else: template_id_final = 'Template_3A'
-    elif 'entidade_nome' in entidades:
-        if 'calculo' in entidades: template_id_final = 'Template_1D'
-        elif 'regex_pattern' in entidades: template_id_final = 'Template_1C'
+    elif has_entidade_nome:
+        if has_calculo: template_id_final = 'Template_1D' # Nome antigo: Template_6
+        elif 'regex_pattern' in entidades: template_id_final = 'Template_1C' # Nome antigo: Template_5
         elif has_valor_desejado:
             template_id_final = 'Template_1B' if entidades.get('tipo_entidade') == 'ticker' else 'Template_1A'
         else:
-             template_id_final = 'Template_2A' # Default para nome de empresa é buscar o ticker
-    else:
-        template_id_final = None # Fallback para similaridade
+             template_id_final = 'Template_2' # Default para nome de empresa é buscar o ticker
     
-    # Fallback por similaridade
+    # Fallback por similaridade se nenhuma regra se aplicar
     if not template_id_final and vectorizer:
         similaridades = cosine_similarity(vectorizer.transform([pergunta_lower]), tfidf_matrix_ref).flatten()
-        if similaridades.any() and similaridades.max() > 0.3: # Limiar de confiança
+        if similaridades.any() and similaridades.max() > 0.3:
             template_id_final = ref_ids_flat[similaridades.argmax()]
 
     if not template_id_final: return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
     
-    # Garante que 'calculo' seja populado para rankings simples baseados em valor_desejado
-    if template_id_final in ['Template_5A', 'Template_5B'] and 'valor_desejado' in entidades and 'calculo' not in entidades:
-        entidades['calculo'] = entidades['valor_desejado'].replace('metrica.', '')
+    # Ajuste final: garante que 'calculo' seja populado para rankings simples
+    if template_id_final in ['Template_5A', 'Template_5B']:
+        if 'ranking_calculation' in entidades:
+            entidades.setdefault('calculo', entidades['ranking_calculation'])
+        elif 'valor_desejado' in entidades:
+            entidades.setdefault('calculo', entidades['valor_desejado'].replace('metrica.', ''))
     
     return jsonify({"templateId": template_id_final, "entities": {k.upper(): v for k, v in entidades.items()}})
 
