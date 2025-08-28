@@ -44,6 +44,7 @@ public class SPARQLProcessor {
         try {
             String nlpResponseJson = callNlpService(naturalLanguageQuery);
             logger.info("Resposta do NLP: {}", nlpResponseJson);
+
             JsonNode rootNode = objectMapper.readTree(nlpResponseJson);
             String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
@@ -145,12 +146,6 @@ public class SPARQLProcessor {
                     String varName = toCamelCase(value);
                     query = query.replace("?valor", "?" + varName).replace("?ANS", "?" + varName);
                 }
-            } else if (placeholder.equals("#REGEX_FILTER#")) {
-                if(entities.has("REGEX_PATTERN")){
-                    query = query.replace(placeholder, "FILTER(REGEX(STR(?ticker), \"" + value + "\"))");
-                } else {
-                    query = query.replace(placeholder, "");
-                }
             } else {
                 query = query.replace(placeholder, value);
             }
@@ -170,13 +165,13 @@ public class SPARQLProcessor {
             case "variacao_perc": return "((?fechamento" + suffix + " - ?abertura" + suffix + ") / ?abertura" + suffix + ") * 100";
             case "intervalo_abs": return "ABS(?maximo" + suffix + " - ?minimo" + suffix + ")";
             case "intervalo_perc": return "((?maximo" + suffix + " - ?minimo" + suffix + ") / ?abertura" + suffix + ") * 100";
-            case "volume": return "?volumeNegociacao";
-            case "quantidade": return "?totalNegocios";
-            case "preco_medio": return "?precoMedio";
-            case "preco_maximo": return "?maximo";
-            case "preco_minimo": return "?minimo";
-            case "preco_fechamento": return "?fechamento";
-            case "preco_abertura": return "?abertura";
+            case "volume": return "?volumeNegociacao" + suffix; // Adicionado para ranking
+            case "quantidade": return "?totalNegocios" + suffix;
+            case "preco_medio": return "?precoMedio" + suffix;
+            case "preco_maximo": return "?maximo" + suffix;
+            case "preco_minimo": return "?minimo" + suffix;
+            case "preco_fechamento": return "?fechamento" + suffix;
+            case "preco_abertura": return "?abertura" + suffix;
             default: return "?undefinedCalculation";
         }
     }
