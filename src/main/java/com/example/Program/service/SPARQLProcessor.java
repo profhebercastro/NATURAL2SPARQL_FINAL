@@ -44,39 +44,23 @@ public class SPARQLProcessor {
         try {
             String nlpResponseJson = callNlpService(naturalLanguageQuery);
             logger.info("Resposta do NLP: {}", nlpResponseJson);
-
             JsonNode rootNode = objectMapper.readTree(nlpResponseJson);
             String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
-
             if (templateId == null || templateId.isEmpty()) {
                 throw new IOException("NLP não retornou um templateId.");
             }
-
             String templateContent = loadTemplate(templateId);
-            
-            if (templateContent.trim().toUpperCase().startsWith("ASK")) {
-                resposta.setQueryType("ASK");
-            } else {
-                resposta.setQueryType("SELECT");
-            }
-
             String finalQuery = buildQuery(templateContent, entitiesNode);
-            
             resposta.setSparqlQuery(finalQuery);
             resposta.setTemplateId(templateId);
-            
             if (entitiesNode.has("CALCULO")) {
                 resposta.setTipoMetrica(entitiesNode.get("CALCULO").asText());
             } else if (entitiesNode.has("VALOR_DESEJADO")) {
                 resposta.setTipoMetrica(entitiesNode.get("VALOR_DESEJADO").asText());
-            } else if (templateId.equals("Template_2A")) {
-                resposta.setTipoMetrica("metrica.codigo_negociacao");
             }
-
             logger.info("Consulta SPARQL final gerada:\n{}", finalQuery);
             return resposta;
-
         } catch (Exception e) {
             logger.error("Erro fatal ao gerar query para '{}': {}", naturalLanguageQuery, e.getMessage(), e);
             resposta.setErro("Erro ao processar a pergunta: " + e.getMessage());
@@ -86,7 +70,7 @@ public class SPARQLProcessor {
 
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
-
+    
         // ETAPA 1: Substituição de Blocos de Filtro
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
@@ -97,13 +81,13 @@ public class SPARQLProcessor {
                 entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\")) \n    ?S1 P1 ?SO1 .";
             }
         }
-        
+    
         String setorFilter = "";
         if (entities.has("NOME_SETOR")) {
             String nomeSetor = entities.get("NOME_SETOR").asText();
-            setorFilter = "?S1 P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt .";
+            setorFilter = "?S1 P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt . \n ?S1 P1 ?SO1 .";
         }
-
+    
         String tickersFilter = "";
         if (entities.has("LISTA_TICKERS")) {
             JsonNode tickersNode = entities.get("LISTA_TICKERS");
@@ -115,70 +99,78 @@ public class SPARQLProcessor {
                 tickersFilter = "VALUES ?SO1 { " + String.join(" ", uris) + " }";
             }
         }
-
-        String filterBlock = "";
-        if (!tickersFilter.isEmpty()) filterBlock = tickersFilter;
-        else if (!setorFilter.isEmpty()) filterBlock = setorFilter;
-        else if (!entidadeFilter.isEmpty()) filterBlock = entidadeFilter;
-        
-        query = query.replace("#FILTER_BLOCK#", filterBlock);
+    
+        // Aplica os filtros nos placeholders corretos
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", !tickersFilter.isEmpty() ? tickersFilter : setorFilter);
-
-
+        
+        if (query.contains("#FILTER_BLOCK#")) {
+            String filterBlock = "";
+            if (!tickersFilter.isEmpty()) filterBlock = tickersFilter;
+            else if (!setorFilter.isEmpty()) filterBlock = setorFilter;
+            else if (!entidadeFilter.isEmpty()) filterBlock = entidadeFilter;
+            query = query.replace("#FILTER_BLOCK#", filterBlock);
+        }
+    
         // ETAPA 2: Substituição de Placeholders Dinâmicos
+        if (query.contains("#CALCULO#")) {
+            String calculoSparql = "?undefinedCalculation"; // Default
+            if (entities.has("CALCULO")) {
+                String calculoKey = entities.get("CALCULO").asText();
+                calculoSparql = getFormulaCalculo(calculoKey, "");
+            } else if (entities.has("VALOR_DESEJADO")) {
+                String metricaKey = entities.get("VALOR_DESEJADO").asText();
+                calculoSparql = getFormulaCalculo(metricaKey.replace("metrica.", ""), "");
+            }
+            query = query.replace("#CALCULO#", calculoSparql);
+        }
+    
+        if (query.contains("#RANKING_CALCULATION#") && entities.has("RANKING_CALCULATION")) {
+            String rankingKey = entities.get("RANKING_CALCULATION").asText();
+            String rankingCalculoSql = getFormulaCalculo(rankingKey, "_rank");
+            query = query.replace("#RANKING_CALCULATION#", rankingCalculoSql);
+        }
+    
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
+            if (placeholder.matches("#CALCULO#|#RANKING_CALCULATION#|#FILTER_.*#|#ENTIDADE_NOME#|#NOME_SETOR#|#LISTA_TICKERS#")) continue;
+            
             String value = field.getValue().asText();
-
-            switch (placeholder) {
-                case "#VALOR_DESEJADO#":
-                    String predicadoRDF = placeholderService.getPlaceholderValue(value);
-                    if (predicadoRDF != null) {
-                        query = query.replace(placeholder, predicadoRDF);
-                        String varName = toCamelCase(value);
-                        query = query.replace("?valor", "?" + varName).replace("?ANS", "?" + varName);
-                    }
-                    break;
-                case "#CALCULO#":
-                    String calculoSparql = getFormulaCalculo(value, "");
-                    query = query.replace(placeholder, calculoSparql);
-                    break;
-                case "#RANKING_CALCULATION#":
-                    String rankingCalculoSql = getFormulaCalculo(value, "_rank");
-                    query = query.replace(placeholder, rankingCalculoSql);
-                    break;
-                case "#REGEX_PATTERN#":
-                    String regexFilter = "FILTER(REGEX(STR(?ticker), \"" + value + "\"))";
-                    query = query.replace("#REGEX_FILTER#", regexFilter);
-                    break;
-                default:
-                    query = query.replace(placeholder, value);
-                    break;
+            if (placeholder.equals("#VALOR_DESEJADO#")) {
+                String predicadoRDF = placeholderService.getPlaceholderValue(value);
+                if (predicadoRDF != null) {
+                    query = query.replace(placeholder, predicadoRDF);
+                    String varName = toCamelCase(value);
+                    query = query.replace("?valor", "?" + varName).replace("?ANS", "?" + varName);
+                }
+            } else {
+                query = query.replace(placeholder, value);
             }
         }
-        
+    
         // ETAPA 3: Limpeza e Finalização
         query = query.replaceAll("#[A-Z_]+#", ""); 
         query = placeholderService.replaceGenericPlaceholders(query);
         String prefixes = placeholderService.getPrefixes();
-
+    
         return prefixes + query;
     }
-
+    
     private String getFormulaCalculo(String calculoKey, String suffix) {
         switch (calculoKey) {
-            case "variacao_abs": return "ABS(?fechamento" + suffix + " - ?abertura" + suffix + ")";
+            case "variacao_abs": case "variacao_abs_abs": return "ABS(?fechamento" + suffix + " - ?abertura" + suffix + ")";
             case "variacao_perc": return "((?fechamento" + suffix + " - ?abertura" + suffix + ") / ?abertura" + suffix + ") * 100";
             case "intervalo_abs": return "ABS(?maximo" + suffix + " - ?minimo" + suffix + ")";
             case "intervalo_perc": return "((?maximo" + suffix + " - ?minimo" + suffix + ") / ?abertura" + suffix + ") * 100";
-            case "preco_fechamento": return "?fechamento" + suffix;
             case "volume": return "?volumeNegociacao" + suffix;
-            case "preco_abertura": return "?abertura" + suffix;
+            case "quantidade": return "?totalNegocios" + suffix;
+            case "preco_medio": return "?precoMedio" + suffix;
             case "preco_maximo": return "?maximo" + suffix;
             case "preco_minimo": return "?minimo" + suffix;
+            case "preco_fechamento": return "?fechamento" + suffix;
+            case "preco_abertura": return "?abertura" + suffix;
             default: return "?undefinedCalculation";
         }
     }
