@@ -44,7 +44,6 @@ public class SPARQLProcessor {
         try {
             String nlpResponseJson = callNlpService(naturalLanguageQuery);
             logger.info("Resposta do NLP: {}", nlpResponseJson);
-
             JsonNode rootNode = objectMapper.readTree(nlpResponseJson);
             String templateId = rootNode.path("templateId").asText();
             JsonNode entitiesNode = rootNode.path("entities");
@@ -82,9 +81,9 @@ public class SPARQLProcessor {
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
-            if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) { // É um Ticker
+            if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) {
                 entidadeFilter = "BIND(b3:" + entidade.toUpperCase() + " AS ?SO1)";
-            } else { // É um Nome de Empresa
+            } else {
                 entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\")) \n    ?S1 P1 ?SO1 .";
             }
         }
@@ -105,10 +104,8 @@ public class SPARQLProcessor {
             }
         }
         
-        // Aplica os filtros nos placeholders corretos com prioridade
-        String setorOuIndiceFilter = !tickersFilter.isEmpty() ? tickersFilter : setorFilter;
-        query = query.replace("#FILTER_BLOCK_SETOR#", setorOuIndiceFilter);
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
+        query = query.replace("#FILTER_BLOCK_SETOR#", !tickersFilter.isEmpty() ? tickersFilter : setorFilter);
         
         if (query.contains("#FILTER_BLOCK#")) {
             String filterBlock = !tickersFilter.isEmpty() ? tickersFilter : (!setorFilter.isEmpty() ? setorFilter : entidadeFilter);
@@ -116,12 +113,10 @@ public class SPARQLProcessor {
         }
         
         // ETAPA 2: Substituição de Placeholders de Valor
-        // Processa placeholders complexos de cálculo primeiro
         if (query.contains("#CALCULO#")) {
-            String calculoSparql = "?undefinedCalculation"; // Default seguro
+            String calculoSparql = "?undefinedCalculation";
             if (entities.has("CALCULO")) {
-                String calculoKey = entities.get("CALCULO").asText();
-                calculoSparql = getFormulaCalculo(calculoKey, "");
+                calculoSparql = getFormulaCalculo(entities.get("CALCULO").asText(), "");
             } else if (entities.has("VALOR_DESEJADO")) {
                 String metricaKey = entities.get("VALOR_DESEJADO").asText().replace("metrica.", "");
                 calculoSparql = getFormulaCalculo(metricaKey, "");
@@ -135,17 +130,13 @@ public class SPARQLProcessor {
             query = query.replace("#RANKING_CALCULATION#", rankingCalculoSql);
         }
     
-        // Processa os placeholders restantes
         Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> field = fields.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
-            // Ignora placeholders que já foram tratados ou são para a lógica de filtro
-            if (placeholder.matches("#CALCULO#|#RANKING_CALCULATION#|#FILTER_.*#|#ENTIDADE_NOME#|#NOME_SETOR#|#LISTA_TICKERS#")) {
-                continue;
-            }
-            
             String value = field.getValue().asText();
+            
+            if (placeholder.matches("#CALCULO#|#RANKING_CALCULATION#|#FILTER_.*#|#ENTIDADE_NOME#|#NOME_SETOR#|#LISTA_TICKERS#")) continue;
             
             if (placeholder.equals("#VALOR_DESEJADO#")) {
                 String predicadoRDF = placeholderService.getPlaceholderValue(value);
@@ -154,16 +145,22 @@ public class SPARQLProcessor {
                     String varName = toCamelCase(value);
                     query = query.replace("?valor", "?" + varName).replace("?ANS", "?" + varName);
                 }
+            } else if (placeholder.equals("#REGEX_FILTER#")) {
+                if(entities.has("REGEX_PATTERN")){
+                    query = query.replace(placeholder, "FILTER(REGEX(STR(?ticker), \"" + value + "\"))");
+                } else {
+                    query = query.replace(placeholder, "");
+                }
             } else {
                 query = query.replace(placeholder, value);
             }
         }
         
         // ETAPA 3: Limpeza e Finalização
-        query = query.replaceAll("#[A-Z_]+#", ""); // Remove quaisquer placeholders não substituídos
-        query = placeholderService.replaceGenericPlaceholders(query); // Substitui P*, D*, S*, O*
+        query = query.replaceAll("#[A-Z_]+#", "");
+        query = placeholderService.replaceGenericPlaceholders(query);
         String prefixes = placeholderService.getPrefixes();
-
+    
         return prefixes + query;
     }
 
@@ -173,13 +170,13 @@ public class SPARQLProcessor {
             case "variacao_perc": return "((?fechamento" + suffix + " - ?abertura" + suffix + ") / ?abertura" + suffix + ") * 100";
             case "intervalo_abs": return "ABS(?maximo" + suffix + " - ?minimo" + suffix + ")";
             case "intervalo_perc": return "((?maximo" + suffix + " - ?minimo" + suffix + ") / ?abertura" + suffix + ") * 100";
-            case "volume": return "?volumeNegociacao" + suffix;
-            case "quantidade": return "?totalNegocios" + suffix;
-            case "preco_medio": return "?precoMedio" + suffix;
-            case "preco_maximo": return "?maximo" + suffix;
-            case "preco_minimo": return "?minimo" + suffix;
-            case "preco_fechamento": return "?fechamento" + suffix;
-            case "preco_abertura": return "?abertura" + suffix;
+            case "volume": return "?volumeNegociacao";
+            case "quantidade": return "?totalNegocios";
+            case "preco_medio": return "?precoMedio";
+            case "preco_maximo": return "?maximo";
+            case "preco_minimo": return "?minimo";
+            case "preco_fechamento": return "?fechamento";
+            case "preco_abertura": return "?abertura";
             default: return "?undefinedCalculation";
         }
     }
