@@ -73,8 +73,17 @@ def extrair_todas_entidades(pergunta_lower):
     
     # 3. Métricas (com prioridade para ranking)
     mapa_ranking = {
-        'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual'],
-        'variacao_abs': ['maior baixa absoluta', 'menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
+        'variacao_perc': [
+            'maior percentual de alta', 'maior alta percentual',
+            'maior percentual de baixa', 'maior baixa percentual',
+            'menor variacao percentual', 'menor variação percentual',
+            'maior variacao percentual', 'maior variação percentual'  # <-- CORREÇÃO APLICADA AQUI
+        ],
+        'variacao_abs': [
+            'maior baixa absoluta', 'menor variacao absoluta',
+            'menor variação absoluta', 'maior variacao absoluta',
+            'maior variação absoluta'
+        ],
         'volume': ['maior volume', 'menor volume'],
     }
     mapa_metricas = {
