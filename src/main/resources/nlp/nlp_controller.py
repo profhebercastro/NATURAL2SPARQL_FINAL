@@ -71,7 +71,7 @@ def extrair_todas_entidades(pergunta_lower):
     
     texto_sem_acento = remover_acentos(texto_restante)
     
-    # 3. Métricas
+    # 3. Métricas (LÓGICA CORRIGIDA: SEM BREAK E COM REMOÇÃO DE TEXTO)
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual', 'maior variacao percentual', 'maior variação percentual'],
         'variacao_abs': ['maior baixa absoluta', 'menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
@@ -89,18 +89,30 @@ def extrair_todas_entidades(pergunta_lower):
         'quantidade_negocios': ['quantidade', 'quantidade de negocios', 'quantidade de ações', 'volume de titulos', 'volume de ações']
     }
     
+    # Primeiro, procura a métrica de ranking
     for chave, sinonimos in mapa_ranking.items():
-        if any(re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento) for s in sinonimos):
-            entidades['ranking_calculation'] = chave; break
-            
-    for chave, sinonimos in mapa_metricas.items():
-        if any(re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento) for s in sinonimos):
-            if chave.startswith(('variacao', 'intervalo')):
-                entidades.setdefault('calculo', chave)
-            else:
-                entidades.setdefault('valor_desejado', 'metrica.' + chave)
+        for s in sorted(sinonimos, key=len, reverse=True):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+                entidades['ranking_calculation'] = chave
+                # Remove o trecho encontrado para não ser detectado novamente
+                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
+                break
+        if 'ranking_calculation' in entidades:
             break
 
+    # Depois, procura a métrica de resultado no texto restante
+    for chave, sinonimos in mapa_metricas.items():
+        for s in sorted(sinonimos, key=len, reverse=True):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+                if chave.startswith(('variacao', 'intervalo')):
+                    entidades.setdefault('calculo', chave)
+                else:
+                    entidades.setdefault('valor_desejado', 'metrica.' + chave)
+                break
+        if 'calculo' in entidades or 'valor_desejado' in entidades:
+            break
+
+    # Se só achou ranking, a métrica de resultado é a mesma
     if 'ranking_calculation' in entidades and not ('calculo' in entidades or 'valor_desejado' in entidades):
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
 
