@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- CARREGAMENTO DOS ARTEFATOS DE CONHECIMENTO ---
+# --- CARREGAMENTO DOS ARTEFATOS DE CONHECIMENTO (inalterado) ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def carregar_arquivo_json(nome_arquivo):
@@ -71,7 +71,7 @@ def extrair_todas_entidades(pergunta_lower):
     
     texto_sem_acento = remover_acentos(texto_processavel)
     
-    # 3. Métricas (lógica de duas passadas para desambiguação)
+    # 3. Métricas (Lógica de duas passadas para desambiguação)
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual', 'maior variacao percentual', 'maior variação percentual'],
         'variacao_abs': ['menor variacao absoluta', 'menor variação absoluta', 'maior baixa absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
@@ -88,7 +88,6 @@ def extrair_todas_entidades(pergunta_lower):
         'quantidade_negocios': ['quantidade de negocios', 'quantidade de ações', 'volume de titulos', 'volume de ações', 'quantidade']
     }
     
-    # Passada 1: Extrai a métrica de RANKING e a remove do texto para a próxima busca
     texto_para_resultado = texto_sem_acento
     for chave, sinonimos in mapa_ranking.items():
         for s in sorted(sinonimos, key=len, reverse=True):
@@ -98,8 +97,7 @@ def extrair_todas_entidades(pergunta_lower):
                 break
         if 'ranking_calculation' in entidades:
             break
-    
-    # Passada 2: Extrai a métrica de RESULTADO do texto que sobrou
+
     for chave, sinonimos in mapa_metricas.items():
         for s in sorted(sinonimos, key=len, reverse=True):
             if re.search(r'\b' + remover_acentos(s) + r'\b', texto_para_resultado):
@@ -115,21 +113,18 @@ def extrair_todas_entidades(pergunta_lower):
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
 
     # 4. Entidades principais
-    entidade_principal_encontrada = False
     for key, tickers in index_map.items():
         if re.search(r'\b(no|do|da|de|entre as|do indice|acoes do)?\s*' + re.escape(key.lower()) + r'\b', remover_acentos(texto_processavel)):
             entidades['lista_tickers'] = tickers
-            entidade_principal_encontrada = True
             break
     
-    if not entidade_principal_encontrada:
+    if 'lista_tickers' not in entidades:
         for key, setor in setor_map.items():
             if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_processavel)):
                 entidades['nome_setor'] = setor
-                entidade_principal_encontrada = True
                 break
     
-    if not entidade_principal_encontrada:
+    if not any(k in entidades for k in ['lista_tickers', 'nome_setor']):
         ticker_match = re.search(r'\b([A-Z]{4}[0-9]{1,2})\b', texto_processavel.upper())
         if ticker_match:
             entidades['entidade_nome'] = ticker_match.group(1); entidades['tipo_entidade'] = 'ticker'
@@ -156,7 +151,7 @@ def process_question():
         
     entidades = extrair_todas_entidades(pergunta_lower)
     
-    # Flags de decisão para clareza
+    # Flags de decisão
     has_ranking = 'ranking_calculation' in entidades
     has_calculo = 'calculo' in entidades
     has_entidade_nome = 'entidade_nome' in entidades
@@ -173,7 +168,7 @@ def process_question():
         template_id_final = 'Template_5B' if has_filtro_grupo else 'Template_5A'
     elif has_entidade_nome and has_calculo:
         template_id_final = 'Template_1D'
-    elif has_valor_desejado and entidades['valor_desejado'] == 'metrica.ticker':
+    elif has_valor_desejado and entidades.get('valor_desejado') == 'metrica.ticker':
         template_id_final = 'Template_2A'
     elif has_filtro_grupo:
         if 'empresas' in pergunta_lower: template_id_final = 'Template_3B'
@@ -190,7 +185,7 @@ def process_question():
         else:
              template_id_final = 'Template_2A'
     
-    # Fallback por similaridade
+    # Fallback
     if not template_id_final and vectorizer:
         similaridades = cosine_similarity(vectorizer.transform([pergunta_lower]), tfidf_matrix_ref).flatten()
         if similaridades.any() and similaridades.max() > 0.3:
@@ -198,7 +193,7 @@ def process_question():
 
     if not template_id_final: return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
     
-    # Ajuste final: garante que 'calculo' seja populado para rankings simples
+    # Ajuste final
     if template_id_final in ['Template_5A', 'Template_5B']:
         if 'ranking_calculation' in entidades:
             entidades.setdefault('calculo', entidades['ranking_calculation'])

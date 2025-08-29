@@ -51,59 +51,58 @@ def remover_acentos(texto):
 
 def extrair_todas_entidades(pergunta_lower):
     entidades = {}
-    texto_restante = ' ' + pergunta_lower + ' '
+    texto_processavel = ' ' + pergunta_lower + ' '
     
     # 1. Datas
-    match_data = re.search(r'(\d{1,2})/(\d{1,2})/(\d{4})', texto_restante)
+    match_data = re.search(r'(\d{1,2})/(\d{1,2})/(\d{4})', texto_processavel)
     if match_data:
         dia, mes, ano = match_data.groups()
         entidades['data'] = f"{ano}-{mes.zfill(2)}-{dia.zfill(2)}"
-        texto_restante = texto_restante.replace(match_data.group(0), " ")
+        texto_processavel = texto_processavel.replace(match_data.group(0), " ")
 
     # 2. Limites numéricos
-    limit_match = re.search(r'\b(as|os)?\s*(\d+|cinco|tres|três|duas|dois|quatro)\s+(acoes|ações|papeis|papéis)\b', texto_restante, re.IGNORECASE)
+    limit_match = re.search(r'\b(as|os)?\s*(\d+|cinco|tres|três|duas|dois|quatro)\s+(acoes|ações|papeis|papéis)\b', texto_processavel, re.IGNORECASE)
     num_map = {'cinco': '5', 'quatro': '4', 'tres': '3', 'três': '3', 'duas': '2', 'dois': '2'}
     if limit_match:
         num_str = limit_match.group(2).lower()
         entidades['limite'] = num_map.get(num_str, num_str)
-    elif re.search(r'\btop\s*(\d+)\b', texto_restante, re.IGNORECASE):
-        entidades['limite'] = re.search(r'\btop\s*(\d+)\b', texto_restante, re.IGNORECASE).group(1)
+    elif re.search(r'\btop\s*(\d+)\b', texto_processavel, re.IGNORECASE):
+        entidades['limite'] = re.search(r'\btop\s*(\d+)\b', texto_processavel, re.IGNORECASE).group(1)
     
-    texto_sem_acento = remover_acentos(texto_restante)
+    texto_sem_acento = remover_acentos(texto_processavel)
     
-    # 3. Métricas (LÓGICA CORRIGIDA: SEM BREAK E COM REMOÇÃO DE TEXTO)
+    # 3. Métricas (lógica de duas passadas para desambiguação)
     mapa_ranking = {
         'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual', 'maior variacao percentual', 'maior variação percentual'],
-        'variacao_abs': ['maior baixa absoluta', 'menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
+        'variacao_abs': ['menor variacao absoluta', 'menor variação absoluta', 'maior baixa absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
         'volume_financeiro': ['maior volume', 'menor volume'],
     }
     mapa_metricas = {
         'variacao_perc': ['variacao percentual', 'variação percentual', 'variacao intradiaria percentual', 'variação intradiária percentual'],
         'variacao_abs': ['variacao absoluta', 'variação absoluta', 'variacao intradiaria absoluta', 'variação intradiária absoluta'],
-        'intervalo_perc': ['intervalo intradiario percentual', 'intervalo intradiário percentual'],
-        'intervalo_abs': ['intervalo intradiario absoluto', 'intervalo intradiário absoluto'],
+        'intervalo_perc': ['intervalo intradiario percentual', 'intervalo intradiário percentual'], 'intervalo_abs': ['intervalo intradiario absoluto', 'intervalo intradiário absoluto'],
         'preco_fechamento': ['preco de fechamento', 'fechamento'], 'preco_abertura': ['preco de abertura', 'abertura'],
         'preco_maximo': ['preco maximo', 'preço máximo'], 'preco_minimo': ['preco minimo', 'preço mínimo'], 'preco_medio': ['preco medio', 'preço médio'],
         'ticker': ['ticker', 'codigo de negociacao', 'código de negociação', 'simbolo'],
-        'volume_financeiro': ['volume', 'volume negociado', 'volume financeiro'],
-        'quantidade_negocios': ['quantidade', 'quantidade de negocios', 'quantidade de ações', 'volume de titulos', 'volume de ações']
+        'volume_financeiro': ['volume financeiro', 'volume negociado', 'volume'],
+        'quantidade_negocios': ['quantidade de negocios', 'quantidade de ações', 'volume de titulos', 'volume de ações', 'quantidade']
     }
     
-    # Primeiro, procura a métrica de ranking
+    # Passada 1: Extrai a métrica de RANKING e a remove do texto para a próxima busca
+    texto_para_resultado = texto_sem_acento
     for chave, sinonimos in mapa_ranking.items():
         for s in sorted(sinonimos, key=len, reverse=True):
-            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_para_resultado):
                 entidades['ranking_calculation'] = chave
-                # Remove o trecho encontrado para não ser detectado novamente
-                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
+                texto_para_resultado = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_para_resultado, flags=re.IGNORECASE)
                 break
         if 'ranking_calculation' in entidades:
             break
-
-    # Depois, procura a métrica de resultado no texto restante
+    
+    # Passada 2: Extrai a métrica de RESULTADO do texto que sobrou
     for chave, sinonimos in mapa_metricas.items():
         for s in sorted(sinonimos, key=len, reverse=True):
-            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_para_resultado):
                 if chave.startswith(('variacao', 'intervalo')):
                     entidades.setdefault('calculo', chave)
                 else:
@@ -112,32 +111,31 @@ def extrair_todas_entidades(pergunta_lower):
         if 'calculo' in entidades or 'valor_desejado' in entidades:
             break
 
-    # Se só achou ranking, a métrica de resultado é a mesma
     if 'ranking_calculation' in entidades and not ('calculo' in entidades or 'valor_desejado' in entidades):
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
 
     # 4. Entidades principais
     entidade_principal_encontrada = False
     for key, tickers in index_map.items():
-        if re.search(r'\b(no|do|da|de|entre as|do indice|acoes do)?\s*' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
+        if re.search(r'\b(no|do|da|de|entre as|do indice|acoes do)?\s*' + re.escape(key.lower()) + r'\b', remover_acentos(texto_processavel)):
             entidades['lista_tickers'] = tickers
             entidade_principal_encontrada = True
             break
     
     if not entidade_principal_encontrada:
         for key, setor in setor_map.items():
-            if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_restante)):
+            if re.search(r'\b' + re.escape(remover_acentos(key.lower())) + r'\b', remover_acentos(texto_processavel)):
                 entidades['nome_setor'] = setor
                 entidade_principal_encontrada = True
                 break
     
     if not entidade_principal_encontrada:
-        ticker_match = re.search(r'\b([A-Z]{4}[0-9]{1,2})\b', texto_restante.upper())
+        ticker_match = re.search(r'\b([A-Z]{4}[0-9]{1,2})\b', texto_processavel.upper())
         if ticker_match:
             entidades['entidade_nome'] = ticker_match.group(1); entidades['tipo_entidade'] = 'ticker'
         else:
             for key in sorted(empresa_map.keys(), key=len, reverse=True):
-                if re.search(r'\b' + re.escape(key.lower()) + r'\b', remover_acentos(texto_restante)):
+                if re.search(r'\b' + re.escape(key.lower()) + r'\b', remover_acentos(texto_processavel)):
                     entidades['entidade_nome'] = key; entidades['tipo_entidade'] = 'nome'; break
 
     # 5. Filtros e defaults
@@ -158,13 +156,13 @@ def process_question():
         
     entidades = extrair_todas_entidades(pergunta_lower)
     
-    # Flags de decisão
+    # Flags de decisão para clareza
     has_ranking = 'ranking_calculation' in entidades
     has_calculo = 'calculo' in entidades
     has_entidade_nome = 'entidade_nome' in entidades
     has_filtro_grupo = 'nome_setor' in entidades or 'lista_tickers' in entidades
     has_valor_desejado = 'valor_desejado' in entidades
-    is_complex_ranking = has_ranking and has_valor_desejado and entidades['valor_desejado'] != 'metrica.' + entidades['ranking_calculation']
+    is_complex_ranking = has_ranking and has_valor_desejado and ('metrica.' + entidades.get('ranking_calculation', '') != entidades.get('valor_desejado'))
     
     template_id_final = None
 
@@ -192,7 +190,7 @@ def process_question():
         else:
              template_id_final = 'Template_2A'
     
-    # Fallback
+    # Fallback por similaridade
     if not template_id_final and vectorizer:
         similaridades = cosine_similarity(vectorizer.transform([pergunta_lower]), tfidf_matrix_ref).flatten()
         if similaridades.any() and similaridades.max() > 0.3:
@@ -200,7 +198,7 @@ def process_question():
 
     if not template_id_final: return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
     
-    # Ajuste final
+    # Ajuste final: garante que 'calculo' seja populado para rankings simples
     if template_id_final in ['Template_5A', 'Template_5B']:
         if 'ranking_calculation' in entidades:
             entidades.setdefault('calculo', entidades['ranking_calculation'])
