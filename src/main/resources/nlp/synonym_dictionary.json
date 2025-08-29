@@ -20,7 +20,25 @@
     { "canonico": "preco_maximo", "sinonimos": [ { "termo": "preço máximo", "score": 1.0 }, { "termo": "máximo", "score": 0.9 }, { "termo": "maior preço", "score": 0.95 } ] },
     { "canonico": "preco_minimo", "sinonimos": [ { "termo": "preço mínimo", "score": 1.0 }, { "termo": "mínimo", "score": 0.9 }, { "termo": "menor preço", "score": 0.95 } ] },
     { "canonico": "preco_medio", "sinonimos": [ { "termo": "preço médio", "score": 1.0 }, { "termo": "média de preço", "score": 0.9 } ] },
-    { "canonico": "volume", "sinonimos": [ { "termo": "volume", "score": 1.0 }, { "termo": "volume negociado", "score": 0.95 } ] },
-    { "canonico": "quantidade", "sinonimos": [ { "termo": "quantidade", "score": 1.0 }, { "termo": "quantidade negociada", "score": 0.95 } ] }
+    { 
+      "canonico": "volume_financeiro", 
+      "sinonimos": [ 
+        { "termo": "volume", "score": 0.8 }, 
+        { "termo": "volume negociado", "score": 1.0 },
+        { "termo": "volume financeiro", "score": 1.0 },
+        { "termo": "total negociado em reais", "score": 0.9 }
+      ] 
+    },
+    { 
+      "canonico": "quantidade_negocios", 
+      "sinonimos": [ 
+        { "termo": "quantidade", "score": 0.8 },
+        { "termo": "quantidade de negócios", "score": 1.0 },
+        { "termo": "total de negócios", "score": 1.0 },
+        { "termo": "quantidade de ações negociadas", "score": 0.95 },
+        { "termo": "volume de títulos", "score": 0.9 },
+        { "termo": "volume de ações", "score": 0.9 }
+      ] 
+    }
   ]
 }
