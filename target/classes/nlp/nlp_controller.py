@@ -71,41 +71,48 @@ def extrair_todas_entidades(pergunta_lower):
     
     texto_sem_acento = remover_acentos(texto_restante)
     
-    # 3. Métricas
+    # 3. Métricas (LÓGICA CORRIGIDA: SEM BREAK E COM REMOÇÃO DE TEXTO)
     mapa_ranking = {
-        'variacao_perc': [
-            'maior percentual de alta', 'maior alta percentual',
-            'maior percentual de baixa', 'maior baixa percentual',
-            'menor variacao percentual', 'menor variação percentual',
-            'maior variacao percentual', 'maior variação percentual'
-        ],
-        'variacao_abs': [
-            'maior baixa absoluta', 'menor variacao absoluta',
-            'menor variação absoluta', 'maior variacao absoluta',
-            'maior variação absoluta'
-        ],
-        'volume': ['maior volume', 'menor volume'],
+        'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'menor variação percentual', 'maior variacao percentual', 'maior variação percentual'],
+        'variacao_abs': ['maior baixa absoluta', 'menor variacao absoluta', 'menor variação absoluta', 'maior variacao absoluta', 'maior variação absoluta'],
+        'volume_financeiro': ['maior volume', 'menor volume'],
     }
     mapa_metricas = {
-        'variacao_perc': ['variacao percentual', 'variação percentual', 'variacao intradiaria percentual', 'variação intradiária percentual'], 'variacao_abs': ['variacao absoluta', 'variação absoluta', 'variacao intradiaria absoluta', 'variação intradiária absoluta'],
-        'intervalo_perc': ['intervalo intradiario percentual', 'intervalo intradiário percentual'], 'intervalo_abs': ['intervalo intradiario absoluto', 'intervalo intradiário absoluto'],
+        'variacao_perc': ['variacao percentual', 'variação percentual', 'variacao intradiaria percentual', 'variação intradiária percentual'],
+        'variacao_abs': ['variacao absoluta', 'variação absoluta', 'variacao intradiaria absoluta', 'variação intradiária absoluta'],
+        'intervalo_perc': ['intervalo intradiario percentual', 'intervalo intradiário percentual'],
+        'intervalo_abs': ['intervalo intradiario absoluto', 'intervalo intradiário absoluto'],
         'preco_fechamento': ['preco de fechamento', 'fechamento'], 'preco_abertura': ['preco de abertura', 'abertura'],
         'preco_maximo': ['preco maximo', 'preço máximo'], 'preco_minimo': ['preco minimo', 'preço mínimo'], 'preco_medio': ['preco medio', 'preço médio'],
-        'volume': ['volume'], 'quantidade': ['quantidade de negocios', 'quantidade de negócios'], 'ticker': ['ticker', 'codigo de negociacao', 'código de negociação', 'simbolo']
+        'ticker': ['ticker', 'codigo de negociacao', 'código de negociação', 'simbolo'],
+        'volume_financeiro': ['volume', 'volume negociado', 'volume financeiro'],
+        'quantidade_negocios': ['quantidade', 'quantidade de negocios', 'quantidade de ações', 'volume de titulos', 'volume de ações']
     }
     
+    # Primeiro, procura a métrica de ranking
     for chave, sinonimos in mapa_ranking.items():
-        if any(re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento) for s in sinonimos):
-            entidades['ranking_calculation'] = chave; break
-            
-    for chave, sinonimos in mapa_metricas.items():
-        if any(re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento) for s in sinonimos):
-            if chave.startswith(('variacao', 'intervalo')):
-                entidades.setdefault('calculo', chave)
-            else:
-                entidades.setdefault('valor_desejado', 'metrica.' + chave)
+        for s in sorted(sinonimos, key=len, reverse=True):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+                entidades['ranking_calculation'] = chave
+                # Remove o trecho encontrado para não ser detectado novamente
+                texto_sem_acento = re.sub(r'\b' + remover_acentos(s) + r'\b', ' ', texto_sem_acento, flags=re.IGNORECASE)
+                break
+        if 'ranking_calculation' in entidades:
             break
 
+    # Depois, procura a métrica de resultado no texto restante
+    for chave, sinonimos in mapa_metricas.items():
+        for s in sorted(sinonimos, key=len, reverse=True):
+            if re.search(r'\b' + remover_acentos(s) + r'\b', texto_sem_acento):
+                if chave.startswith(('variacao', 'intervalo')):
+                    entidades.setdefault('calculo', chave)
+                else:
+                    entidades.setdefault('valor_desejado', 'metrica.' + chave)
+                break
+        if 'calculo' in entidades or 'valor_desejado' in entidades:
+            break
+
+    # Se só achou ranking, a métrica de resultado é a mesma
     if 'ranking_calculation' in entidades and not ('calculo' in entidades or 'valor_desejado' in entidades):
         entidades['valor_desejado'] = 'metrica.' + entidades['ranking_calculation']
 
@@ -151,7 +158,7 @@ def process_question():
         
     entidades = extrair_todas_entidades(pergunta_lower)
     
-    # Flags de decisão para clareza
+    # Flags de decisão
     has_ranking = 'ranking_calculation' in entidades
     has_calculo = 'calculo' in entidades
     has_entidade_nome = 'entidade_nome' in entidades
@@ -176,7 +183,6 @@ def process_question():
         else: template_id_final = 'Template_3A'
     elif has_entidade_nome:
         pergunta_sem_acento = remover_acentos(pergunta_lower)
-        # CORREÇÃO APLICADA AQUI: Verifica a intenção de buscar o setor
         if 'setor de atuacao' in pergunta_sem_acento:
             template_id_final = 'Template_2B'
         elif 'regex_pattern' in entidades: 
@@ -184,9 +190,9 @@ def process_question():
         elif has_valor_desejado:
             template_id_final = 'Template_1B' if entidades.get('tipo_entidade') == 'ticker' else 'Template_1A'
         else:
-             template_id_final = 'Template_2A' # Default para nome de empresa é buscar o ticker
+             template_id_final = 'Template_2A'
     
-    # Fallback por similaridade
+    # Fallback
     if not template_id_final and vectorizer:
         similaridades = cosine_similarity(vectorizer.transform([pergunta_lower]), tfidf_matrix_ref).flatten()
         if similaridades.any() and similaridades.max() > 0.3:
@@ -194,7 +200,7 @@ def process_question():
 
     if not template_id_final: return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
     
-    # Ajuste final: garante que 'calculo' seja populado para rankings simples
+    # Ajuste final
     if template_id_final in ['Template_5A', 'Template_5B']:
         if 'ranking_calculation' in entidades:
             entidades.setdefault('calculo', entidades['ranking_calculation'])
