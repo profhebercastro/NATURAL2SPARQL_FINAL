@@ -28,9 +28,7 @@ try:
             line = line.strip()
             if line and ';' in line and not line.startswith('#'):
                 template_id, question_text = [part.strip() for part in line.split(';', 1)]
-                if template_id not in reference_templates:
-                    reference_templates[template_id] = []
-                reference_templates[template_id].append(question_text)
+                reference_templates.setdefault(template_id, []).append(question_text)
 except FileNotFoundError:
     print("AVISO: Arquivo Reference_questions.txt não encontrado.")
 
@@ -86,12 +84,10 @@ def extrair_todas_entidades(pergunta_lower):
         'quantidade_negocios': ['quantidade de negocios', 'quantidade de acoes', 'volume de titulos', 'volume de acoes', 'quantidade']
     }
     
-    # Passada 1: Encontra a melhor correspondência para ranking, priorizando a mais longa
     best_rank_match = ''
     rank_key = None
     for chave, sinonimos in mapa_ranking.items():
         for s in sinonimos:
-            # Normaliza o sinônimo para busca
             s_sem_acento = remover_acentos(s)
             if re.search(r'\b' + s_sem_acento + r'\b', texto_sem_acento) and len(s) > len(best_rank_match):
                 best_rank_match = s
@@ -99,7 +95,6 @@ def extrair_todas_entidades(pergunta_lower):
     if rank_key:
         entidades['ranking_calculation'] = rank_key
 
-    # Passada 2: Encontra a melhor correspondência para a métrica de resultado, ignorando o texto do ranking
     texto_para_resultado = texto_sem_acento.replace(remover_acentos(best_rank_match), '') if best_rank_match else texto_sem_acento
     best_metric_match = ''
     metric_key = None
