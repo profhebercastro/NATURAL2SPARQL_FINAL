@@ -71,7 +71,7 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
 
-        // ETAPA 1: Substitui todos os placeholders de valor simples.
+        // ETAPA 1: Substituição de placeholders de valor simples (ex: #DATA#, #LIMITE#, etc.)
         Iterator<Map.Entry<String, JsonNode>> fieldsIterator = entities.fields();
         while (fieldsIterator.hasNext()) {
             Map.Entry<String, JsonNode> field = fieldsIterator.next();
@@ -83,7 +83,7 @@ public class SPARQLProcessor {
             }
         }
         
-        // ETAPA 2: Constrói e aplica blocos de filtro e placeholders complexos.
+        // ETAPA 2: Construção e aplicação de blocos de filtro e placeholders complexos.
         String entidadeFilter = entities.has("ENTIDADE_NOME") ? buildEntidadeFilter(entities.get("ENTIDADE_NOME").asText()) : "";
         String setorFilter = entities.has("NOME_SETOR") ? buildSetorFilter(entities.get("NOME_SETOR").asText()) : "";
         String tickersFilter = entities.has("LISTA_TICKERS") ? buildTickersFilter(entities.get("LISTA_TICKERS")) : "";
@@ -124,7 +124,6 @@ public class SPARQLProcessor {
     }
 
     // --- MÉTODOS AUXILIARES ---
-
     private String buildEntidadeFilter(String entidade) {
         if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) {
             return "BIND(b3:" + entidade.toUpperCase() + " AS ?SO1)";
@@ -152,15 +151,15 @@ public class SPARQLProcessor {
             case "variacao_perc": return "((?fechamento" + suffix + " - ?abertura" + suffix + ") / ?abertura" + suffix + ") * 100";
             case "intervalo_abs": return "ABS(?maximo" + suffix + " - ?minimo" + suffix + ")";
             case "intervalo_perc": return "((?maximo" + suffix + " - ?minimo" + suffix + ") / ?abertura" + suffix + ") * 100";
-            case "volume_financeiro": return "?volumeNegociacao";
-            case "quantidade_negocios": return "?totalNegocios";
-            case "volume": return "?volumeNegociacao";
-            case "quantidade": return "?totalNegocios";
-            case "preco_medio": return "?precoMedio";
-            case "preco_maximo": return "?maximo";
-            case "preco_minimo": return "?minimo";
-            case "preco_fechamento": return "?fechamento";
-            case "preco_abertura": return "?abertura";
+            case "volume_financeiro": return "?volumeNegociacao" + suffix;
+            case "quantidade_negocios": return "?totalNegocios" + suffix;
+            case "volume": return "?volumeNegociacao" + suffix;
+            case "quantidade": return "?totalNegocios" + suffix;
+            case "preco_medio": return "?precoMedio" + suffix;
+            case "preco_maximo": return "?maximo" + suffix;
+            case "preco_minimo": return "?minimo" + suffix;
+            case "preco_fechamento": return "?fechamento" + suffix;
+            case "preco_abertura": return "?abertura" + suffix;
             default: return "?undefinedCalculation";
         }
     }
