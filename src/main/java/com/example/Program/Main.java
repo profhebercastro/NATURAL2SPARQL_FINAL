@@ -88,7 +88,6 @@ public class Main {
 
             Map<String, Object> results = new HashMap<>();
             
-            // Formatadores
             Locale brLocale = new Locale("pt", "BR");
             NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(brLocale);
             DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(brLocale));
@@ -105,20 +104,19 @@ public class Main {
                     String varName = entry.getKey();
                     String formattedValue = currentValue; 
 
-                    // A formatação agora se baseia principalmente no tipo de métrica da consulta, não no nome da variável
                     if (tipoMetrica != null && !varName.equalsIgnoreCase("ticker")) {
                         try {
                             double numericValue = Double.parseDouble(currentValue);
                             
                             if (tipoMetrica.contains("perc")) {
                                 formattedValue = percentageFormatter.format(numericValue);
-                            } else if (tipoMetrica.contains("volume") || tipoMetrica.contains("preco")) {
+                            } else if (tipoMetrica.contains("volume") || tipoMetrica.contains("preco") || tipoMetrica.contains("abs") || tipoMetrica.contains("intervalo")) {
                                 formattedValue = currencyFormatter.format(numericValue);
                             } else if (tipoMetrica.contains("quantidade")) {
                                 formattedValue = largeNumberFormatter.format(numericValue);
                             }
                         } catch (NumberFormatException e) {
-                            // Mantém o valor original se não for um número (ex: "TOTAL")
+                            // Mantém o valor original se não for um número (ex: "TOTAL", "N/A")
                         }
                     }
                     
