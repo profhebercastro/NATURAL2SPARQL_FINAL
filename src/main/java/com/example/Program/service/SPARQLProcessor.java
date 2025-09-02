@@ -72,12 +72,10 @@ public class SPARQLProcessor {
         String query = template;
 
         // ETAPA 1: Substituição inicial de todos os placeholders de valor simples.
-        // Isso garante que os valores estejam disponíveis para a construção dos blocos de filtro.
         Iterator<Map.Entry<String, JsonNode>> fieldsIterator = entities.fields();
         while (fieldsIterator.hasNext()) {
             Map.Entry<String, JsonNode> field = fieldsIterator.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
-            // Substitui apenas se não for um placeholder complexo que precisa de lógica especial.
             if (!placeholder.matches("#FILTER_.*#|#CALCULO#|#RANKING_CALCULATION#|#VALOR_DESEJADO#|#REGEX_FILTER#")) {
                 if (field.getValue().isTextual()) {
                     query = query.replace(placeholder, field.getValue().asText());
@@ -86,31 +84,9 @@ public class SPARQLProcessor {
         }
         
         // ETAPA 2: Construção e aplicação de blocos de filtro e placeholders complexos.
-        String entidadeFilter = "";
-        if (entities.has("ENTIDADE_NOME")) {
-            String entidade = entities.get("ENTIDADE_NOME").asText();
-            if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) {
-                entidadeFilter = "BIND(b3:" + entidade.toUpperCase() + " AS ?SO1)";
-            } else {
-                entidadeFilter = "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\")) \n    ?S1 P1 ?SO1 .";
-            }
-        }
-        
-        String setorFilter = "";
-        if (entities.has("NOME_SETOR")) {
-            String nomeSetor = entities.get("NOME_SETOR").asText();
-            setorFilter = "?S1 P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt . \n    ?S1 P1 ?SO1 .";
-        }
-
-        String tickersFilter = "";
-        if (entities.has("LISTA_TICKERS")) {
-            JsonNode tickersNode = entities.get("LISTA_TICKERS");
-            if (tickersNode.isArray() && tickersNode.size() > 0) {
-                List<String> uris = new ArrayList<>();
-                for (JsonNode ticker : tickersNode) { uris.add("b3:" + ticker.asText()); }
-                tickersFilter = "VALUES ?SO1 { " + String.join(" ", uris) + " }";
-            }
-        }
+        String entidadeFilter = entities.has("ENTIDADE_NOME") ? buildEntidadeFilter(entities.get("ENTIDADE_NOME").asText()) : "";
+        String setorFilter = entities.has("NOME_SETOR") ? buildSetorFilter(entities.get("NOME_SETOR").asText()) : "";
+        String tickersFilter = entities.has("LISTA_TICKERS") ? buildTickersFilter(entities.get("LISTA_TICKERS")) : "";
         
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", !tickersFilter.isEmpty() ? tickersFilter : setorFilter);
@@ -121,47 +97,51 @@ public class SPARQLProcessor {
         }
 
         if (query.contains("#CALCULO#")) {
-            String calculoSparql = "?undefinedCalculation";
-            if (entities.has("CALCULO")) {
-                calculoSparql = getFormulaCalculo(entities.get("CALCULO").asText(), "");
-            } else if (entities.has("VALOR_DESEJADO")) {
-                String metricaKey = entities.get("VALOR_DESEJADO").asText().replace("metrica.", "");
-                calculoSparql = getFormulaCalculo(metricaKey, "");
-            }
-            query = query.replace("#CALCULO#", calculoSparql);
+            String calculoKey = entities.has("CALCULO") ? entities.get("CALCULO").asText() : entities.path("VALOR_DESEJADO").asText().replace("metrica.", "");
+            query = query.replace("#CALCULO#", getFormulaCalculo(calculoKey, ""));
         }
-    
         if (query.contains("#RANKING_CALCULATION#") && entities.has("RANKING_CALCULATION")) {
             String rankingKey = entities.get("RANKING_CALCULATION").asText();
-            String rankingCalculoSql = getFormulaCalculo(rankingKey, "_rank");
-            query = query.replace("#RANKING_CALCULATION#", rankingCalculoSql);
+            query = query.replace("#RANKING_CALCULATION#", getFormulaCalculo(rankingKey, "_rank"));
         }
-    
         if (query.contains("#VALOR_DESEJADO#") && entities.has("VALOR_DESEJADO")) {
             String value = entities.get("VALOR_DESEJADO").asText();
             String predicadoRDF = placeholderService.getPlaceholderValue(value);
             if (predicadoRDF != null) {
                 query = query.replace("#VALOR_DESEJADO#", predicadoRDF);
                 String varName = toCamelCase(value);
-                query = query.replace("?valor", "?" + varName).replace("?ANS", "?" + varName);
+                query = query.replace("?valor", "?" + varName).replace("?soma_valor", "?" + varName);
             }
         }
-    
         if (query.contains("#REGEX_FILTER#")) {
-            if (entities.has("REGEX_PATTERN")) {
-                String value = entities.get("REGEX_PATTERN").asText();
-                query = query.replace("#REGEX_FILTER#", "FILTER(REGEX(STR(?ticker), \"" + value + "\"))");
-            } else {
-                query = query.replace("#REGEX_FILTER#", "");
-            }
+            query = query.replace("#REGEX_FILTER#", entities.has("REGEX_PATTERN") ? "FILTER(REGEX(STR(?ticker), \"" + entities.get("REGEX_PATTERN").asText() + "\"))" : "");
         }
-        
+
         // ETAPA 3: Limpeza e Finalização
-        query = query.replaceAll("#[A-Z_]+#", "");
         query = placeholderService.replaceGenericPlaceholders(query);
         String prefixes = placeholderService.getPrefixes();
-    
         return prefixes + query;
+    }
+
+    private String buildEntidadeFilter(String entidade) {
+        if (entidade.matches("^[A-Z]{4}[0-9]{1,2}$")) {
+            return "BIND(b3:" + entidade.toUpperCase() + " AS ?SO1)";
+        } else {
+            return "?S1 P7 ?label . \n    FILTER(REGEX(STR(?label), \"" + entidade + "\", \"i\")) \n    ?S1 P1 ?SO1 .";
+        }
+    }
+
+    private String buildSetorFilter(String nomeSetor) {
+        return "?S1 P9 ?S4 . \n    ?S4 P7 \"" + nomeSetor + "\"@pt . \n    ?S1 P1 ?SO1 .";
+    }
+
+    private String buildTickersFilter(JsonNode tickersNode) {
+        if (tickersNode != null && tickersNode.isArray() && tickersNode.size() > 0) {
+            List<String> uris = new ArrayList<>();
+            for (JsonNode ticker : tickersNode) { uris.add("b3:" + ticker.asText()); }
+            return "VALUES ?SO1 { " + String.join(" ", uris) + " }";
+        }
+        return "";
     }
 
     private String getFormulaCalculo(String calculoKey, String suffix) {
