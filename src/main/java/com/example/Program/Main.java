@@ -5,7 +5,6 @@ import com.example.Program.model.PerguntaRequest;
 import com.example.Program.model.ProcessamentoDetalhadoResposta;
 import com.example.Program.ontology.Ontology;
 import com.example.Program.service.SPARQLProcessor;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.jena.rdf.model.Model;
 import org.slf4j.Logger;
@@ -17,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -88,15 +88,11 @@ public class Main {
 
             Map<String, Object> results = new HashMap<>();
             
-            List<String> priceVarNames = List.of("precoMaximo", "precoMinimo", "precoAbertura", "precoFechamento", "precoMedio");
-            List<String> largeNumberVarNames = List.of("volume", "volumeIndividual", "quantidade", "totalNegocios");
-            
-            NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(new Locale("pt", "BR"));
-            NumberFormat integerFormatter = DecimalFormat.getIntegerInstance(new Locale("pt", "BR"));
-            DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(new Locale("pt", "BR")));
-            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-            symbols.setGroupingSeparator('.');
-            DecimalFormat volumeFormatter = new DecimalFormat("'R$ ' #,##0", symbols);
+            // Formatadores
+            Locale brLocale = new Locale("pt", "BR");
+            NumberFormat currencyFormatter = DecimalFormat.getCurrencyInstance(brLocale);
+            DecimalFormat percentageFormatter = new DecimalFormat("#,##0.00'%'", new DecimalFormatSymbols(brLocale));
+            DecimalFormat largeNumberFormatter = new DecimalFormat("#,##0", new DecimalFormatSymbols(brLocale));
 
             List<Map<String, Object>> formattedBindings = new ArrayList<>();
             for(Map<String, String> row : bindings) {
@@ -109,27 +105,21 @@ public class Main {
                     String varName = entry.getKey();
                     String formattedValue = currentValue; 
 
-                    try {
-                        double numericValue = Double.parseDouble(currentValue);
-
-                        if (tipoMetrica != null && (varName.equals("resultadoCalculado") || varName.equals("resultadoFinal"))) {
-                            if (tipoMetrica.contains("perc")) { 
-                 
+                    // A formatação agora se baseia principalmente no tipo de métrica da consulta, não no nome da variável
+                    if (tipoMetrica != null && !varName.equalsIgnoreCase("ticker")) {
+                        try {
+                            double numericValue = Double.parseDouble(currentValue);
+                            
+                            if (tipoMetrica.contains("perc")) {
                                 formattedValue = percentageFormatter.format(numericValue);
-                            } else { 
+                            } else if (tipoMetrica.contains("volume") || tipoMetrica.contains("preco")) {
                                 formattedValue = currencyFormatter.format(numericValue);
+                            } else if (tipoMetrica.contains("quantidade")) {
+                                formattedValue = largeNumberFormatter.format(numericValue);
                             }
-                        } else if (priceVarNames.contains(varName)) {
-                            formattedValue = currencyFormatter.format(numericValue);
-                        } else if (largeNumberVarNames.contains(varName)) {
-                            if (varName.toLowerCase().contains("volume")) {
-                                formattedValue = volumeFormatter.format(numericValue);
-                            } else {
-                                formattedValue = integerFormatter.format(numericValue);
-                            }
+                        } catch (NumberFormatException e) {
+                            // Mantém o valor original se não for um número (ex: "TOTAL")
                         }
-                    } catch (NumberFormatException e) {
-                      
                     }
                     
                     valueMap.put("value", formattedValue);

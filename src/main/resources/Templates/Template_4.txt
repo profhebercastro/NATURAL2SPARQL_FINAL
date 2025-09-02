@@ -1,27 +1,29 @@
 # --- Template_4.txt ---
-# Finalidade: Agrega (soma) uma métrica para um setor ou empresa em uma data.
+# Finalidade: Agrega (soma) uma métrica para um setor.
 # Exemplo: "Qual o volume total do setor financeiro em 12/06/2025?"
 # ----------------------------------------------------------
-SELECT ?ticker ?resultadoAgregado
+SELECT ?ticker ?resultado
 WHERE {
     {
-        SELECT ?ticker ?valorIndividual WHERE {
+        # Lista os valores individuais
+        SELECT ?ticker ?resultado WHERE {
             #FILTER_BLOCK_SETOR#
             ?SO1 P8 ?ticker .
             ?SO1 P3 ?SO2 .
             ?SO2 P5 ?S2 .
             ?S2 P6 "#DATA#"^^xsd:date .
-            ?SO2 #VALOR_DESEJADO# ?valorIndividual .
+            ?SO2 #VALOR_DESEJADO# ?resultado .
         }
     }
     UNION
     {
-        SELECT ("TOTAL" AS ?ticker) (SUM(?valorSoma) AS ?resultadoAgregado) WHERE {
+        # Calcula o total agregado
+        SELECT ("TOTAL" AS ?ticker) (SUM(?valor_interno) AS ?resultado) WHERE {
             #FILTER_BLOCK_SETOR#
             ?SO1 P3 ?SO2 .
             ?SO2 P5 ?S2 .
             ?S2 P6 "#DATA#"^^xsd:date .
-            ?SO2 #VALOR_DESEJADO# ?valorSoma .
+            ?SO2 #VALOR_DESEJADO# ?valor_interno .
         }
     }
 }
