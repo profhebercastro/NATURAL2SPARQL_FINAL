@@ -71,22 +71,21 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
 
-        // ETAPA 1: Substituir todos os placeholders de valor simples (ex: #DATA#, #ENTIDADE_NOME#, #LIMITE#)
-        Iterator<Map.Entry<String, JsonNode>> fields = entities.fields();
-        while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> field = fields.next();
-            // Ignora entidades que controlam blocos ou lógicas complexas por enquanto
-            if (field.getKey().equals("LISTA_TICKERS") || field.getKey().equals("NOME_SETOR")) continue;
-            
+        // ETAPA 1: Substituição inicial de todos os placeholders de valor simples.
+        // Isso garante que os valores estejam disponíveis para a construção dos blocos de filtro.
+        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = entities.fields();
+        while (fieldsIterator.hasNext()) {
+            Map.Entry<String, JsonNode> field = fieldsIterator.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
-            // Apenas substitui placeholders que não são para lógica complexa a ser tratada depois
-            if (!placeholder.matches("#CALCULO#|#RANKING_CALCULATION#|#VALOR_DESEJADO#|#REGEX_FILTER#|#FILTER_.*#")) {
-                 String value = field.getValue().asText();
-                 query = query.replace(placeholder, value);
+            // Substitui apenas se não for um placeholder complexo que precisa de lógica especial.
+            if (!placeholder.matches("#FILTER_.*#|#CALCULO#|#RANKING_CALCULATION#|#VALOR_DESEJADO#|#REGEX_FILTER#")) {
+                if (field.getValue().isTextual()) {
+                    query = query.replace(placeholder, field.getValue().asText());
+                }
             }
         }
         
-        // ETAPA 2: Construir e substituir blocos de filtro e placeholders complexos
+        // ETAPA 2: Construção e aplicação de blocos de filtro e placeholders complexos.
         String entidadeFilter = "";
         if (entities.has("ENTIDADE_NOME")) {
             String entidade = entities.get("ENTIDADE_NOME").asText();
@@ -153,14 +152,15 @@ public class SPARQLProcessor {
                 String value = entities.get("REGEX_PATTERN").asText();
                 query = query.replace("#REGEX_FILTER#", "FILTER(REGEX(STR(?ticker), \"" + value + "\"))");
             } else {
-                query = query.replace("#REGEX_FILTER#", ""); // Remove o placeholder se não houver padrão
+                query = query.replace("#REGEX_FILTER#", "");
             }
         }
         
         // ETAPA 3: Limpeza e Finalização
-        query = query.replaceAll("#[A-Z_]+#", ""); // Remove placeholders restantes
+        query = query.replaceAll("#[A-Z_]+#", "");
         query = placeholderService.replaceGenericPlaceholders(query);
         String prefixes = placeholderService.getPrefixes();
+    
         return prefixes + query;
     }
 
