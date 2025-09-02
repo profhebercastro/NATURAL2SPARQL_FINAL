@@ -2,28 +2,26 @@
 # Finalidade: Agrega (soma) uma métrica para um setor ou empresa em uma data.
 # Exemplo: "Qual o volume total do setor financeiro em 12/06/2025?"
 # ----------------------------------------------------------
-SELECT ?ticker ?valor
+SELECT ?ticker ?resultadoAgregado
 WHERE {
     {
-        SELECT ?ticker ?valor WHERE {
-            #FILTER_BLOCK#
-            ?S1 P1 ?SO1 .  
+        SELECT ?ticker ?valorIndividual WHERE {
+            #FILTER_BLOCK_SETOR#
             ?SO1 P8 ?ticker .
             ?SO1 P3 ?SO2 .
             ?SO2 P5 ?S2 .
             ?S2 P6 "#DATA#"^^xsd:date .
-            ?SO2 #VALOR_DESEJADO# ?valor .
+            ?SO2 #VALOR_DESEJADO# ?valorIndividual .
         }
     }
     UNION
     {
-        SELECT ("TOTAL" AS ?ticker) (SUM(?soma_valor) AS ?valor) WHERE {
-            #FILTER_BLOCK#
-            ?S1 P1 ?SO1 .  
+        SELECT ("TOTAL" AS ?ticker) (SUM(?valorSoma) AS ?resultadoAgregado) WHERE {
+            #FILTER_BLOCK_SETOR#
             ?SO1 P3 ?SO2 .
             ?SO2 P5 ?S2 .
             ?S2 P6 "#DATA#"^^xsd:date .
-            ?SO2 #VALOR_DESEJADO# ?soma_valor .
+            ?SO2 #VALOR_DESEJADO# ?valorSoma .
         }
     }
 }

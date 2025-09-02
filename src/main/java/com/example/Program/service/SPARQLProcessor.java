@@ -71,41 +71,35 @@ public class SPARQLProcessor {
     private String buildQuery(String template, JsonNode entities) {
         String query = template;
 
-        // ETAPA 1: Substituição de placeholders de valor literal direto (os mais simples).
+        // ETAPA 1: Substitui todos os placeholders de valor literal direto.
         Iterator<Map.Entry<String, JsonNode>> fieldsIterator = entities.fields();
         while (fieldsIterator.hasNext()) {
             Map.Entry<String, JsonNode> field = fieldsIterator.next();
             String placeholder = "#" + field.getKey().toUpperCase() + "#";
-            // Substitui apenas placeholders que não controlam lógicas mais complexas.
-            if (!placeholder.matches("#FILTER_.*#|#CALCULO#|#RANKING_CALCULATION#|#VALOR_DESEJADO#|#REGEX_FILTER#|#ENTIDADE_NOME#|#NOME_SETOR#|#LISTA_TICKERS#")) {
+            if (!placeholder.matches("#FILTER_.*#|#CALCULO#|#RANKING_CALCULATION#|#VALOR_DESEJADO#|#REGEX_FILTER#")) {
                 if (field.getValue().isTextual()) {
                     query = query.replace(placeholder, field.getValue().asText());
                 }
             }
         }
         
-        // ETAPA 2: Construção e aplicação de blocos de filtro.
+        // ETAPA 2: Constrói e aplica blocos de filtro.
         String entidadeFilter = entities.has("ENTIDADE_NOME") ? buildEntidadeFilter(entities.get("ENTIDADE_NOME").asText()) : "";
         String setorFilter = entities.has("NOME_SETOR") ? buildSetorFilter(entities.get("NOME_SETOR").asText()) : "";
         String tickersFilter = entities.has("LISTA_TICKERS") ? buildTickersFilter(entities.get("LISTA_TICKERS")) : "";
         
         query = query.replace("#FILTER_BLOCK_ENTIDADE#", entidadeFilter);
         query = query.replace("#FILTER_BLOCK_SETOR#", !tickersFilter.isEmpty() ? tickersFilter : setorFilter);
-        
         if (query.contains("#FILTER_BLOCK#")) {
-            String filterBlock = !tickersFilter.isEmpty() ? tickersFilter : (!setorFilter.isEmpty() ? setorFilter : entidadeFilter);
-            query = query.replace("#FILTER_BLOCK#", filterBlock);
+            query = query.replace("#FILTER_BLOCK#", !tickersFilter.isEmpty() ? tickersFilter : (!setorFilter.isEmpty() ? setorFilter : entidadeFilter));
         }
 
-        // ETAPA 3: Substituição de placeholders de lógica (os mais complexos).
-        if (query.contains("#VALOR_DESEJADO#") && entities.has("VALOR_DESEJADO")) {
+        // ETAPA 3: Substitui placeholders de lógica.
+        if (entities.has("VALOR_DESEJADO")) {
             String value = entities.get("VALOR_DESEJADO").asText();
             String predicadoRDF = placeholderService.getPlaceholderValue(value);
             if (predicadoRDF != null) {
                 query = query.replace("#VALOR_DESEJADO#", predicadoRDF);
-                String varName = toCamelCase(value);
-                // Substitui as variáveis genéricas pela variável com nome da métrica.
-                query = query.replace("?valor", "?" + varName).replace("?soma_valor", "?" + varName);
             }
         }
         
@@ -115,7 +109,6 @@ public class SPARQLProcessor {
                 : entities.path("VALOR_DESEJADO").asText().replace("metrica.", "");
             query = query.replace("#CALCULO#", getFormulaCalculo(calculoKey, ""));
         }
-
         if (query.contains("#RANKING_CALCULATION#") && entities.has("RANKING_CALCULATION")) {
             String rankingKey = entities.get("RANKING_CALCULATION").asText();
             query = query.replace("#RANKING_CALCULATION#", getFormulaCalculo(rankingKey, "_rank"));
