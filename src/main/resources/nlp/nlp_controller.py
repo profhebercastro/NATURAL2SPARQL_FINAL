@@ -10,11 +10,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def carregar_arquivo_json(nome_arquivo):
+    """Função auxiliar para carregar arquivos JSON de forma segura."""
     caminho_completo = os.path.join(SCRIPT_DIR, nome_arquivo)
     try:
-        with open(caminho_completo, 'r', encoding='utf-8') as f: return json.load(f)
+        with open(caminho_completo, 'r', encoding='utf-8') as f:
+            return json.load(f)
     except FileNotFoundError:
         print(f"AVISO: Arquivo {nome_arquivo} não encontrado em {caminho_completo}.")
+        return {}
+    except json.JSONDecodeError:
+        print(f"AVISO: Arquivo {nome_arquivo} em {caminho_completo} não é um JSON válido.")
         return {}
 
 empresa_map = carregar_arquivo_json('Named_entity_dictionary.json')
@@ -42,7 +47,6 @@ else:
     vectorizer, tfidf_matrix_ref = None, None
 
 # --- FUNÇÕES AUXILIARES DE PROCESSAMENTO DE TEXTO ---
-
 def remover_acentos(texto):
     nfkd_form = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -59,27 +63,32 @@ def extrair_todas_entidades(pergunta_lower):
         texto_processavel = texto_processavel.replace(match_data.group(0), " ")
 
     # 2. Limites numéricos
-    limit_match = re.search(r'\b(as|os)?\s*(\d+|cinco|tres|três|duas|dois|quatro)\s+(acoes|ações|papeis|papéis)\b', texto_processavel, re.IGNORECASE)
-    num_map = {'cinco': '5', 'quatro': '4', 'tres': '3', 'três': '3', 'duas': '2', 'dois': '2'}
+    num_map = {'cinco': '5', 'quatro': '4', 'tres': '3', 'três': '3', 'duas': '2', 'dois': '2', 'dez': '10', 'sete': '7', 'seis': '6'}
+    limit_match = re.search(r'\b(as|os|top)?\s*(\d+|' + '|'.join(num_map.keys()) + r')\s+(acoes|ações|papeis|papéis)\b', texto_processavel, re.IGNORECASE)
     if limit_match:
-        entidades['limite'] = num_map.get(limit_match.group(2).lower(), limit_match.group(2))
-    elif re.search(r'\btop\s*(\d+)\b', texto_processavel, re.IGNORECASE):
-        entidades['limite'] = re.search(r'\btop\s*(\d+)\b', texto_processavel, re.IGNORECASE).group(1)
+        num_str = limit_match.group(2).lower()
+        entidades['limite'] = num_map.get(num_str, num_str)
+        texto_processavel = texto_processavel.replace(limit_match.group(0), " ")
     
     texto_sem_acento = remover_acentos(texto_processavel)
     
-    # 3. Métricas (Lógica refeita para robustez)
+    # 3. Métricas (Lógica refeita para robustez e captura de múltiplas intenções)
     mapa_ranking = {
-        'variacao_perc': ['maior percentual de alta', 'maior alta percentual', 'maior percentual de baixa', 'maior baixa percentual', 'menor variacao percentual', 'maior variacao percentual'],
+        'variacao_perc': ['maior alta percentual', 'maior percentual de alta', 'maior baixa percentual', 'menor baixa percentual', 'menor variacao percentual', 'maior variacao percentual', 'maior recuo percentual', 'maiores altas percentuais'],
         'variacao_abs': ['menor variacao absoluta', 'maior baixa absoluta', 'maior variacao absoluta'],
-        'volume_financeiro': ['maior volume', 'menor volume'],
+        'volume_financeiro': ['maior volume', 'menor volume', 'maior volume negociado', 'menor volume negociado'],
+        'quantidade_negocios': ['maior quantidade de negocios', 'menor quantidade de negocios'],
+        'preco_maximo': ['maior preco maximo', 'maior alta'],
+        'preco_minimo': ['menor preco minimo'],
+        'preco_fechamento': ['menor preco de fechamento'],
+        'preco_abertura': ['menor preco de abertura']
     }
     mapa_metricas = {
         'variacao_perc': ['variacao percentual', 'variacao intradiaria percentual'], 'variacao_abs': ['variacao absoluta', 'variacao intradiaria absoluta'],
         'intervalo_perc': ['intervalo intradiario percentual'], 'intervalo_abs': ['intervalo intradiario absoluto'],
-        'preco_fechamento': ['preco de fechamento', 'fechamento'], 'preco_abertura': ['preco de abertura', 'abertura'],
-        'preco_maximo': ['preco maximo', 'maior preco'], 'preco_minimo': ['preco minimo', 'menor preco'], 'preco_medio': ['preco medio'],
-        'ticker': ['ticker', 'codigo de negociacao', 'simbolo'],
+        'preco_fechamento': ['preco de fechamento', 'fechamento', 'cotação'], 'preco_abertura': ['preco de abertura', 'abertura'],
+        'preco_maximo': ['preco maximo'], 'preco_minimo': ['preco minimo'], 'preco_medio': ['preco medio'],
+        'ticker': ['ticker', 'codigo de negociacao', 'simbolo', 'papel'],
         'volume_financeiro': ['volume financeiro', 'volume negociado', 'volume'],
         'quantidade_negocios': ['quantidade de negocios', 'quantidade de acoes', 'volume de titulos', 'volume de acoes', 'quantidade']
     }
@@ -94,14 +103,16 @@ def extrair_todas_entidades(pergunta_lower):
                 rank_key = chave
     if rank_key:
         entidades['ranking_calculation'] = rank_key
+        texto_sem_acento_para_resultado = texto_sem_acento.replace(remover_acentos(best_rank_match), ' ')
+    else:
+        texto_sem_acento_para_resultado = texto_sem_acento
 
-    texto_para_resultado = texto_sem_acento.replace(remover_acentos(best_rank_match), '') if best_rank_match else texto_sem_acento
     best_metric_match = ''
     metric_key = None
     for chave, sinonimos in mapa_metricas.items():
         for s in sinonimos:
             s_sem_acento = remover_acentos(s)
-            if re.search(r'\b' + s_sem_acento + r'\b', texto_para_resultado) and len(s) > len(best_metric_match):
+            if re.search(r'\b' + s_sem_acento + r'\b', texto_sem_acento_para_resultado) and len(s) > len(best_metric_match):
                 best_metric_match = s
                 metric_key = chave
     if metric_key:
@@ -109,7 +120,7 @@ def extrair_todas_entidades(pergunta_lower):
             entidades['calculo'] = metric_key
         else:
             entidades['valor_desejado'] = 'metrica.' + metric_key
-
+            
     if rank_key and not metric_key:
         entidades['valor_desejado'] = 'metrica.' + rank_key
 
@@ -140,11 +151,14 @@ def extrair_todas_entidades(pergunta_lower):
     return entidades
 
 app = Flask(__name__)
+
 @app.route('/process_question', methods=['POST'])
 def process_question():
-    data = request.get_json(); pergunta_lower = data.get('question', '').lower()
-    if not pergunta_lower.strip(): return jsonify({"error": "A pergunta não pode ser vazia."}), 400
-        
+    data = request.get_json()
+    if not data or 'question' not in data or not data['question'].strip():
+        return jsonify({"error": "A pergunta não pode ser vazia."}), 400
+    
+    pergunta_lower = data.get('question', '').lower()
     entidades = extrair_todas_entidades(pergunta_lower)
     
     has_ranking = 'ranking_calculation' in entidades
@@ -162,16 +176,22 @@ def process_question():
         template_id_final = 'Template_5B' if has_filtro_grupo else 'Template_5A'
     elif has_entidade_nome and has_calculo:
         template_id_final = 'Template_1D'
-    elif has_valor_desejado and entidades.get('valor_desejado') == 'metrica.ticker':
-        template_id_final = 'Template_2A'
     elif has_filtro_grupo:
-        if 'empresas' in pergunta_lower: template_id_final = 'Template_3B'
-        elif has_valor_desejado: template_id_final = 'Template_4'
-        else: template_id_final = 'Template_3A'
+        # CORREÇÃO: se tiver um calculo, mesmo em grupo, não é agregação simples (Template_4)
+        if has_calculo:
+            template_id_final = 'Template_6B' # Usa o template mais complexo para cálculos em grupo
+        elif 'empresas' in pergunta_lower: 
+            template_id_final = 'Template_3B'
+        elif has_valor_desejado: 
+            template_id_final = 'Template_4'
+        else: 
+            template_id_final = 'Template_3A'
     elif has_entidade_nome:
         pergunta_sem_acento = remover_acentos(pergunta_lower)
-        if 'setor de atuacao' in pergunta_sem_acento:
+        if 'setor de atuacao' in pergunta_sem_acento or 'a qual setor pertence' in pergunta_sem_acento:
             template_id_final = 'Template_2B'
+        elif any(term in pergunta_sem_acento for term in ['ticker', 'codigo de negociacao', 'simbolo']):
+            template_id_final = 'Template_2A'
         elif 'regex_pattern' in entidades: 
             template_id_final = 'Template_1C'
         elif has_valor_desejado:
@@ -184,13 +204,14 @@ def process_question():
         if similaridades.any() and similaridades.max() > 0.3:
             template_id_final = ref_ids_flat[similaridades.argmax()]
 
-    if not template_id_final: return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
+    if not template_id_final:
+        return jsonify({"error": "Não foi possível identificar um template para a pergunta."}), 404
     
-    if template_id_final in ['Template_5A', 'Template_5B']:
+    if template_id_final in ['Template_5A', 'Template_5B'] and 'calculo' not in entidades:
         if 'ranking_calculation' in entidades:
-            entidades.setdefault('calculo', entidades['ranking_calculation'])
+            entidades['calculo'] = entidades['ranking_calculation']
         elif 'valor_desejado' in entidades:
-            entidades.setdefault('calculo', entidades['valor_desejado'].replace('metrica.', ''))
+            entidades['calculo'] = entidades['valor_desejado'].replace('metrica.', '')
     
     return jsonify({"templateId": template_id_final, "entities": {k.upper(): v for k, v in entidades.items()}})
 
